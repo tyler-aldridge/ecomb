@@ -3,12 +3,11 @@
 [ext_resource type="Script" uid="uid://4lphy1d54d88" path="res://scripts/ui/game/menus/GameOptionsMenu.gd" id="1_vm04o"]
 [ext_resource type="Texture2D" uid="uid://ddpukf3u74xr0" path="res://assets/interface/ui/panel-gradient-4.png" id="2_f8yp2"]
 [ext_resource type="Texture2D" uid="uid://dlteajxyiio2x" path="res://assets/interface/ui/grabber.png" id="3_cptyg"]
+[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="4_m1poi"]
 [ext_resource type="AudioStream" uid="uid://bia60cj7of2o4" path="res://assets/audio/sfx/recordscratch.ogg" id="4_trj4p"]
-[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="5_blip"]
-[ext_resource type="AudioStream" uid="uid://dwnyjl8oi2gwc" path="res://assets/audio/sfx/blop.ogg" id="6_blop"]
-[ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="7_lifeup"]
-[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="8_hurt"]
-[ext_resource type="Theme" uid="uid://bqdn1hl5c7fvl" path="res://assets/interface/themes/space-worm-theme/space_worm_theme.tres" id="9_theme"]
+[ext_resource type="AudioStream" uid="uid://dwnyjl8oi2gwc" path="res://assets/audio/sfx/blop.ogg" id="5_a7mxu"]
+[ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="7_3bs1w"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="8_a7mxu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glr2s"]
 bg_color = Color(1, 1, 1, 1)
@@ -188,7 +187,6 @@ theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
 min_value = -200.0
 max_value = 200.0
-value = 0.0
 
 [node name="RhythmTimingDescription" type="Label" parent="GameOptionsContainer"]
 custom_minimum_size = Vector2(325, 50)
@@ -267,23 +265,23 @@ text = "Exit to Title"
 icon_alignment = 1
 
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("5_blip")
+stream = ExtResource("4_m1poi")
 bus = &"SFX"
 
 [node name="ButtonEnterSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("6_blop")
+stream = ExtResource("5_a7mxu")
 bus = &"SFX"
 
 [node name="ExitConfirmSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_trj4p")
 bus = &"SFX"
 
-[node name="CancelSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("8_hurt")
+[node name="SuccessSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("7_3bs1w")
 bus = &"SFX"
 
-[node name="SuccessSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("7_lifeup")
+[node name="CancelSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("8_a7mxu")
 bus = &"SFX"
 
 [node name="Systems" type="Node" parent="."]

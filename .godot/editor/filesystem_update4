@@ -1,2 +1,3 @@
 res://scenes/ui/game/menus/GameOptionsMenu.tscn
 res://assets/interface/themes/space-worm-theme/space_worm_theme.tres
+res://scripts/ui/game/menus/GameOptionsMenu.gd

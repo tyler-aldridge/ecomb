@@ -47,6 +47,26 @@ func _ready():
 		exit_btn.pressed.connect(_on_exit_pressed)
 		exit_btn.mouse_entered.connect(_on_button_hover)
 
+	# Load saved settings
+	load_settings()
+
+func create_exit_dialog():
+	# Create overlay (matches MainTitle's dialog_overlay)
+	dialog_overlay = ColorRect.new()
+	dialog_overlay.color = Color(0, 0, 0, 0.7)
+	dialog_overlay.size = Vector2(1920, 1080)
+	dialog_overlay.position = Vector2(0, 0)
+	dialog_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	dialog_overlay.hide()
+	add_child(dialog_overlay)
+
+	# Create dialog (matches MainTitle's quit_dialog)
+	exit_dialog = ConfirmationDialog.new()
+	exit_dialog.dialog_text = "Are you sure you want to throw in the towel?"
+	exit_dialog.title = "Exit Game"
+	exit_dialog.hide()
+	add_child(exit_dialog)
+
 	# Connect dialog signals
 	exit_dialog.confirmed.connect(_on_exit_confirmed)
 	exit_dialog.canceled.connect(_on_exit_canceled)
