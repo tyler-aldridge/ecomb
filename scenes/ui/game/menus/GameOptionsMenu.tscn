@@ -280,5 +280,13 @@ bus = &"SFX"
 stream = ExtResource("4_trj4p")
 bus = &"SFX"
 
+[node name="CancelSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_trj4p")
+bus = &"SFX"
+
+[node name="SuccessSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_trj4p")
+bus = &"SFX"
+
 [connection signal="toggled" from="GameOptionsContainer/FullScreenContainer/FullScreenCheckbox" to="." method="_on_fullscreen_toggled"]
 [connection signal="toggled" from="GameOptionsContainer/FramerateContainer/FramerateCheckbox" to="." method="_on_framerate_toggled"]
