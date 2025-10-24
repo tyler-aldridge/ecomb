@@ -33,3 +33,4 @@ dist/
 # IDE files
 .vscode/
 .idea/
+.tmp.driveupload/*
