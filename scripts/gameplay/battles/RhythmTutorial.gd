@@ -6,7 +6,7 @@ extends Node2D
 @onready var trainer_sprite = $TutorialUI/Trainer
 
 # Level data
-@export var level_data_path: String = "res://data/levels/DivineFoxPlay-152BPM.json"
+@export var level_data_path: String = "res://data/levels/RhythmTutorial.json"
 var level_data: Dictionary = {}
 var processed_patterns: Dictionary = {}  # Stores pre-calculated beat positions for patterns
 
