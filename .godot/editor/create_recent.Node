@@ -1,0 +1,14 @@
+Label
+Label      - Matches the "text" keyword.
+TextureRect
+RichTextLabel
+NinePatchRect
+HBoxContainer
+VBoxContainer
+Panel
+Control
+Area2D
+AudioStreamPlayer
+Node
+Line2D
+ColorRect

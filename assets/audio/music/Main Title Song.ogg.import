@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bux47n2lu0pyf"
+path="res://.godot/imported/Main Title Song.ogg-31baf9e33a350596ce0d582b0879800f.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/audio/music/Main Title Song.ogg"
+dest_files=["res://.godot/imported/Main Title Song.ogg-31baf9e33a350596ce0d582b0879800f.oggvorbisstr"]
+
+[params]
+
+loop=true
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4
