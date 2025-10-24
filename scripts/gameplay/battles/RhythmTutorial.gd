@@ -5,6 +5,11 @@ extends Node2D
 @onready var player_sprite = $TutorialUI/Player
 @onready var trainer_sprite = $TutorialUI/Trainer
 
+# Level data
+@export var level_data_path: String = "res://data/levels/DivineFoxPlay-152BPM.json"
+var level_data: Dictionary = {}
+var processed_patterns: Dictionary = {}  # Stores pre-calculated beat positions for patterns
+
 # Note spawning
 var note_scene = preload("res://scenes/rhythm/Note.tscn")
 var long_note_scene = preload("res://scenes/rhythm/LongNote.tscn")
@@ -43,22 +48,112 @@ var trainer_original_pos: Vector2
 var fade_overlay: ColorRect
 
 func _ready():
+	# Load level data
+	load_level_data()
+
 	# Create fade overlay
 	create_fade_overlay()
 	fade_from_black()
-	
+
 	# Create effects layer
 	effects_layer = Node2D.new()
 	effects_layer.z_index = 100
 	add_child(effects_layer)
-	
+
 	setup_hit_zone_borders()
 	start_character_animations()
 	conductor.beat.connect(_on_beat)
-	
+
 	# Start with beat offset
 	await get_tree().create_timer(1.0).timeout
 	conductor.play_with_beat_offset()
+
+func load_level_data():
+	var file = FileAccess.open(level_data_path, FileAccess.READ)
+	if file:
+		var json_string = file.get_as_text()
+		file.close()
+
+		var json = JSON.new()
+		var parse_result = json.parse(json_string)
+
+		if parse_result == OK:
+			level_data = json.data
+			print("Level data loaded: ", level_data.get("song_name", "Unknown"))
+
+			# Pre-process patterns to calculate all beat positions
+			if level_data.has("patterns"):
+				for pattern in level_data["patterns"]:
+					process_pattern(pattern)
+		else:
+			push_error("Failed to parse level data JSON: " + json.get_error_message())
+	else:
+		push_error("Failed to load level data from: " + level_data_path)
+
+func process_pattern(pattern: Dictionary):
+	var beats_per_bar = level_data.get("beats_per_bar", 4)
+	var beat_start = pattern.get("beat_start", 0)
+	var beat_end = pattern.get("beat_end", 0)
+
+	# Simple interval pattern
+	if pattern.has("interval") and not pattern.has("type"):
+		var interval = pattern["interval"]
+		for beat_pos in range(beat_start, beat_end + 1, interval):
+			processed_patterns[beat_pos] = pattern
+
+	# Complex bar-based pattern
+	elif pattern.get("type") == "complex" and pattern.has("bars"):
+		var bars_dict = pattern["bars"]
+
+		# Find the first bar number to use as reference
+		var first_bar_num = 999999
+		for bar_str in bars_dict.keys():
+			var bar_num = int(bar_str)
+			if bar_num < first_bar_num:
+				first_bar_num = bar_num
+
+		for bar_str in bars_dict.keys():
+			var bar_num = int(bar_str)
+			var beats_in_bar = bars_dict[bar_str].get("beats", [])
+
+			for half_beat in beats_in_bar:
+				# Calculate absolute beat position
+				# beat_start corresponds to first bar, beat 0
+				var beat_pos = beat_start + (bar_num - first_bar_num) * beats_per_bar * 2 + half_beat
+				processed_patterns[beat_pos] = pattern
+
+	# Conditional pattern with special bars
+	elif pattern.get("type") == "conditional":
+		var default_interval = pattern.get("default_interval", 4)
+		var special_bars_dict = pattern.get("special_bars", {})
+		var reference_beat = pattern.get("reference_beat", beat_start)
+		var reference_bar = pattern.get("reference_bar", 1)
+
+		# Parse special bar ranges (e.g., "80-82")
+		var special_bar_beats = {}
+		for bar_range_str in special_bars_dict.keys():
+			var beats_config = special_bars_dict[bar_range_str]
+			var range_parts = bar_range_str.split("-")
+			var start_bar = int(range_parts[0])
+			var end_bar = int(range_parts[1]) if range_parts.size() > 1 else start_bar
+
+			for bar_num in range(start_bar, end_bar + 1):
+				special_bar_beats[bar_num] = beats_config.get("beats", [])
+
+		# Process all beats in the range
+		for beat_pos in range(beat_start, beat_end + 1):
+			var adjusted_beat = beat_pos - reference_beat
+			var current_bar = int(float(adjusted_beat) / (beats_per_bar * 2)) + reference_bar
+			var half_beat_in_bar = adjusted_beat % (beats_per_bar * 2)
+
+			# Check if this bar has special beats
+			if special_bar_beats.has(current_bar):
+				if half_beat_in_bar in special_bar_beats[current_bar]:
+					processed_patterns[beat_pos] = pattern
+			else:
+				# Use default interval
+				if beat_pos % default_interval == 0:
+					processed_patterns[beat_pos] = pattern
 
 func create_fade_overlay():
 	fade_overlay = ColorRect.new()
@@ -101,61 +196,68 @@ func start_character_animations():
 
 func _on_beat(beat_position: int):
 	check_automatic_misses()
-	
-	# Dialog timing - UPDATED with Muscle Beach style attitude
-	if beat_position == -15:
-		DialogManager.show_dialog("Yo chump! Open them ears, this only gets said once!", "trainer", 4.0)
-		create_hit_zone_indicators()
-	elif beat_position == 0:
-		DialogManager.show_dialog("Hit 1, 2, or 3 on your keyboard with the beat! Miss it, and you might as well pack it up, cupcake!", "trainer", 5.0)
-	elif beat_position == 104:
-		DialogManager.show_dialog("Feelin’ the pump yet, sweaty palms?", "trainer", 8.0)
-	elif beat_position == 160:
-		DialogManager.show_dialog("Alright, tough guy, let’s see if you can handle the real grind. That was just the warmup!", "trainer", 8.0)
-	elif beat_position == 208:
-		DialogManager.show_countdown(["3", "2", "1", "GO!"], 0.5, 500)
-	elif beat_position == 408:
-		DialogManager.show_dialog("Hope you stretched, chump! Time for a curveball!", "trainer", 5.0)
-	elif beat_position == 494:
-		DialogManager.show_dialog("BWAHAHA! Gotcha scared for a sec, huh?", "trainer", 5.0)
-	elif beat_position == 508:
-		DialogManager.show_countdown_number("3", 1.0, 500, Color.WHITE)
-	elif beat_position == 510:
-		DialogManager.show_countdown_number("2", 1.0, 500, Color.WHITE)
-	elif beat_position == 512:
-		DialogManager.show_countdown_number("1", 1.0, 500, Color.WHITE)
-	elif beat_position == 514:
-		DialogManager.show_countdown_number("GO!", 1.0, 500, Color.RED)
-	elif beat_position == 788:
-		DialogManager.show_dialog("Not bad, rookie... but that was light weight, baby! See ya in the gym, scrub!", "trainer", 5.0)
-		get_tree().create_timer(5.0).timeout.connect(fade_to_title)
 
-	
-	# Note spawning (unchanged)
-	if beat_position == -8:
-		spawn_ambient_note()
-	elif beat_position == 50:
-		spawn_ambient_note()
-	elif beat_position == 98:
-		spawn_ambient_note()
-	elif beat_position == 146:
-		spawn_ambient_note()
-	elif beat_position >= 208 and beat_position <= 392:
-		if beat_position % 4 == 0:
+	# Process dialogue events
+	if level_data.has("dialogue"):
+		for dialogue in level_data["dialogue"]:
+			if dialogue.get("beat_position") == beat_position:
+				var text = dialogue.get("text", "")
+				var character = dialogue.get("character", "trainer")
+				var duration = dialogue.get("duration", 3.0)
+				DialogManager.show_dialog(text, character, duration)
+
+				# Handle triggers
+				if dialogue.has("triggers"):
+					handle_trigger(dialogue["triggers"])
+
+	# Process countdown events
+	if level_data.has("countdowns"):
+		for countdown in level_data["countdowns"]:
+			if countdown.get("beat_position") == beat_position:
+				var countdown_type = countdown.get("type", "single")
+				if countdown_type == "multi":
+					var values = countdown.get("values", [])
+					var interval = countdown.get("interval", 0.5)
+					var size = countdown.get("size", 500)
+					DialogManager.show_countdown(values, interval, size)
+				elif countdown_type == "single":
+					var text = countdown.get("text", "")
+					var duration = countdown.get("duration", 1.0)
+					var size = countdown.get("size", 500)
+					var color_str = countdown.get("color", "white")
+					var color = Color.WHITE
+					if color_str == "red":
+						color = Color.RED
+					DialogManager.show_countdown_number(text, duration, size, color)
+
+	# Process individual notes
+	if level_data.has("notes"):
+		for note_data in level_data["notes"]:
+			if note_data.get("beat_position") == beat_position:
+				var note_type = note_data.get("note", "quarter")
+				spawn_note_by_type(note_type)
+
+	# Process patterns (pre-calculated beats)
+	if processed_patterns.has(beat_position):
+		var pattern = processed_patterns[beat_position]
+		var note_type = pattern.get("note", "quarter")
+		spawn_note_by_type(note_type)
+
+func handle_trigger(trigger_name: String):
+	match trigger_name:
+		"create_hit_zone_indicators":
+			create_hit_zone_indicators()
+		"fade_to_title":
+			get_tree().create_timer(5.0).timeout.connect(fade_to_title)
+
+func spawn_note_by_type(note_type: String):
+	match note_type:
+		"whole":
+			spawn_ambient_note()
+		"quarter":
 			spawn_single_note()
-	elif beat_position == 400:
-		spawn_single_note()
-	elif beat_position >= 424 and beat_position <= 488:
-		spawn_detailed_funky_rhythm(beat_position)
-	elif beat_position >= 508 and beat_position <= 764:
-		var adjusted_beat_for_bass = beat_position - 504
-		var current_bar = float(adjusted_beat_for_bass) / 8.0 + 63.0
-		var half_beat_in_bar = adjusted_beat_for_bass % 8
-		if (int(current_bar) >= 80 and int(current_bar) <= 82) or (int(current_bar) >= 92 and int(current_bar) <= 95):
-			if half_beat_in_bar == 0 or half_beat_in_bar == 2 or half_beat_in_bar == 4:
-				spawn_single_note()
-		elif beat_position % 4 == 0:
-			spawn_single_note()
+		_:
+			spawn_single_note()  # Default to quarter note
 
 func create_hit_zone_indicators():
 	var indicators_to_cleanup = []
@@ -212,31 +314,6 @@ func fade_to_title():
 func change_to_title():
 	GameManager.complete_tutorial()
 	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
-
-func spawn_detailed_funky_rhythm(beat_pos: int):
-	var adjusted_beat = beat_pos - 424
-	var bar = float(adjusted_beat) / 8.0 + 53.0
-	var half_beat_in_bar = adjusted_beat % 8
-	
-	match int(bar):
-		53:
-			if half_beat_in_bar == 0 or half_beat_in_bar == 2 or half_beat_in_bar == 3 or half_beat_in_bar == 6 or half_beat_in_bar == 7:
-				spawn_single_note()
-		54:
-			if half_beat_in_bar == 0 or half_beat_in_bar == 3 or half_beat_in_bar == 7:
-				spawn_single_note()
-		55:
-			if half_beat_in_bar == 1 or half_beat_in_bar == 3:
-				spawn_single_note()
-		58:
-			if half_beat_in_bar == 0 or half_beat_in_bar == 4:
-				spawn_single_note()
-		59:
-			if half_beat_in_bar == 0 or half_beat_in_bar == 4 or half_beat_in_bar == 7:
-				spawn_single_note()
-		60:
-			if half_beat_in_bar == 1 or half_beat_in_bar == 3:
-				spawn_single_note()
 
 func spawn_ambient_note():
 	var tracks = ["1", "2", "3"]

@@ -1,0 +1,78 @@
+{
+  "song_name": "DivineFoxPlay-152BPM",
+  "audio_file": "res://assets/audio/music/DivineFoxPlay-152BPM.ogg",
+  "bpm": 152,
+  "beats_per_bar": 4,
+  "beats_before_start": 8,
+  "_note": "beat_position values are in HALF-BEATS (conductor multiplies by 2). Even = on beat, Odd = AND beat. Dialogue starts at -15 due to Godot timing hangup.",
+
+  "dialogue": [
+    {"beat_position": -15, "text": "Yo chump! Open them ears, this only gets said once!", "character": "trainer", "duration": 4.0, "triggers": "create_hit_zone_indicators"},
+    {"beat_position": 0, "text": "Hit 1, 2, or 3 on your keyboard with the beat! Miss it, and you might as well pack it up, cupcake!", "character": "trainer", "duration": 5.0},
+    {"beat_position": 104, "text": "Feelin' the pump yet, sweaty palms?", "character": "trainer", "duration": 8.0},
+    {"beat_position": 160, "text": "Alright, tough guy, let's see if you can handle the real grind. That was just the warmup!", "character": "trainer", "duration": 8.0},
+    {"beat_position": 408, "text": "Hope you stretched, chump! Time for a curveball!", "character": "trainer", "duration": 5.0},
+    {"beat_position": 494, "text": "BWAHAHA! Gotcha scared for a sec, huh?", "character": "trainer", "duration": 5.0},
+    {"beat_position": 788, "text": "Not bad, rookie... but that was light weight, baby! See ya in the gym, scrub!", "character": "trainer", "duration": 5.0, "triggers": "fade_to_title"}
+  ],
+
+  "countdowns": [
+    {"beat_position": 208, "type": "multi", "values": ["3", "2", "1", "GO!"], "interval": 0.5, "size": 500},
+    {"beat_position": 508, "type": "single", "text": "3", "duration": 1.0, "size": 500, "color": "white"},
+    {"beat_position": 510, "type": "single", "text": "2", "duration": 1.0, "size": 500, "color": "white"},
+    {"beat_position": 512, "type": "single", "text": "1", "duration": 1.0, "size": 500, "color": "white"},
+    {"beat_position": 514, "type": "single", "text": "GO!", "duration": 1.0, "size": 500, "color": "red"}
+  ],
+
+  "notes": [
+    {"beat_position": -8, "note": "whole", "lane": "random"},
+    {"beat_position": 50, "note": "whole", "lane": "random"},
+    {"beat_position": 98, "note": "whole", "lane": "random"},
+    {"beat_position": 146, "note": "whole", "lane": "random"},
+    {"beat_position": 400, "note": "quarter", "lane": "random"}
+  ],
+
+  "patterns": [
+    {
+      "description": "Main steady beat section",
+      "beat_start": 208,
+      "beat_end": 392,
+      "interval": 4,
+      "note": "quarter",
+      "lane": "random"
+    },
+    {
+      "description": "Funky rhythm section - Bar 53-60",
+      "type": "complex",
+      "beat_start": 424,
+      "beat_end": 488,
+      "bars": {
+        "53": {"beats": [0, 2, 3, 6, 7]},
+        "54": {"beats": [0, 3, 7]},
+        "55": {"beats": [1, 3]},
+        "58": {"beats": [0, 4]},
+        "59": {"beats": [0, 4, 7]},
+        "60": {"beats": [1, 3]}
+      },
+      "note": "quarter",
+      "lane": "random"
+    },
+    {
+      "description": "Final section with bass emphasis",
+      "beat_start": 508,
+      "beat_end": 764,
+      "type": "conditional",
+      "default_interval": 4,
+      "reference_beat": 504,
+      "reference_bar": 63,
+      "special_bars": {
+        "80-82": {"beats": [0, 2, 4]},
+        "92-95": {"beats": [0, 2, 4]}
+      },
+      "note": "quarter",
+      "lane": "random"
+    }
+  ],
+
+  "animations": []
+}
