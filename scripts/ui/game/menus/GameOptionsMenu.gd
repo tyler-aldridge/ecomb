@@ -18,13 +18,16 @@ signal exit_to_title
 @onready var cancel_sound: AudioStreamPlayer = $CancelSound
 @onready var success_sound: AudioStreamPlayer = $SuccessSound
 
-# Exit confirmation dialog (matches MainTitle pattern)
-var exit_dialog: ConfirmationDialog = null
-var dialog_overlay: ColorRect = null
+# Dialog nodes (matches MainTitle pattern)
+@onready var exit_dialog: ConfirmationDialog = $Systems/ExitDialog
+@onready var dialog_overlay: ColorRect = $Systems/DialogOverlay
+@onready var fade: ColorRect = $FadeRect
 
 func _ready():
-	# Create exit confirmation dialog (matches MainTitle's quit_dialog)
-	create_exit_dialog()
+	# Initialize dialogs as hidden
+	exit_dialog.hide()
+	dialog_overlay.hide()
+	fade.hide()
 
 	# Connect volume sliders
 	if master_volume_slider:
@@ -44,30 +47,12 @@ func _ready():
 		exit_btn.pressed.connect(_on_exit_pressed)
 		exit_btn.mouse_entered.connect(_on_button_hover)
 
-	# Load saved settings
-	load_settings()
-
-func create_exit_dialog():
-	# Create overlay (matches MainTitle's dialog_overlay)
-	dialog_overlay = ColorRect.new()
-	dialog_overlay.color = Color(0, 0, 0, 0.7)
-	dialog_overlay.size = Vector2(1920, 1080)
-	dialog_overlay.position = Vector2(0, 0)
-	dialog_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	dialog_overlay.hide()
-	add_child(dialog_overlay)
-
-	# Create dialog (matches MainTitle's quit_dialog)
-	exit_dialog = ConfirmationDialog.new()
-	exit_dialog.dialog_text = "Exit to title screen? Any unsaved progress will be lost."
-	exit_dialog.title = "Exit Game"
-	exit_dialog.z_index = 101
-	exit_dialog.hide()
-	add_child(exit_dialog)
-
 	# Connect dialog signals
 	exit_dialog.confirmed.connect(_on_exit_confirmed)
 	exit_dialog.canceled.connect(_on_exit_canceled)
+
+	# Load saved settings
+	load_settings()
 
 func _unhandled_input(event):
 	if event.is_action_pressed("options"):
@@ -149,6 +134,7 @@ func _on_exit_dialog_cancel_pressed():
 func _on_exit_dialog_ok_pressed():
 	if success_sound:
 		success_sound.play()
+	# Don't call _on_exit_confirmed here - it will be called by the confirmed signal
 
 func _hide_dialog_overlay():
 	if dialog_overlay:
@@ -156,7 +142,8 @@ func _hide_dialog_overlay():
 
 func _on_exit_confirmed():
 	_hide_dialog_overlay()
-	emit_signal("exit_to_title")
+	# Fade to black, then emit exit signal
+	_fade_to_black()
 
 func _on_exit_canceled():
 	_hide_dialog_overlay()
@@ -164,6 +151,17 @@ func _on_exit_canceled():
 func _on_button_hover():
 	if button_hover_sound:
 		button_hover_sound.play()
+
+func _fade_to_black() -> void:
+	# Match MainTitle's fade pattern
+	fade.show()
+	fade.modulate.a = 0.0
+	var tween = create_tween()
+	tween.tween_property(fade, "modulate:a", 1.0, 1.5)
+	# Wait for fade to complete, then emit exit signal
+	tween.tween_callback(func():
+		emit_signal("exit_to_title")
+	)
 
 func load_settings():
 	if master_volume_slider:
