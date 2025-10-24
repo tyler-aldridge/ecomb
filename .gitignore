@@ -25,6 +25,14 @@ Temporary Items
 # Google Drive
 desktop.ini
 
+# macOS custom folder icons (caused git corruption issues)
+Icon?
+Icon
+
+# Team assets managed via Google Drive - DO NOT SYNC
+assets/
+docs/
+
 # Build outputs
 build/
 dist/
