@@ -1,11 +1,12 @@
-/Users/tyler/Game Dev/ecomb/scripts/ui/title
-res://scenes/ui/title
 res://scenes/ui/game/menus
+res://scenes/ui/game/dialog
 /Users/tyler/Game Dev/ecomb/scripts/autoload
+res://scenes/ui/title
+/Users/tyler/Game Dev/ecomb/scripts/ui/title
+/Users/tyler/Game Dev/ecomb/scripts/ui/game/menus
 /Users/tyler/Game Dev/ecomb/builds/web
 /Users/tyler/Documents/Backups
 res://scripts/autoload
-res://scenes/ui/game/dialog
 res://scenes/rhythm
 res://scripts/gameplay/battles
 res://assets/audio/music
@@ -19,4 +20,3 @@ res://assets/characters/muscle_man
 res://assets/interface/themes/space-worm-theme
 res://assets/interface/themes
 res://assets/interface/themes/
-res://assets/interface/fonts
