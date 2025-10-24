@@ -91,13 +91,14 @@ func load_level_data():
 		push_error("Failed to load level data from: " + level_data_path)
 
 func process_pattern(pattern: Dictionary):
-	var beats_per_bar = level_data.get("beats_per_bar", 4)
-	var beat_start = pattern.get("beat_start", 0)
-	var beat_end = pattern.get("beat_end", 0)
+	# Ensure all JSON values are integers
+	var beats_per_bar = int(level_data.get("beats_per_bar", 4))
+	var beat_start = int(pattern.get("beat_start", 0))
+	var beat_end = int(pattern.get("beat_end", 0))
 
 	# Simple interval pattern
 	if pattern.has("interval") and not pattern.has("type"):
-		var interval = pattern["interval"]
+		var interval = int(pattern["interval"])
 		for beat_pos in range(beat_start, beat_end + 1, interval):
 			processed_patterns[beat_pos] = pattern
 
@@ -117,17 +118,16 @@ func process_pattern(pattern: Dictionary):
 			var beats_in_bar = bars_dict[bar_str].get("beats", [])
 
 			for half_beat in beats_in_bar:
-				# Calculate absolute beat position
-				# beat_start corresponds to first bar, beat 0
-				var beat_pos = beat_start + (bar_num - first_bar_num) * beats_per_bar * 2 + half_beat
+				# Calculate absolute beat position - ensure all integer math
+				var beat_pos = int(beat_start + (bar_num - first_bar_num) * beats_per_bar * 2 + int(half_beat))
 				processed_patterns[beat_pos] = pattern
 
 	# Conditional pattern with special bars
 	elif pattern.get("type") == "conditional":
-		var default_interval = pattern.get("default_interval", 4)
+		var default_interval = int(pattern.get("default_interval", 4))
 		var special_bars_dict = pattern.get("special_bars", {})
-		var reference_beat = pattern.get("reference_beat", beat_start)
-		var reference_bar = pattern.get("reference_bar", 1)
+		var reference_beat = int(pattern.get("reference_beat", beat_start))
+		var reference_bar = int(pattern.get("reference_bar", 1))
 
 		# Parse special bar ranges (e.g., "80-82")
 		var special_bar_beats = {}
@@ -201,7 +201,7 @@ func _on_beat(beat_position: int):
 	# Process dialogue events
 	if level_data.has("dialogue"):
 		for dialogue in level_data["dialogue"]:
-			if dialogue.get("beat_position") == beat_position:
+			if int(dialogue.get("beat_position", 0)) == beat_position:
 				var text = dialogue.get("text", "")
 				var character = dialogue.get("character", "trainer")
 				var duration = dialogue.get("duration", 3.0)
@@ -214,17 +214,17 @@ func _on_beat(beat_position: int):
 	# Process countdown events
 	if level_data.has("countdowns"):
 		for countdown in level_data["countdowns"]:
-			if countdown.get("beat_position") == beat_position:
+			if int(countdown.get("beat_position", 0)) == beat_position:
 				var countdown_type = countdown.get("type", "single")
 				if countdown_type == "multi":
 					var values = countdown.get("values", [])
 					var interval = countdown.get("interval", 0.5)
-					var size = countdown.get("size", 500)
+					var size = int(countdown.get("size", 500))
 					DialogManager.show_countdown(values, interval, size)
 				elif countdown_type == "single":
 					var text = countdown.get("text", "")
 					var duration = countdown.get("duration", 1.0)
-					var size = countdown.get("size", 500)
+					var size = int(countdown.get("size", 500))
 					var color_str = countdown.get("color", "white")
 					var color = Color.WHITE
 					if color_str == "red":
@@ -234,7 +234,7 @@ func _on_beat(beat_position: int):
 	# Process individual notes
 	if level_data.has("notes"):
 		for note_data in level_data["notes"]:
-			if note_data.get("beat_position") == beat_position:
+			if int(note_data.get("beat_position", 0)) == beat_position:
 				var note_type = note_data.get("note", "quarter")
 				spawn_note_by_type(note_type)
 
