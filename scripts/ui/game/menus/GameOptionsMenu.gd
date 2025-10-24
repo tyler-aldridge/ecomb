@@ -14,14 +14,16 @@ signal exit_to_title
 # Audio nodes
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
 @onready var button_enter_sound: AudioStreamPlayer = $ButtonEnterSound
-@onready var exit_confirm_sound: AudioStreamPlayer = $GameOptionsContainer/ButtonsContainer/ExitConfirmSound
+@onready var exit_confirm_sound: AudioStreamPlayer = $ExitConfirmSound
+@onready var cancel_sound: AudioStreamPlayer = $CancelSound
+@onready var success_sound: AudioStreamPlayer = $SuccessSound
 
-# Exit confirmation dialog
+# Exit confirmation dialog (matches MainTitle pattern)
 var exit_dialog: ConfirmationDialog = null
 var dialog_overlay: ColorRect = null
 
 func _ready():
-	# Create exit confirmation dialog
+	# Create exit confirmation dialog (matches MainTitle's quit_dialog)
 	create_exit_dialog()
 
 	# Connect volume sliders
@@ -46,17 +48,16 @@ func _ready():
 	load_settings()
 
 func create_exit_dialog():
-	# Create overlay
+	# Create overlay (matches MainTitle's dialog_overlay)
 	dialog_overlay = ColorRect.new()
 	dialog_overlay.color = Color(0, 0, 0, 0.7)
 	dialog_overlay.size = Vector2(1920, 1080)
 	dialog_overlay.position = Vector2(0, 0)
-	dialog_overlay.z_index = 100
 	dialog_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	dialog_overlay.hide()
 	add_child(dialog_overlay)
 
-	# Create dialog
+	# Create dialog (matches MainTitle's quit_dialog)
 	exit_dialog = ConfirmationDialog.new()
 	exit_dialog.dialog_text = "Exit to title screen? Any unsaved progress will be lost."
 	exit_dialog.title = "Exit Game"
@@ -67,22 +68,6 @@ func create_exit_dialog():
 	# Connect dialog signals
 	exit_dialog.confirmed.connect(_on_exit_confirmed)
 	exit_dialog.canceled.connect(_on_exit_canceled)
-
-	# Connect button sounds after dialog is created
-	call_deferred("_connect_dialog_sounds")
-
-func _connect_dialog_sounds():
-	if exit_dialog:
-		var cancel_btn = exit_dialog.get_cancel_button()
-		var ok_btn = exit_dialog.get_ok_button()
-
-		if cancel_btn and not cancel_btn.mouse_entered.is_connected(_on_button_hover):
-			cancel_btn.mouse_entered.connect(_on_button_hover)
-			cancel_btn.pressed.connect(_on_button_enter)
-
-		if ok_btn and not ok_btn.mouse_entered.is_connected(_on_button_hover):
-			ok_btn.mouse_entered.connect(_on_button_hover)
-			ok_btn.pressed.connect(_on_button_enter)
 
 func _unhandled_input(event):
 	if event.is_action_pressed("options"):
@@ -118,34 +103,67 @@ func _on_save_pressed():
 func _on_exit_pressed():
 	if exit_confirm_sound:
 		exit_confirm_sound.play()
-	show_exit_dialog()
+	_show_dialog_with_overlay(exit_dialog)
 
-func show_exit_dialog():
+# --- Dialog Management (matches MainTitle pattern exactly) ---
+func _show_dialog_with_overlay(dialog: ConfirmationDialog):
+	dialog_overlay.show()
+	dialog.popup_centered()
+
+	# Connect sounds for this specific dialog after it's shown
+	call_deferred("_connect_dialog_sounds", dialog)
+
+func _connect_dialog_sounds(dialog: ConfirmationDialog):
+	var cancel_btn = dialog.get_cancel_button()
+	var ok_btn = dialog.get_ok_button()
+
+	if cancel_btn:
+		cancel_btn.mouse_filter = Control.MOUSE_FILTER_PASS
+		cancel_btn.focus_mode = Control.FOCUS_ALL
+		if not cancel_btn.mouse_entered.is_connected(_on_dialog_button_hover):
+			cancel_btn.mouse_entered.connect(_on_dialog_button_hover)
+
+	if ok_btn:
+		ok_btn.mouse_filter = Control.MOUSE_FILTER_PASS
+		ok_btn.focus_mode = Control.FOCUS_ALL
+		if not ok_btn.mouse_entered.is_connected(_on_dialog_button_hover):
+			ok_btn.mouse_entered.connect(_on_dialog_button_hover)
+
+	# Connect click sounds for exit dialog
+	if dialog == exit_dialog:
+		if cancel_btn and not cancel_btn.pressed.is_connected(_on_exit_dialog_cancel_pressed):
+			cancel_btn.pressed.connect(_on_exit_dialog_cancel_pressed)
+		if ok_btn and not ok_btn.pressed.is_connected(_on_exit_dialog_ok_pressed):
+			ok_btn.pressed.connect(_on_exit_dialog_ok_pressed)
+
+func _on_dialog_button_hover():
+	if button_hover_sound:
+		button_hover_sound.play()
+
+# Exit dialog sounds
+func _on_exit_dialog_cancel_pressed():
+	if cancel_sound:
+		cancel_sound.play()
+	_hide_dialog_overlay()
+
+func _on_exit_dialog_ok_pressed():
+	if success_sound:
+		success_sound.play()
+
+func _hide_dialog_overlay():
 	if dialog_overlay:
-		dialog_overlay.show()
-	if exit_dialog:
-		exit_dialog.popup_centered()
+		dialog_overlay.hide()
 
 func _on_exit_confirmed():
-	hide_exit_dialog()
+	_hide_dialog_overlay()
 	emit_signal("exit_to_title")
 
 func _on_exit_canceled():
-	hide_exit_dialog()
-
-func hide_exit_dialog():
-	if dialog_overlay:
-		dialog_overlay.hide()
-	if exit_dialog:
-		exit_dialog.hide()
+	_hide_dialog_overlay()
 
 func _on_button_hover():
 	if button_hover_sound:
 		button_hover_sound.play()
-
-func _on_button_enter():
-	if button_enter_sound:
-		button_enter_sound.play()
 
 func load_settings():
 	if master_volume_slider:
