@@ -264,7 +264,7 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 50
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
-text = "Quit Game"
+text = "Exit to Title"
 icon_alignment = 1
 
 [node name="ExitConfirmSound" type="AudioStreamPlayer" parent="GameOptionsContainer/ButtonsContainer"]
