@@ -28,7 +28,7 @@ func set_travel_time(time: float):
 	travel_time = time
 	speed = spawn_height / travel_time
 
-func _physics_process(delta):
+func _process(delta):
 	position.y += speed * delta
 	if position.y > target_y + 400:
 		queue_free()
