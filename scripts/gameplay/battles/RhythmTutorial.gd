@@ -142,8 +142,8 @@ func process_pattern(pattern: Dictionary):
 
 		# Process all beats in the range
 		for beat_pos in range(beat_start, beat_end + 1):
-			var adjusted_beat = beat_pos - reference_beat
-			var beats_per_bar_doubled = beats_per_bar * 2
+			var adjusted_beat = int(beat_pos - reference_beat)
+			var beats_per_bar_doubled = int(beats_per_bar * 2)
 			var current_bar = int(float(adjusted_beat) / float(beats_per_bar_doubled)) + reference_bar
 			var half_beat_in_bar = adjusted_beat % beats_per_bar_doubled
 
