@@ -58,9 +58,8 @@ func create_exit_dialog():
 
 	# Create dialog
 	exit_dialog = ConfirmationDialog.new()
-	exit_dialog.dialog_text = "Exit to title screen? Any unsaved progress will be lost."
+	exit_dialog.dialog_text = "Are you sure you want to throw in the towel?"
 	exit_dialog.title = "Exit Game"
-	exit_dialog.z_index = 101
 	exit_dialog.hide()
 	add_child(exit_dialog)
 
