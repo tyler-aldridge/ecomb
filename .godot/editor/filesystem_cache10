@@ -1,5 +1,5 @@
 e910c82af1378a97450e26817c58487e
-::res://::1761106239
+::res://::1761281330
 default_bus_layout.tres::AudioBusLayout::8184098035899748928::1760815692::0::1::::<><><>0<>0<><>::
 export_presets.cfg::TextFile::-1::1761068813::0::1::::<><><>0<>0<><>::
 icon.svg::CompressedTexture2D::5043215496737880353::1760580972::1760580979::1::::<><><>0<>0<>364eea09a31ab75372bb8e749b199748<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
@@ -175,10 +175,11 @@ RhythmTutorial.tscn::PackedScene::4435845431135441162::1761068978::0::1::::<><><
 ::res://scenes/ui/game/dialog/::1761106006
 DialogBox.tscn::PackedScene::5851292155088025988::1761066998::0::1::::<><><>0<>0<><>::uid://bfqyixuu77pk6::::res://assets/interface/ui/dialog-texture.png
 ::res://scenes/ui/game/hud/::1761106006
-::res://scenes/ui/game/menus/::1761106006
+::res://scenes/ui/game/menus/::1761281330
+GameOptionsMenu.tscn::PackedScene::5578186342296478597::1761281322::0::1::::<><><>0<>0<><>::uid://cubyc6d2rwa8f::::res://scripts/ui/title/OptionsMenu.gd<>uid://ddpukf3u74xr0::::res://assets/interface/ui/panel-gradient-4.png<>uid://dlteajxyiio2x::::res://assets/interface/ui/grabber.png
 ::res://scenes/ui/game/overworld/::1761106006
 ::res://scenes/ui/game/rhythm/::1761106006
-::res://scenes/ui/title/::1761106006
+::res://scenes/ui/title/::1761281330
 CharacterCreation.tscn::PackedScene::8950247211648770443::1761035635::0::1::::<><><>0<>0<><>::uid://co75rxqi8oa51::::res://scripts/ui/title/CharacterCreation.gd<>uid://7mjvc5l1r2sf::::res://assets/interface/ui/panel-gradient-3.png<>uid://cfvlcvrc6ylsq::::res://assets/characters/muscle_man/RipJackson_idel2size.png
 LoadMenu.tscn::PackedScene::8553945236566423291::1760986929::0::1::::<><><>0<>0<><>::uid://dwxp1t1ktixp::::res://scripts/ui/title/LoadMenu.gd<>uid://cfhnm68xsojk6::::res://assets/interface/ui/panel-gradient-1.png
 MainTitle.tscn::PackedScene::3818771130398233531::1761047791::0::1::::<><><>0<>0<><>::uid://dhabv6lrpnwo::::res://scripts/ui/title/MainTitle.gd<>uid://bux47n2lu0pyf::::res://assets/audio/music/Main Title Song.ogg<>uid://crjgohh4l5gga::::res://assets/cutscenes/title/title-beach-background.png<>uid://cgmyw6iwqwxw8::::res://assets/cutscenes/title/title-text.png<>uid://briiykqk7vfop::::res://scenes/ui/title/MenuButton.tscn<>uid://dpvpwlk3sosd6::::res://assets/audio/sfx/cheow.ogg<>uid://cy3tcxro6v2qm::::res://assets/interface/ui/load.png<>uid://diwyaxkx3m828::::res://assets/interface/ui/exit.png<>uid://dn7uvuehw0m2o::::res://assets/interface/ui/options.png<>uid://dwnyjl8oi2gwc::::res://assets/audio/sfx/blop.ogg<>uid://bqdn1hl5c7fvl::::res://assets/interface/themes/space-worm-theme/space_worm_theme.tres<>uid://cfvlcvrc6ylsq::::res://assets/characters/muscle_man/RipJackson_idel2size.png<>uid://bilktb84t5goh::::res://assets/characters/muscle_man/RipJackson_peckflex2size.png<>uid://ol8fdcuahnvr::::res://assets/characters/muscle_man/RipJackson_walk2size.png<>uid://dymyvwuyug16w::::res://scripts/characters/MuscleMan.gd<>uid://du4sq6cemirw4::::res://assets/audio/sfx/grunt.ogg<>uid://1lct1vu4aghb::::res://assets/characters/crab/crab1.png<>uid://by7tx7memfuws::::res://assets/characters/crab/crab2.png<>uid://g4upotewd1ff::::res://assets/characters/crab/crab3.png<>uid://cm8m3c4ha8nwn::::res://assets/characters/crab/crab4.png<>uid://cduvg45db6x34::::res://assets/characters/crab/crab5.png<>uid://cbun1ts2e1203::::res://assets/audio/sfx/ohno.ogg<>uid://c4r2srw1jrpt6::::res://scripts/characters/Crab.gd<>uid://crdbghfx0kv4j::::res://assets/audio/sfx/blip.ogg<>uid://blyy4qd322wkd::::res://assets/audio/sfx/lifeup.ogg<>uid://dhlp5d5he2cwc::::res://assets/audio/sfx/hurt.ogg<>uid://d1gauqxolvwmu::::res://assets/audio/sfx/warning.ogg<>uid://bia60cj7of2o4::::res://assets/audio/sfx/recordscratch.ogg
@@ -208,11 +209,12 @@ RhythmTutorial.gd::GDScript::6141827254509738995::1761066998::0::1::::<>Node2D<>
 ::res://scripts/ui/game/menus/::1761106006
 ::res://scripts/ui/game/overworld/::1761106006
 ::res://scripts/ui/game/rhythm/::1761106006
-::res://scripts/ui/title/::1761106006
+::res://scripts/ui/title/::1761281359
 CharacterCreation.gd::GDScript::5823398367890003222::1761037410::0::1::::<>Control<><>0<>0<><>::
 LoadMenu.gd::GDScript::257407515399443189::1760854458::0::1::::<>Control<><>0<>0<><>::
 MainTitle.gd::GDScript::225020112388823126::1761037417::0::1::::<>Control<><>0<>0<><>::
 MenuButton.gd::GDScript::5822065317478802610::1760769474::0::1::::<>Control<><>0<>0<><>::
 OptionsMenu.gd::GDScript::6180145031423722183::1760988728::0::1::::<>Control<><>0<>0<><>::
+GameOptionsMenu.gd::GDScript::2059109177149286967::1761281359::0::1::::<>Control<><>0<>0<><>::
 Splash.gd::GDScript::8768891444574028733::1761065775::0::1::::<>Node<><>0<>0<><>::
 ::res://scripts/utils/::1761106006
