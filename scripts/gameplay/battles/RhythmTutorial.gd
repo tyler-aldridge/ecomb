@@ -42,6 +42,23 @@ var trainer_original_pos: Vector2
 # Fade overlay
 var fade_overlay: ColorRect
 
+# Options menu
+const OPTIONS_MENU_SCENE = preload("res://scenes/ui/game/menus/GameOptionsMenu.tscn")
+var options_menu: Control = null
+var is_paused: bool = false
+
+# Particle object pool
+var particle_pool: Array[ColorRect] = []
+const PARTICLE_POOL_SIZE = 200
+
+# Note object pool
+var note_pool: Dictionary = {"1": [], "2": [], "3": []}
+var long_note_pool: Dictionary = {"1": [], "2": [], "3": []}
+const NOTES_PER_TRACK = 30
+
+# Tween cleanup tracking
+var active_tweens: Array[Tween] = []
+
 func _ready():
 	# Create fade overlay
 	create_fade_overlay()
@@ -51,7 +68,12 @@ func _ready():
 	effects_layer = Node2D.new()
 	effects_layer.z_index = 100
 	add_child(effects_layer)
-	
+
+	# Initialize particle pool
+	initialize_particle_pool()
+	# Initialize note pools
+	initialize_note_pools()
+
 	setup_hit_zone_borders()
 	start_character_animations()
 	conductor.beat.connect(_on_beat)
@@ -213,6 +235,115 @@ func change_to_title():
 	GameManager.complete_tutorial()
 	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
 
+func pause_game():
+	if is_paused:
+		return
+
+	is_paused = true
+	get_tree().paused = true
+
+	# Instantiate options menu
+	options_menu = OPTIONS_MENU_SCENE.instantiate()
+	options_menu.z_index = 1000
+	options_menu.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(options_menu)
+
+	# Connect signals
+	options_menu.closed.connect(unpause_game)
+	options_menu.exit_to_title.connect(_on_exit_to_title)
+
+	# Pause conductor (audio)
+	if conductor:
+		conductor.stream_paused = true
+
+func unpause_game():
+	if not is_paused:
+		return
+
+	is_paused = false
+	get_tree().paused = false
+
+	# Remove options menu
+	if options_menu and is_instance_valid(options_menu):
+		options_menu.queue_free()
+		options_menu = null
+
+	# Resume conductor (audio)
+	if conductor:
+		conductor.stream_paused = false
+
+func _on_exit_to_title():
+	# Unpause before changing scene
+	get_tree().paused = false
+	change_to_title()
+
+func initialize_particle_pool():
+	for i in range(PARTICLE_POOL_SIZE):
+		var particle = ColorRect.new()
+		particle.visible = false
+		particle.z_index = 200
+		effects_layer.add_child(particle)
+		particle_pool.append(particle)
+
+func get_particle() -> ColorRect:
+	for particle in particle_pool:
+		if not particle.visible:
+			particle.visible = true
+			particle.modulate.a = 1.0
+			particle.scale = Vector2.ONE
+			return particle
+	# Pool exhausted, reuse first particle
+	var particle = particle_pool[0]
+	particle.visible = true
+	particle.modulate.a = 1.0
+	particle.scale = Vector2.ONE
+	return particle
+
+func return_particle(particle: ColorRect):
+	if is_instance_valid(particle):
+		particle.visible = false
+		particle.modulate.a = 1.0
+		particle.scale = Vector2.ONE
+
+func initialize_note_pools():
+	for track in ["1", "2", "3"]:
+		for i in range(NOTES_PER_TRACK):
+			# Regular notes
+			var note = note_scene.instantiate()
+			note.visible = false
+			note.process_mode = Node.PROCESS_MODE_PAUSABLE
+			add_child(note)
+			note_pool[track].append(note)
+
+			# Long notes
+			var long_note = long_note_scene.instantiate()
+			long_note.visible = false
+			long_note.process_mode = Node.PROCESS_MODE_PAUSABLE
+			add_child(long_note)
+			long_note_pool[track].append(long_note)
+
+func get_note(track_key: String, is_long: bool = false) -> Area2D:
+	var pool = long_note_pool if is_long else note_pool
+	for note in pool[track_key]:
+		if not note.visible:
+			note.visible = true
+			note.modulate.a = 1.0
+			return note
+	# Pool exhausted, reuse first note
+	var note = pool[track_key][0]
+	note.visible = true
+	note.modulate.a = 1.0
+	# Remove from active_notes if it's being reused
+	if note in active_notes:
+		active_notes.erase(note)
+	return note
+
+func return_note(note: Area2D):
+	if is_instance_valid(note):
+		note.visible = false
+		note.modulate.a = 1.0
+		note.position = Vector2.ZERO
+
 func spawn_detailed_funky_rhythm(beat_pos: int):
 	var adjusted_beat = beat_pos - 424
 	var bar = float(adjusted_beat) / 8.0 + 53.0
@@ -242,12 +373,10 @@ func spawn_ambient_note():
 	var tracks = ["1", "2", "3"]
 	var random_track = tracks[randi() % tracks.size()]
 	var target_pos = hit_zone_positions[random_track]
-	# (unchanged path math)
 	var spawn_pos = Vector2(target_pos.x, target_pos.y - SPAWN_HEIGHT_ABOVE_TARGET - 600.0)
-	
-	var note = long_note_scene.instantiate()
+
+	var note = get_note(random_track, true)
 	note.z_index = 50
-	add_child(note)
 	note.setup(random_track, spawn_pos, target_pos.y)
 	note.set_travel_time(3.0)
 	note.set_meta("is_ambient", true)
@@ -258,10 +387,9 @@ func spawn_single_note():
 	var random_track = tracks[randi() % tracks.size()]
 	var target_pos = hit_zone_positions[random_track]
 	var spawn_pos = Vector2(target_pos.x, target_pos.y - SPAWN_HEIGHT_ABOVE_TARGET)
-	
-	var note = note_scene.instantiate()
+
+	var note = get_note(random_track, false)
 	note.z_index = 50
-	add_child(note)
 	note.setup(random_track, spawn_pos, target_pos.y)
 	note.set_travel_time(NOTE_TRAVEL_TIME)
 	active_notes.append(note)
@@ -286,6 +414,16 @@ func check_automatic_misses():
 				active_notes.erase(note)
 
 func _unhandled_input(event):
+	# Handle options menu toggle
+	if event.is_action_pressed("options"):
+		if not is_paused:
+			pause_game()
+		return
+
+	# Don't process gameplay input if paused
+	if is_paused:
+		return
+
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_1:
 			handle_input("1")
@@ -460,16 +598,15 @@ func get_random_feedback_text(quality: String) -> String:
 
 func explode_note_at_position(note: Node, color_type: String, intensity: int, explosion_pos: Vector2):
 	var is_ambient = note.has_meta("is_ambient")
-	# FIX: explosion_pos is already the NOTE CENTER; do not add extra (100,100)
 	var note_center = explosion_pos
 	var particle_count = intensity * 20
-	
+
 	for i in range(particle_count):
-		var particle = ColorRect.new()
+		var particle = get_particle()
 		var particle_size = randi_range(8, 25)
 		particle.size = Vector2(particle_size, particle_size)
 		particle.pivot_offset = particle.size / 2
-		
+
 		match color_type:
 			"rainbow":
 				var rainbow_colors = [Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.PURPLE, Color.MAGENTA, Color.PINK]
@@ -488,25 +625,24 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 			"black":
 				var dark_colors = [Color.BLACK, Color.DIM_GRAY, Color.DARK_GRAY, Color.PURPLE]
 				particle.color = dark_colors[i % dark_colors.size()]
-		
+
 		particle.rotation = randf() * TAU
 		particle.position = note_center + Vector2(randi_range(-40, 40), randi_range(-40, 40))
-		effects_layer.add_child(particle)
-		
+
 		var tween = create_tween()
 		tween.set_parallel(true)
-		
+
 		var explosion_radius = 600 if color_type == "rainbow" else 450
 		var random_direction = Vector2(randi_range(-explosion_radius, explosion_radius), randi_range(-explosion_radius, explosion_radius))
 		var base_duration = 2.5 if is_ambient else 1.25
 		var duration = randf_range(base_duration * 0.4, base_duration)
-		
+
 		tween.tween_property(particle, "position", particle.position + random_direction, duration)
 		tween.tween_property(particle, "rotation", particle.rotation + randf_range(-TAU * 2, TAU * 2), duration)
 		tween.tween_property(particle, "modulate:a", 0.0, duration)
 		tween.tween_property(particle, "scale", Vector2(3.0, 3.0), duration * 0.2)
 		tween.tween_property(particle, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
-		tween.tween_callback(particle.queue_free).set_delay(duration)
+		tween.tween_callback(return_particle.bind(particle)).set_delay(duration)
 
 # SIMPLE feedback function - all feedback fades at same rate
 func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool):
@@ -540,4 +676,4 @@ func fade_out_note(note: Node):
 	if is_instance_valid(note):
 		var fade_tween = create_tween()
 		fade_tween.tween_property(note, "modulate:a", 0.0, 1.0)
-		fade_tween.tween_callback(note.queue_free)
+		fade_tween.tween_callback(return_note.bind(note))

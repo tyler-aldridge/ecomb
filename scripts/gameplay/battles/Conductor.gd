@@ -27,7 +27,13 @@ func _physics_process(_delta: float) -> void:
 	if playing:
 		song_position = get_playback_position() + AudioServer.get_time_since_last_mix()
 		song_position -= AudioServer.get_output_latency()
-		song_position_in_beats = int((song_position / seconds_per_beat) * 2) + beats_before_start
+
+		# Web-specific latency compensation
+		if OS.has_feature("web"):
+			song_position += 0.05  # 50ms typical browser audio buffer delay
+
+		# Fixed: removed *2 multiplier that was causing beat drift
+		song_position_in_beats = int(song_position / seconds_per_beat) + beats_before_start
 		_report_beat()
 
 func _report_beat() -> void:

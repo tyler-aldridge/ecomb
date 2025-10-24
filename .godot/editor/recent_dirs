@@ -1,8 +1,9 @@
+/Users/tyler/Game Dev/ecomb/scripts/ui/title
+res://scenes/ui/title
+res://scenes/ui/game/menus
 /Users/tyler/Game Dev/ecomb/scripts/autoload
 /Users/tyler/Game Dev/ecomb/builds/web
 /Users/tyler/Documents/Backups
-/Users/tyler/Game Dev/ecomb/scripts/ui/title
-res://scenes/ui/title
 res://scripts/autoload
 res://scenes/ui/game/dialog
 res://scenes/rhythm

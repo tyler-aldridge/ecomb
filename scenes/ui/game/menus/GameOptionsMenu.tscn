@@ -1,0 +1,284 @@
+[gd_scene load_steps=14 format=3 uid="uid://clqd6cw1r46y8"]
+
+[ext_resource type="Script" uid="uid://4lphy1d54d88" path="res://scripts/ui/game/menus/GameOptionsMenu.gd" id="1_vm04o"]
+[ext_resource type="Texture2D" uid="uid://ddpukf3u74xr0" path="res://assets/interface/ui/panel-gradient-4.png" id="2_f8yp2"]
+[ext_resource type="Texture2D" uid="uid://dlteajxyiio2x" path="res://assets/interface/ui/grabber.png" id="3_cptyg"]
+[ext_resource type="AudioStream" uid="uid://bia60cj7of2o4" path="res://assets/audio/sfx/recordscratch.ogg" id="4_trj4p"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glr2s"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0, 0, 1)
+expand_margin_top = 10.0
+expand_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_f2l25"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8, 0.8, 0.8, 0)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_88x8e"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_tctq1"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_glr2s"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_f2l25"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_88x8e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yxu6n"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tctq1"]
+
+[node name="GameOptionsMenu" type="Control"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -350.0
+offset_right = 400.0
+offset_bottom = 350.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_vm04o")
+
+[node name="GradientBackground" type="TextureRect" parent="."]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+texture = ExtResource("2_f8yp2")
+
+[node name="ContainerBackground" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1143, 744)
+layout_mode = 0
+offset_left = 367.0
+offset_top = 142.0
+offset_right = 1581.5
+offset_bottom = 928.0
+color = Color(1, 1, 1, 0.36862746)
+
+[node name="GameOptionsContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -521.5
+offset_top = -322.0
+offset_right = 521.5
+offset_bottom = 322.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="TitleLabel" type="Label" parent="GameOptionsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 100
+text = "Options"
+
+[node name="MasterVolumeBox" type="HBoxContainer" parent="GameOptionsContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+
+[node name="MasterVolumeLabel" type="Label" parent="GameOptionsContainer/MasterVolumeBox"]
+custom_minimum_size = Vector2(325, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Master Volume:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MasterVolumeSlider" type="HSlider" parent="GameOptionsContainer/MasterVolumeBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_icons/grabber = ExtResource("3_cptyg")
+theme_override_icons/grabber_highlight = ExtResource("3_cptyg")
+theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
+value = 100.0
+
+[node name="MusicVolumeBox" type="HBoxContainer" parent="GameOptionsContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+
+[node name="MusicVolumeLabel" type="Label" parent="GameOptionsContainer/MusicVolumeBox"]
+custom_minimum_size = Vector2(325, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Music Volume:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MusicVolumeSlider" type="HSlider" parent="GameOptionsContainer/MusicVolumeBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_icons/grabber = ExtResource("3_cptyg")
+theme_override_icons/grabber_highlight = ExtResource("3_cptyg")
+theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
+value = 100.0
+
+[node name="SoundVolumeBox" type="HBoxContainer" parent="GameOptionsContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+
+[node name="SoundVolumeLabel" type="Label" parent="GameOptionsContainer/SoundVolumeBox"]
+custom_minimum_size = Vector2(325, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "SFX Volume:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="SoundVolumeSlider" type="HSlider" parent="GameOptionsContainer/SoundVolumeBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_icons/grabber = ExtResource("3_cptyg")
+theme_override_icons/grabber_highlight = ExtResource("3_cptyg")
+theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
+value = 100.0
+
+[node name="RhythmTiming" type="HBoxContainer" parent="GameOptionsContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+
+[node name="RhythmTimingLabel" type="Label" parent="GameOptionsContainer/RhythmTiming"]
+custom_minimum_size = Vector2(325, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Rhythm Timing:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="RhythmTimingSlider" type="HSlider" parent="GameOptionsContainer/RhythmTiming"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_icons/grabber = ExtResource("3_cptyg")
+theme_override_icons/grabber_highlight = ExtResource("3_cptyg")
+theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
+min_value = -200.0
+max_value = 200.0
+value = 0.0
+
+[node name="RhythmTimingDescription" type="Label" parent="GameOptionsContainer"]
+custom_minimum_size = Vector2(325, 50)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 37
+text = "If rhythm feels off: too slow - move left, too fast - move right"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="FullScreenContainer" type="HBoxContainer" parent="GameOptionsContainer"]
+layout_mode = 2
+
+[node name="FullScreenLabel" type="Label" parent="GameOptionsContainer/FullScreenContainer"]
+custom_minimum_size = Vector2(325, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Fullscreen"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="FullScreenCheckbox" type="CheckBox" parent="GameOptionsContainer/FullScreenContainer"]
+layout_mode = 2
+theme_override_styles/hover = SubResource("StyleBoxTexture_88x8e")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_tctq1")
+icon_alignment = 1
+
+[node name="FramerateContainer" type="HBoxContainer" parent="GameOptionsContainer"]
+layout_mode = 2
+
+[node name="FramerateLabel" type="Label" parent="GameOptionsContainer/FramerateContainer"]
+custom_minimum_size = Vector2(325, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Show FPS:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="FramerateCheckbox" type="CheckBox" parent="GameOptionsContainer/FramerateContainer"]
+layout_mode = 2
+theme_override_styles/hover = SubResource("StyleBoxTexture_glr2s")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_f2l25")
+
+[node name="BottomSeparator" type="HSeparator" parent="GameOptionsContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_88x8e")
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="GameOptionsContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 250
+
+[node name="SaveButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 50
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
+text = "Save and Close"
+icon_alignment = 1
+
+[node name="ExitButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 50
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
+text = "Exit to Title"
+icon_alignment = 1
+
+[node name="ExitConfirmSound" type="AudioStreamPlayer" parent="GameOptionsContainer/ButtonsContainer"]
+stream = ExtResource("4_trj4p")
+bus = &"SFX"
+
+[node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_trj4p")
+bus = &"SFX"
+
+[node name="ButtonEnterSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_trj4p")
+bus = &"SFX"
+
+[connection signal="toggled" from="GameOptionsContainer/FullScreenContainer/FullScreenCheckbox" to="." method="_on_fullscreen_toggled"]
+[connection signal="toggled" from="GameOptionsContainer/FramerateContainer/FramerateCheckbox" to="." method="_on_framerate_toggled"]

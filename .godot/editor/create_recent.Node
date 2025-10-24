@@ -1,9 +1,9 @@
+HBoxContainer
 Label
 Label      - Matches the "text" keyword.
 TextureRect
 RichTextLabel
 NinePatchRect
-HBoxContainer
 VBoxContainer
 Panel
 Control

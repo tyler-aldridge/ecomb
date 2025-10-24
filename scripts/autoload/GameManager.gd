@@ -44,6 +44,7 @@ const SAVE_DIR = "user://saves"
 
 # FPS Display
 var fps_label: Label = null
+var last_fps: int = 0
 
 func _ready():
 	print("GameManager loading...")
@@ -178,7 +179,10 @@ func create_fps_display():
 
 func _process(_delta):
 	if fps_label and fps_label.visible:
-		fps_label.text = "FPS: " + str(int(Engine.get_frames_per_second()))
+		var current_fps = int(Engine.get_frames_per_second())
+		if current_fps != last_fps:
+			fps_label.text = "FPS: " + str(current_fps)
+			last_fps = current_fps
 
 # ===== AUDIO SETTINGS =====
 func apply_audio_settings():
