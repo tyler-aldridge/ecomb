@@ -203,27 +203,27 @@ func create_battle_ui():
 	add_child(ui_layer)
 
 	# Groove bar (full width at top)
-	var groove_bar_scene = preload("res://scenes/ui/game/hud/GrooveBar.tscn")
+	var groove_bar_scene = preload("res://scenes/ui/game/battle/hud/GrooveBar.tscn")
 	groove_bar = groove_bar_scene.instantiate()
 	ui_layer.add_child(groove_bar)
 
 	# Combo display (center of screen, 313px from center)
-	var combo_display_scene = preload("res://scenes/ui/game/hud/ComboDisplay.tscn")
+	var combo_display_scene = preload("res://scenes/ui/game/battle/hud/ComboDisplay.tscn")
 	combo_display = combo_display_scene.instantiate()
 	ui_layer.add_child(combo_display)
 
 	# XP popup (above combo display)
-	var xp_popup_scene = preload("res://scenes/ui/game/hud/XPPopup.tscn")
+	var xp_popup_scene = preload("res://scenes/ui/game/battle/hud/XPPopup.tscn")
 	xp_popup = xp_popup_scene.instantiate()
 	ui_layer.add_child(xp_popup)
 
-	# Battle results (hidden until battle completes successfully)
-	var battle_results_scene = preload("res://scenes/ui/game/hud/BattleResults.tscn")
+	# Battle results menu (hidden until battle completes successfully)
+	var battle_results_scene = preload("res://scenes/ui/game/battle/menus/BattleResults.tscn")
 	battle_results = battle_results_scene.instantiate()
 	ui_layer.add_child(battle_results)
 
 	# Battle failure dialog (hidden until battle fails)
-	var battle_failure_scene = preload("res://scenes/ui/game/hud/BattleFailure.tscn")
+	var battle_failure_scene = preload("res://scenes/ui/game/battle/dialogs/BattleFailure.tscn")
 	battle_failure = battle_failure_scene.instantiate()
 	ui_layer.add_child(battle_failure)
 
