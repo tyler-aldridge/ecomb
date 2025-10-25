@@ -6,7 +6,7 @@ extends Node2D
 @onready var trainer_sprite = $TutorialUI/Trainer
 
 # Level data
-@export var level_data_path: String = "res://data/levels/BattleTutorial.json"
+@export var level_data_path: String = "res://data/levels/battle/BattleTutorial.json"
 var level_data: Dictionary = {}
 
 # Note type configuration (scalable for future note types)
@@ -76,7 +76,7 @@ var hit_zone_indicator_nodes = []
 # Battle UI elements
 var groove_bar: Control
 var combo_display: Label
-var xp_popup: Label
+var xp_gain: Label
 var battle_results: Control
 var battle_failure: Control
 
@@ -212,10 +212,10 @@ func create_battle_ui():
 	combo_display = combo_display_scene.instantiate()
 	ui_layer.add_child(combo_display)
 
-	# XP popup (above combo display)
-	var xp_popup_scene = preload("res://scenes/ui/battle/XPPopup.tscn")
-	xp_popup = xp_popup_scene.instantiate()
-	ui_layer.add_child(xp_popup)
+	# XP gain display (above combo display)
+	var xp_gain_scene = preload("res://scenes/ui/battle/XPGain.tscn")
+	xp_gain = xp_gain_scene.instantiate()
+	ui_layer.add_child(xp_gain)
 
 	# Battle results menu (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/battle/BattleResults.tscn")

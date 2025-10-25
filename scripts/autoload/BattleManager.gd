@@ -51,7 +51,7 @@ const MAX_COMBO_MULTIPLIER = 3.0
 var battle_active: bool = false
 var battle_id: String = ""
 var battle_level: int = 1
-var battle_type: String = "story"  # "story" or "random"
+var battle_type: String = "story"  # "story", "lessons", or "random"
 
 # Groove bar (health system)
 var groove_current: float = 0.0
@@ -84,9 +84,9 @@ func start_battle(battle_data: Dictionary):
 
 	Args:
 		battle_data: Dictionary with keys:
-			- battle_id: String (unique identifier for story battles)
+			- battle_id: String (unique identifier for story/lessons battles)
 			- battle_level: int (1-10, for XP scaling)
-			- battle_type: String ("story" or "random")
+			- battle_type: String ("story", "lessons", or "random")
 			- groove_miss_penalty: float (optional, default 10.0)
 			- groove_start: float (optional, default 50.0)
 	"""
@@ -269,7 +269,7 @@ func get_combo_multiplier() -> float:
 func calculate_awarded_strength() -> int:
 	"""Calculate actual XP awarded after applying level scaling.
 
-	For story battles that have been completed before, players can only
+	For story and lessons battles that have been completed before, players can only
 	improve on their previous score (tracked in GameManager).
 
 	For random battles, XP is scaled based on player level vs battle level.
@@ -284,8 +284,8 @@ func calculate_awarded_strength() -> int:
 	if battle_type == "random":
 		awarded_strength = apply_level_scaling(base_strength)
 
-	# Check if this is a replay of a story battle
-	elif battle_type == "story" and battle_id != "":
+	# Check if this is a replay of a story or lessons battle
+	elif (battle_type == "story" or battle_type == "lessons") and battle_id != "":
 		awarded_strength = GameManager.calculate_battle_strength_improvement(
 			battle_id,
 			base_strength
