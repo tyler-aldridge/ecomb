@@ -17,14 +17,13 @@ var player_data := {
 	"selected_character": "",
 	"hp": 100,
 	"max_hp": 100,
-	"strength": 10,  # Affects health loss rate
-	"groove": 10,    # Timing leniency modifier
-	"xp": 0,
+	"strength": 0,  # Total Strength (XP) earned
 	"level": 1,
 	"inventory": [],
 	"position": Vector2.ZERO,
 	"current_scene": "",
-	"tutorial_completed": false
+	"tutorial_completed": false,
+	"completed_story_battles": {},  # {"battle_id": max_strength_earned}
 }
 
 # Settings storage - enhanced with rhythm settings
@@ -41,6 +40,44 @@ var settings = {
 # File paths
 const SETTINGS_FILE = "user://settings.save"
 const SAVE_DIR = "user://saves"
+
+# ============================================================================
+# STRENGTH (XP) SYSTEM - Level Progression
+# ============================================================================
+# Total Strength required to reach each level (cumulative)
+# Level 10 requires 5,000,000 total Strength
+const LEVEL_THRESHOLDS = [
+	0,          # Level 1 (start)
+	40000,      # Level 2
+	96000,      # Level 3 (40k + 56k)
+	174000,     # Level 4 (96k + 78k)
+	284000,     # Level 5 (174k + 110k)
+	438000,     # Level 6 (284k + 154k)
+	654000,     # Level 7 (438k + 216k)
+	956000,     # Level 8 (654k + 302k)
+	1379000,    # Level 9 (956k + 423k)
+	2000000     # Level 10 (1,379k + 621k) - FINAL LEVEL
+]
+
+# Strength required per level (for display purposes)
+const STRENGTH_PER_LEVEL = [
+	0,       # Level 1 (start)
+	40000,   # Level 1 → 2
+	56000,   # Level 2 → 3
+	78000,   # Level 3 → 4
+	110000,  # Level 4 → 5
+	154000,  # Level 5 → 6
+	216000,  # Level 6 → 7
+	302000,  # Level 7 → 8
+	423000,  # Level 8 → 9
+	621000   # Level 9 → 10
+]
+
+const MAX_LEVEL = 10
+
+# Signals for level progression
+signal strength_gained(amount: int, total: int)
+signal level_up(new_level: int)
 
 # FPS Display
 var fps_label: Label = null
@@ -82,24 +119,132 @@ func set_selected_character(character: String):
 func complete_tutorial():
 	player_data["tutorial_completed"] = true
 
-func add_xp(amount: int):
-	player_data["xp"] += amount
-	check_level_up()
+# ============================================================================
+# STRENGTH (XP) AND LEVEL SYSTEM
+# ============================================================================
 
-func check_level_up():
-	var xp_needed = player_data["level"] * 100  # Simple leveling formula
-	if player_data["xp"] >= xp_needed:
-		player_data["level"] += 1
-		player_data["xp"] -= xp_needed
-		level_up_stats()
-		print("Level up! Now level ", player_data["level"])
+func add_strength(amount: int):
+	"""Award Strength (XP) to the player and check for level ups.
 
-func level_up_stats():
-	# Increase stats on level up
-	player_data["max_hp"] += 10
-	player_data["hp"] = player_data["max_hp"]  # Full heal on level up
-	player_data["strength"] += 2
-	player_data["groove"] += 1
+	Args:
+		amount: int - Strength to award (can be 0)
+	"""
+	if amount <= 0:
+		return
+
+	var old_level = player_data["level"]
+	player_data["strength"] += amount
+
+	strength_gained.emit(amount, player_data["strength"])
+
+	# Check for level ups (can level multiple times from one battle)
+	var new_level = calculate_level_from_strength(player_data["strength"])
+
+	if new_level > old_level:
+		player_data["level"] = min(new_level, MAX_LEVEL)
+		level_up.emit(player_data["level"])
+
+func calculate_level_from_strength(strength_total: int) -> int:
+	"""Calculate player level based on total Strength.
+
+	Args:
+		strength_total: int - Total Strength earned
+
+	Returns:
+		int - Player level (1-10)
+	"""
+	for i in range(LEVEL_THRESHOLDS.size() - 1, -1, -1):
+		if strength_total >= LEVEL_THRESHOLDS[i]:
+			return min(i + 1, MAX_LEVEL)
+	return 1
+
+func get_player_level() -> int:
+	"""Get current player level (1-10)."""
+	return player_data.get("level", 1)
+
+func get_player_strength() -> int:
+	"""Get total Strength (XP) earned."""
+	return player_data.get("strength", 0)
+
+func get_strength_to_next_level() -> int:
+	"""Get Strength needed to reach next level.
+
+	Returns:
+		int - Strength needed, or 0 if max level
+	"""
+	var current_level = get_player_level()
+	if current_level >= MAX_LEVEL:
+		return 0
+
+	var current_strength = get_player_strength()
+	var next_threshold = LEVEL_THRESHOLDS[current_level]
+	return max(0, next_threshold - current_strength)
+
+func get_strength_progress_in_level() -> float:
+	"""Get progress through current level as percentage (0.0 to 1.0).
+
+	Returns:
+		float - Progress percentage, or 1.0 if max level
+	"""
+	var current_level = get_player_level()
+	if current_level >= MAX_LEVEL:
+		return 1.0
+
+	var current_strength = get_player_strength()
+	var current_threshold = LEVEL_THRESHOLDS[current_level - 1]
+	var next_threshold = LEVEL_THRESHOLDS[current_level]
+	var strength_in_level = current_strength - current_threshold
+	var strength_needed = next_threshold - current_threshold
+
+	return clamp(float(strength_in_level) / float(strength_needed), 0.0, 1.0)
+
+# ============================================================================
+# BATTLE COMPLETION TRACKING
+# ============================================================================
+
+func record_story_battle_completion(battle_id: String, strength_earned: int):
+	"""Record completion of a story battle with Strength earned.
+
+	Args:
+		battle_id: String - Unique battle identifier
+		strength_earned: int - Strength earned this run
+	"""
+	if battle_id == "":
+		return
+
+	if not player_data.has("completed_story_battles"):
+		player_data["completed_story_battles"] = {}
+
+	var previous_best = player_data["completed_story_battles"].get(battle_id, 0)
+	player_data["completed_story_battles"][battle_id] = max(previous_best, strength_earned)
+
+func get_story_battle_best_strength(battle_id: String) -> int:
+	"""Get the best Strength score for a story battle.
+
+	Args:
+		battle_id: String - Unique battle identifier
+
+	Returns:
+		int - Best Strength earned, or 0 if never completed
+	"""
+	if not player_data.has("completed_story_battles"):
+		return 0
+	return player_data["completed_story_battles"].get(battle_id, 0)
+
+func calculate_battle_strength_improvement(battle_id: String, current_strength: int) -> int:
+	"""Calculate Strength to award for story battle replay.
+
+	Players can only earn Strength they haven't earned before.
+
+	Args:
+		battle_id: String - Unique battle identifier
+		current_strength: int - Strength earned this run
+
+	Returns:
+		int - Strength to actually award (improvement only)
+	"""
+	var previous_best = get_story_battle_best_strength(battle_id)
+	return max(0, current_strength - previous_best)
 
 func get_player_name() -> String:
 	return player_data.get("name", "")
