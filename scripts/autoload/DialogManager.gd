@@ -87,7 +87,7 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 				)
 		)
 
-func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 500) -> void:
+func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
 		var delay := float(i) * per_number_seconds
 		_spawn_number_later(str(numbers[i]), delay, font_size, Color.WHITE if str(numbers[i]) != "GO!" else Color.RED, 0.8)
@@ -117,11 +117,13 @@ func _spawn_number_now(text: String, font_size: int, color: Color, linger: float
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	
-	# Center the countdown numbers
+
+	# Center the countdown numbers - use large enough size for any text
 	var viewport_size = get_viewport().get_visible_rect().size
-	label.position = Vector2(viewport_size.x * 0.5 - 100, viewport_size.y * 0.5 - 50)
-	label.size = Vector2(200, 100)
+	var label_width = font_size * 2  # Wide enough for any countdown text
+	var label_height = font_size * 1.5  # Tall enough for the font
+	label.size = Vector2(label_width, label_height)
+	label.position = Vector2(viewport_size.x * 0.5 - label_width * 0.5, viewport_size.y * 0.5 - label_height * 0.5)
 	
 	var layer := CanvasLayer.new()
 	layer.layer = 100

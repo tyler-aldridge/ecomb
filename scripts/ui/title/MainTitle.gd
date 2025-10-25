@@ -59,7 +59,10 @@ func _ready():
 	fade.modulate.a = 1.0
 	var tween = create_tween()
 	tween.tween_property(fade, "modulate:a", 0.0, FADE_DUR)
-	tween.tween_callback(func(): fade.hide())
+	tween.tween_callback(func():
+		if is_instance_valid(fade):
+			fade.hide()
+	)
 	
 	# Title animation
 	hit_timer.wait_time = HIT_TIME
@@ -155,11 +158,14 @@ func _on_new_button_pressed() -> void:
 	
 	if ui.has_signal("finished"):
 		ui.finished.connect(func():
-			music.stop()
-			_close_modal()
-			_fade_to_black()
-			await get_tree().create_timer(1.5).timeout
-			_start_opening_cutscene()
+			if is_instance_valid(self) and is_instance_valid(music):
+				music.stop()
+			if is_instance_valid(self):
+				_close_modal()
+				_fade_to_black()
+				await get_tree().create_timer(1.5).timeout
+				if is_instance_valid(self):
+					_start_opening_cutscene()
 		)
 
 func _on_load_button_pressed() -> void:
@@ -193,11 +199,14 @@ func _on_load_button_pressed() -> void:
 	
 	if ui.has_signal("file_chosen"):
 		ui.file_chosen.connect(func(save_id: String):
-			music.stop()
-			_close_modal()
-			_fade_to_black()
-			await get_tree().create_timer(1.5).timeout
-			_fade_to_loaded_game(save_id)
+			if is_instance_valid(self) and is_instance_valid(music):
+				music.stop()
+			if is_instance_valid(self):
+				_close_modal()
+				_fade_to_black()
+				await get_tree().create_timer(1.5).timeout
+				if is_instance_valid(self):
+					_fade_to_loaded_game(save_id)
 		)
 	
 	# Connect delete signal

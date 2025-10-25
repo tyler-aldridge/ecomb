@@ -29,6 +29,11 @@ func set_travel_time(time: float):
 	speed = spawn_height / travel_time
 
 func _physics_process(delta):
-	position.y += speed * delta
+	if speed > 0:  # Only move if speed is positive
+		position.y += speed * delta
 	if position.y > target_y + 400:
 		queue_free()
+
+func stop_movement():
+	speed = 0
+	set_physics_process(false)

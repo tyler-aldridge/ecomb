@@ -70,8 +70,8 @@ func _ready():
 	print("GameManager loaded successfully")
 
 # ===== NEW: Player Data Management =====
-func set_player_name(name: String):
-	player_data["name"] = name
+func set_player_name(player_name: String):
+	player_data["name"] = player_name
 
 func set_favorite_thing(favorite: String):
 	player_data["favorite_thing"] = favorite
