@@ -6,6 +6,15 @@ extends Control
 # Shows battle completion stats and level-up notifications
 # Connects to BattleManager.battle_completed signal
 #
+# DESIGN PATTERN:
+# This follows the same modal pause pattern as MainTitle's QuitDialog:
+# - Pauses the game with get_tree().paused = true
+# - Shows as modal overlay that blocks all other input
+# - TODO: Add sound effects for button interactions (hover, click) like QuitDialog
+# - CRITICAL DIFFERENCE: Unlike QuitDialog, this CANNOT be dismissed to return
+#   to gameplay. User MUST choose an action (Continue/Restart/Quit). There is
+#   no "Cancel" or ESC handler - the battle is over and must be acknowledged.
+#
 # SCENE STRUCTURE:
 # BattleResults (Control) - this script
 # └─ CanvasLayer (always on top)
