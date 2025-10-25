@@ -1,6 +1,6 @@
 [gd_scene load_steps=13 format=3 uid="uid://c6h3w4y0dc52j"]
 
-[ext_resource type="Script" uid="uid://cubyc6d2rwa8f" path="res://scripts/ui/title/OptionsMenu.gd" id="1_evyrg"]
+[ext_resource type="Script" uid="uid://cubyc6d2rwa8f" path="res://scripts/title/OptionsMenu.gd" id="1_evyrg"]
 [ext_resource type="Texture2D" uid="uid://ddpukf3u74xr0" path="res://assets/interface/ui/panel-gradient-4.png" id="2_rcr6o"]
 [ext_resource type="Texture2D" uid="uid://dlteajxyiio2x" path="res://assets/interface/ui/grabber.png" id="3_glr2s"]
 

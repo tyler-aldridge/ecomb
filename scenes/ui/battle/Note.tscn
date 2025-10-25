@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://jocpioltyqom"]
 
-[ext_resource type="Script" uid="uid://brue8os5ofsw2" path="res://scripts/gameplay/battles/Note.gd" id="1_lslsi"]
+[ext_resource type="Script" uid="uid://brue8os5ofsw2" path="res://scripts/game/battle/Note.gd" id="1_lslsi"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lslsi"]
 size = Vector2(201, 200)

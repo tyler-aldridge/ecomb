@@ -72,4 +72,4 @@ func shake_position(_progress: float):
 
 func _on_animation_finished(anim_name: String) -> void:
 	if anim_name == "splash":
-		Router.goto_scene("res://scenes/ui/title/MainTitle.tscn")
+		Router.goto_scene("res://scenes/title/MainTitle.tscn")

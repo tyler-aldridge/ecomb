@@ -109,7 +109,7 @@ func _on_continue_pressed():
 	"""Continue to next scene or return to title."""
 	get_tree().paused = false
 	# For now, go to title. Later: navigate to overworld or next battle
-	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
+	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
 
 func _on_restart_pressed():
 	"""Restart the battle."""
@@ -119,4 +119,4 @@ func _on_restart_pressed():
 func _on_quit_pressed():
 	"""Quit to title screen."""
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
+	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")

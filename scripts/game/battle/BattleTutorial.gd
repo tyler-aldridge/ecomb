@@ -6,7 +6,7 @@ extends Node2D
 @onready var trainer_sprite = $TutorialUI/Trainer
 
 # Level data
-@export var level_data_path: String = "res://data/levels/RhythmTutorial.json"
+@export var level_data_path: String = "res://data/levels/BattleTutorial.json"
 var level_data: Dictionary = {}
 
 # Note type configuration (scalable for future note types)
@@ -521,7 +521,7 @@ func change_to_title():
 	if is_instance_valid(GameManager):
 		GameManager.complete_tutorial()
 	if is_instance_valid(get_tree()):
-		get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
+		get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
 
 func choose_lane_avoiding_overlap(current_beat: int) -> String:
 	"""Choose a lane that avoids recent spawns to prevent visual overlap."""

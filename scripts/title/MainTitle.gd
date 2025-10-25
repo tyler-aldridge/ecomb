@@ -36,9 +36,9 @@ const FADE_DUR := 6.0
 const HIT_TIME := 5.0
 const BUTTON_DELAY := 1.5
 
-const CHAR_CREATE_SCENE:  PackedScene = preload("res://scenes/ui/title/CharacterCreation.tscn")
-const LOAD_MENU_SCENE:   PackedScene = preload("res://scenes/ui/title/LoadMenu.tscn")
-const OPTIONS_MENU_SCENE: PackedScene = preload("res://scenes/ui/title/OptionsMenu.tscn")
+const CHAR_CREATE_SCENE:  PackedScene = preload("res://scenes/title/CharacterCreation.tscn")
+const LOAD_MENU_SCENE:   PackedScene = preload("res://scenes/title/LoadMenu.tscn")
+const OPTIONS_MENU_SCENE: PackedScene = preload("res://scenes/title/OptionsMenu.tscn")
 
 func _ready():
 	# Add the title scene to a group so Muscle Man can find it
@@ -337,7 +337,7 @@ func _fade_to_black() -> void:
 # --- Game Flow Functions ---
 func _start_opening_cutscene() -> void:
 	print("→ Starting opening cutscene")
-	get_tree().change_scene_to_file("res://scenes/battle/RhythmTutorial.tscn")
+	get_tree().change_scene_to_file("res://scenes/battle/BattleTutorial.tscn")
 
 func _fade_to_loaded_game(save_id: String) -> void:
 	print("→ Loading save:", save_id)
