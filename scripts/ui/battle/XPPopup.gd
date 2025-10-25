@@ -34,7 +34,7 @@ func _ready():
 	if BattleManager:
 		BattleManager.hit_registered.connect(_on_hit_registered)
 
-func _on_hit_registered(quality: String, strength_gain: int, groove_change: float):
+func _on_hit_registered(quality: String, strength_gain: int, _groove_change: float):
 	"""Show XP popup when hit is registered."""
 	if strength_gain > 0:
 		show_xp(strength_gain, quality == "PERFECT")

@@ -86,7 +86,7 @@ func play_combo_increase_animation():
 	flash_tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.1)
 	flash_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.15)
 
-func _on_combo_milestone(combo: int, multiplier: float):
+func _on_combo_milestone(_combo: int, _multiplier: float):
 	"""Extra celebration for milestones (10, 20, 30, 40)."""
 	# Big scale bounce
 	var milestone_tween = create_tween()

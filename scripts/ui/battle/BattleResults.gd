@@ -56,9 +56,11 @@ func _ready():
 		quit_button.pressed.connect(_on_quit_pressed)
 
 func _on_battle_completed(results: Dictionary):
-	"""Show battle results when battle completes."""
-	battle_results = results
-	show_results()
+	"""Show battle results when battle completes SUCCESSFULLY."""
+	# Only show if battle was actually completed successfully
+	if results.get("battle_completed", false):
+		battle_results = results
+		show_results()
 
 func show_results():
 	"""Display the battle results for successful completion."""
