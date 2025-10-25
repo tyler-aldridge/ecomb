@@ -195,6 +195,14 @@ func _ready():
 	await get_tree().create_timer(1.0).timeout
 	conductor.play_with_beat_offset()
 
+func _exit_tree():
+	"""Clean up tweens to prevent lambda capture errors when scene is freed."""
+	# Kill all tweens on this node to prevent lambda callbacks from accessing freed objects
+	var tween_count = get_tree().get_processed_tweens()
+	for tween in tween_count:
+		if is_instance_valid(tween):
+			tween.kill()
+
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
 	# Create UI layer for proper screen-space rendering
