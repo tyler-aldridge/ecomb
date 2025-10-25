@@ -27,35 +27,14 @@ func _ready():
 	if BattleManager:
 		BattleManager.groove_changed.connect(_on_groove_changed)
 
-	# Initialize progress bar with rainbow gradient
+	# Initialize progress bar
 	if progress_bar:
 		progress_bar.min_value = 0
 		progress_bar.max_value = 100
 		progress_bar.value = 50
 
-		# Create rainbow gradient StyleBox
-		var style_box = StyleBoxFlat.new()
-		style_box.bg_color = Color(1, 1, 1, 1)
-		style_box.set_border_width_all(0)
-
-		# Create gradient
-		var gradient = Gradient.new()
-		gradient.set_offset(0, 0.0)
-		gradient.set_color(0, Color(1, 0, 0, 1))  # Red
-		gradient.set_offset(1, 0.2)
-		gradient.set_color(1, Color(1, 1, 0, 1))  # Yellow
-		gradient.set_offset(2, 0.4)
-		gradient.set_color(2, Color(0, 1, 0, 1))  # Green
-		gradient.set_offset(3, 0.6)
-		gradient.set_color(3, Color(0, 1, 1, 1))  # Cyan
-		gradient.set_offset(4, 0.8)
-		gradient.set_color(4, Color(0, 0, 1, 1))  # Blue
-		gradient.set_offset(5, 1.0)
-		gradient.set_color(5, Color(1, 0, 1, 1))  # Magenta
-
-		# Apply gradient as modulate (since StyleBoxFlat doesn't support gradients directly)
-		# We'll use a shader or ColorRect workaround, but for now use solid rainbow effect
-		progress_bar.modulate = Color(1, 1, 1, 1)
+		# TODO: Add rainbow gradient shader for ProgressBar
+		# For now using solid color
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""

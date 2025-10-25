@@ -194,24 +194,26 @@ func _ready():
 	conductor.play_with_beat_offset()
 
 func create_battle_ui():
-	"""Instantiate and add battle UI elements."""
+	"""Instantiate and add battle UI elements to a CanvasLayer."""
+	# Create UI layer for proper screen-space rendering
+	var ui_layer = CanvasLayer.new()
+	ui_layer.layer = 100
+	add_child(ui_layer)
+
 	# Groove bar (full width at top)
 	var groove_bar_scene = preload("res://scenes/ui/battle/GrooveBar.tscn")
 	groove_bar = groove_bar_scene.instantiate()
-	groove_bar.z_index = 200
-	add_child(groove_bar)
+	ui_layer.add_child(groove_bar)
 
-	# Combo display (centered above player)
+	# Combo display (center of screen, 313px from center)
 	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
 	combo_display = combo_display_scene.instantiate()
-	combo_display.z_index = 200
-	add_child(combo_display)
+	ui_layer.add_child(combo_display)
 
 	# XP popup (above combo display)
 	var xp_popup_scene = preload("res://scenes/ui/battle/XPPopup.tscn")
 	xp_popup = xp_popup_scene.instantiate()
-	xp_popup.z_index = 200
-	add_child(xp_popup)
+	ui_layer.add_child(xp_popup)
 
 func load_level_data():
 	var file = FileAccess.open(level_data_path, FileAccess.READ)
@@ -462,8 +464,10 @@ func stop_hit_zone_indicators():
 	hit_zone_indicator_nodes.clear()
 
 func fade_to_title():
-	# End battle and get results
-	var results = BattleManager.end_battle()
+	# End battle and get results (only if battle is still active)
+	var results = {}
+	if BattleManager.is_battle_active():
+		results = BattleManager.end_battle()
 
 	if results.get("battle_completed", false):
 		# Battle completed successfully - award Strength (XP)
@@ -510,10 +514,86 @@ func _on_battle_failed():
 	if conductor:
 		conductor.stop()
 
-	# TODO: Show battle failed UI with options to restart or quit
-	# For now, just fade to title after a delay
-	await get_tree().create_timer(2.0).timeout
-	fade_to_title()
+	# Show battle failed dialog
+	show_battle_failed_dialog()
+
+func show_battle_failed_dialog():
+	"""Show modal dialog for battle failure."""
+	# Pause the game
+	get_tree().paused = true
+
+	# Create dialog overlay
+	var overlay = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.8)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 1000
+	add_child(overlay)
+
+	# Create dialog panel
+	var panel = Panel.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-300, -200)
+	panel.size = Vector2(600, 400)
+	overlay.add_child(panel)
+
+	# Create VBox for content
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 20)
+	panel.add_child(vbox)
+
+	# Add spacer
+	var spacer1 = Control.new()
+	spacer1.custom_minimum_size = Vector2(0, 50)
+	vbox.add_child(spacer1)
+
+	# Title label
+	var title = Label.new()
+	title.text = "BATTLE FAILED!"
+	title.add_theme_font_size_override("font_size", 48)
+	title.add_theme_color_override("font_color", Color.RED)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	# Message label
+	var message = Label.new()
+	message.text = "Your groove hit zero!\nWhat would you like to do?"
+	message.add_theme_font_size_override("font_size", 24)
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(message)
+
+	# Add spacer
+	var spacer2 = Control.new()
+	spacer2.custom_minimum_size = Vector2(0, 20)
+	vbox.add_child(spacer2)
+
+	# Button container
+	var button_container = HBoxContainer.new()
+	button_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_container.add_theme_constant_override("separation", 20)
+	vbox.add_child(button_container)
+
+	# Restart button
+	var restart_btn = Button.new()
+	restart_btn.text = "Restart"
+	restart_btn.custom_minimum_size = Vector2(150, 50)
+	restart_btn.add_theme_font_size_override("font_size", 24)
+	restart_btn.pressed.connect(func():
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+	)
+	button_container.add_child(restart_btn)
+
+	# Quit button
+	var quit_btn = Button.new()
+	quit_btn.text = "Quit to Title"
+	quit_btn.custom_minimum_size = Vector2(150, 50)
+	quit_btn.add_theme_font_size_override("font_size", 24)
+	quit_btn.pressed.connect(func():
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
+	)
+	button_container.add_child(quit_btn)
 
 func change_to_title():
 	if is_instance_valid(GameManager):
