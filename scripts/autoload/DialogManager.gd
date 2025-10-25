@@ -1,6 +1,6 @@
 extends Node
 
-var dialog_box_scene := preload("res://scenes/ui/game/dialog/DialogBox.tscn")
+var dialog_box_scene := preload("res://scenes/ui/universal/DialogBox.tscn")
 var current_dialog: Control = null
 
 func show_dialog(text: String, _character: String, auto_close_time: float, _dialog_id: String = "") -> void:
