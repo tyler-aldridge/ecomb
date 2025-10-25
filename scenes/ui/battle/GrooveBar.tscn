@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://bvt8qm3n6yprd"]
 
-[ext_resource type="Script" path="res://scripts/ui/game/battle/hud/GrooveBar.gd" id="1_groove"]
+[ext_resource type="Script" path="res://scripts/ui/battle/GrooveBar.gd" id="1_groove"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 0.9)

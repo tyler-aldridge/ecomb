@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bv8qm5n7kypse"]
 
-[ext_resource type="Script" path="res://scripts/ui/game/battle/dialogs/BattleFailure.gd" id="1_failure"]
+[ext_resource type="Script" path="res://scripts/ui/battle/BattleFailure.gd" id="1_failure"]
 
 [node name="BattleFailure" type="Control"]
 process_mode = 3

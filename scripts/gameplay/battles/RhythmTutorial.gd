@@ -17,17 +17,17 @@ var level_data: Dictionary = {}
 #   4. All hit detection, spawn positioning, and timing automatically scale!
 const NOTE_TYPE_CONFIG = {
 	"whole": {
-		"scene": preload("res://scenes/battle/LongNote.tscn"),  # 200x800
+		"scene": preload("res://scenes/ui/battle/LongNote.tscn"),  # 200x800
 		"travel_time": 3.0,
 		"spawn_offset": 17  # 3.0s at 152 BPM = 15.2, but empirically needs 17
 	},
 	"half": {
-		"scene": preload("res://scenes/battle/Note.tscn"),  # Will use 200x400 scene when created
+		"scene": preload("res://scenes/ui/battle/Note.tscn"),  # Will use 200x400 scene when created
 		"travel_time": 1.55,
 		"spawn_offset": 8
 	},
 	"quarter": {
-		"scene": preload("res://scenes/battle/Note.tscn"),  # 200x200
+		"scene": preload("res://scenes/ui/battle/Note.tscn"),  # 200x200
 		"travel_time": 1.55,
 		"spawn_offset": 8  # 1.55s at 152 BPM = 7.85 ≈ 8 half-beats
 	}
@@ -203,27 +203,27 @@ func create_battle_ui():
 	add_child(ui_layer)
 
 	# Groove bar (full width at top)
-	var groove_bar_scene = preload("res://scenes/ui/game/battle/hud/GrooveBar.tscn")
+	var groove_bar_scene = preload("res://scenes/ui/battle/GrooveBar.tscn")
 	groove_bar = groove_bar_scene.instantiate()
 	ui_layer.add_child(groove_bar)
 
 	# Combo display (center of screen, 313px from center)
-	var combo_display_scene = preload("res://scenes/ui/game/battle/hud/ComboDisplay.tscn")
+	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
 	combo_display = combo_display_scene.instantiate()
 	ui_layer.add_child(combo_display)
 
 	# XP popup (above combo display)
-	var xp_popup_scene = preload("res://scenes/ui/game/battle/hud/XPPopup.tscn")
+	var xp_popup_scene = preload("res://scenes/ui/battle/XPPopup.tscn")
 	xp_popup = xp_popup_scene.instantiate()
 	ui_layer.add_child(xp_popup)
 
 	# Battle results menu (hidden until battle completes successfully)
-	var battle_results_scene = preload("res://scenes/ui/game/battle/menus/BattleResults.tscn")
+	var battle_results_scene = preload("res://scenes/ui/battle/BattleResults.tscn")
 	battle_results = battle_results_scene.instantiate()
 	ui_layer.add_child(battle_results)
 
 	# Battle failure dialog (hidden until battle fails)
-	var battle_failure_scene = preload("res://scenes/ui/game/battle/dialogs/BattleFailure.tscn")
+	var battle_failure_scene = preload("res://scenes/ui/battle/BattleFailure.tscn")
 	battle_failure = battle_failure_scene.instantiate()
 	ui_layer.add_child(battle_failure)
 
