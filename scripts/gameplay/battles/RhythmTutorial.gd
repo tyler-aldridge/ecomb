@@ -73,6 +73,11 @@ var fade_overlay: ColorRect
 # Hit zone indicators
 var hit_zone_indicator_nodes = []
 
+# Battle UI elements
+var groove_bar: Control
+var combo_display: Label
+var xp_popup: Label
+
 # ============================================================================
 # UNIVERSAL BAR/BEAT SYSTEM
 # ============================================================================
@@ -177,6 +182,9 @@ func _ready():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
+	# Create battle UI elements
+	create_battle_ui()
+
 	setup_hit_zone_borders()
 	start_character_animations()
 	conductor.beat.connect(_on_beat)
@@ -184,6 +192,26 @@ func _ready():
 	# Start with beat offset
 	await get_tree().create_timer(1.0).timeout
 	conductor.play_with_beat_offset()
+
+func create_battle_ui():
+	"""Instantiate and add battle UI elements."""
+	# Groove bar (full width at top)
+	var groove_bar_scene = preload("res://scenes/ui/battle/GrooveBar.tscn")
+	groove_bar = groove_bar_scene.instantiate()
+	groove_bar.z_index = 200
+	add_child(groove_bar)
+
+	# Combo display (centered above player)
+	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
+	combo_display = combo_display_scene.instantiate()
+	combo_display.z_index = 200
+	add_child(combo_display)
+
+	# XP popup (above combo display)
+	var xp_popup_scene = preload("res://scenes/ui/battle/XPPopup.tscn")
+	xp_popup = xp_popup_scene.instantiate()
+	xp_popup.z_index = 200
+	add_child(xp_popup)
 
 func load_level_data():
 	var file = FileAccess.open(level_data_path, FileAccess.READ)
@@ -657,6 +685,15 @@ func process_hit(quality: String, note: Node, effect_pos: Vector2):
 	BattleManager.register_hit(quality)
 
 	var feedback_text = get_random_feedback_text(quality)
+
+	# Get strength gained (with combo multiplier)
+	var base_strength = BattleManager.HIT_VALUES[quality]["strength"]
+	var combo_multiplier = BattleManager.get_combo_multiplier()
+	var strength_gain = int(base_strength * combo_multiplier)
+
+	# Show XP popup if XP was gained
+	if strength_gain > 0 and xp_popup:
+		xp_popup.show_xp(strength_gain, quality == "PERFECT")
 
 	match quality:
 		"PERFECT":

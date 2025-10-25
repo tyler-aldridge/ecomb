@@ -1,127 +1,94 @@
-extends Control
+extends Label
 
 # ============================================================================
 # COMBO DISPLAY - Shows current combo and multiplier
 # ============================================================================
-# Displays combo count and multiplier with celebration effects
-# Connects to BattleManager.combo_changed and combo_milestone_reached signals
-#
-# SCENE STRUCTURE (create in Godot editor):
-# ComboDisplay (Control) - this script
-# ├─ ComboLabel (Label) - shows "42 COMBO!"
-# ├─ MultiplierLabel (Label) - shows "3.0x"
-# └─ MilestoneLabel (Label) - shows milestone messages "10 HIT COMBO!"
-#
-# STYLING NOTES:
-# - ComboLabel should be large and bold
-# - MultiplierLabel should change color based on multiplier (1x, 1.5x, 2x, 2.5x, 3x)
-# - MilestoneLabel should be even larger and animate in/out
-# - Add particle effects or screen shake for milestones
+# Displays "Combo: 0x" format
+# - White at 0x
+# - Rainbow gradient with flag wave animation when > 0x
+# - Flash and scale tween on combo increase
+# Positioned 50px above player sprite
 
-@onready var combo_label: Label = $ComboLabel
-@onready var multiplier_label: Label = $MultiplierLabel
-@onready var milestone_label: Label = $MilestoneLabel
+var combo_current: int = 0
+var multiplier_current: float = 1.0
 
-# Multiplier colors (visual feedback for progression)
-const MULTIPLIER_COLORS = {
-	1.0: Color(1.0, 1.0, 1.0),    # White - base
-	1.5: Color(0.5, 1.0, 1.0),    # Cyan - good
-	2.0: Color(0.3, 1.0, 0.3),    # Green - great
-	2.5: Color(1.0, 1.0, 0.3),    # Yellow - amazing
-	3.0: Color(1.0, 0.5, 0.0)     # Orange - MAX!
-}
+# Rainbow colors for cycling
+var rainbow_colors = [
+	Color(1, 0, 0, 1),    # Red
+	Color(1, 0.5, 0, 1),  # Orange
+	Color(1, 1, 0, 1),    # Yellow
+	Color(0, 1, 0, 1),    # Green
+	Color(0, 1, 1, 1),    # Cyan
+	Color(0, 0, 1, 1),    # Blue
+	Color(1, 0, 1, 1)     # Magenta
+]
+var color_index: float = 0.0
+var wave_offset: float = 0.0
 
 func _ready():
 	# Connect to BattleManager signals
 	if BattleManager:
 		BattleManager.combo_changed.connect(_on_combo_changed)
-		BattleManager.combo_milestone_reached.connect(_on_combo_milestone_reached)
+		BattleManager.combo_milestone_reached.connect(_on_combo_milestone)
 
 	# Initialize
-	if milestone_label:
-		milestone_label.visible = false
-		milestone_label.modulate.a = 0.0
+	update_display()
 
-	update_display(0, 1.0)
+func _process(delta):
+	# Animate rainbow and flag wave when combo > 0
+	if combo_current > 0:
+		# Cycle through rainbow colors
+		color_index += delta * 3.0  # Speed of color change
+		if color_index >= rainbow_colors.size():
+			color_index = 0.0
+
+		var color_a = rainbow_colors[int(color_index)]
+		var color_b = rainbow_colors[int(color_index + 1) % rainbow_colors.size()]
+		var t = color_index - floor(color_index)
+		modulate = color_a.lerp(color_b, t)
+
+		# Flag wave effect (subtle position offset)
+		wave_offset += delta * 5.0
+		rotation = sin(wave_offset) * 0.05  # Slight rotation wave
 
 func _on_combo_changed(current_combo: int, multiplier: float):
 	"""Update combo display when combo changes."""
-	update_display(current_combo, multiplier)
+	var old_combo = combo_current
+	combo_current = current_combo
+	multiplier_current = multiplier
 
-func update_display(combo: int, multiplier: float):
-	"""Update all labels with current combo/multiplier."""
-	# Update combo count
-	if combo_label:
-		if combo > 0:
-			combo_label.text = "%d COMBO!" % combo
-			combo_label.visible = true
-		else:
-			combo_label.visible = false
+	update_display()
 
-	# Update multiplier
-	if multiplier_label:
-		if multiplier > 1.0:
-			multiplier_label.text = "%.1fx" % multiplier
-			multiplier_label.visible = true
-			# Update color based on multiplier
-			multiplier_label.modulate = get_multiplier_color(multiplier)
-		else:
-			multiplier_label.visible = false
+	# Flash and scale animation on combo increase
+	if current_combo > old_combo and current_combo > 0:
+		play_combo_increase_animation()
+	elif current_combo == 0:
+		# Reset to white when combo breaks
+		modulate = Color(1, 1, 1, 1)
+		rotation = 0.0
+		scale = Vector2(1, 1)
 
-func get_multiplier_color(multiplier: float) -> Color:
-	"""Get color for current multiplier level."""
-	# Find the closest defined multiplier color
-	for mult in MULTIPLIER_COLORS.keys():
-		if multiplier <= mult:
-			return MULTIPLIER_COLORS[mult]
-	return MULTIPLIER_COLORS[3.0]  # Max color
+func update_display():
+	"""Update the label text."""
+	if multiplier_current > 1.0:
+		text = "Combo: %.1fx" % multiplier_current
+	else:
+		text = "Combo: %dx" % combo_current
 
-func _on_combo_milestone_reached(combo: int, multiplier: float):
-	"""Show celebration when reaching combo milestones (10, 20, 30, 40)."""
-	if not milestone_label:
-		return
+	# Set to white if no combo
+	if combo_current == 0:
+		modulate = Color(1, 1, 1, 1)
 
-	# Set milestone text
-	var milestone_text = ""
-	match combo:
-		10:
-			milestone_text = "10 HIT COMBO!"
-		20:
-			milestone_text = "20 HIT COMBO!"
-		30:
-			milestone_text = "30 HIT COMBO!"
-		40:
-			milestone_text = "MAX COMBO POWER!"
-		_:
-			if combo >= 40:
-				milestone_text = "LEGENDARY!"
+func play_combo_increase_animation():
+	"""Flash and scale when combo increases."""
+	# Flash bright
+	var flash_tween = create_tween()
+	flash_tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.1)
+	flash_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.15)
 
-	milestone_label.text = milestone_text
-	milestone_label.modulate = get_multiplier_color(multiplier)
-
-	# Animate milestone label
-	play_milestone_animation()
-
-func play_milestone_animation():
-	"""Animate milestone label with scale and fade."""
-	if not milestone_label:
-		return
-
-	milestone_label.visible = true
-	milestone_label.scale = Vector2(0.5, 0.5)
-	milestone_label.modulate.a = 0.0
-
-	var tween = create_tween()
-	tween.set_parallel(true)
-
-	# Scale up
-	tween.tween_property(milestone_label, "scale", Vector2(1.5, 1.5), 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-
-	# Fade in
-	tween.tween_property(milestone_label, "modulate:a", 1.0, 0.2)
-
-	# Chain: hold, then fade out
-	tween.chain()
-	tween.tween_interval(1.5)
-	tween.tween_property(milestone_label, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(func(): milestone_label.visible = false)
+func _on_combo_milestone(combo: int, multiplier: float):
+	"""Extra celebration for milestones (10, 20, 30, 40)."""
+	# Big scale bounce
+	var milestone_tween = create_tween()
+	milestone_tween.tween_property(self, "scale", Vector2(1.5, 1.5), 0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	milestone_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.3).set_ease(Tween.EASE_IN_OUT)
