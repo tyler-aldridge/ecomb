@@ -1,4 +1,9 @@
 {
+  "battle_id": "tutorial",
+  "battle_level": 1,
+  "battle_type": "story",
+  "groove_start": 50.0,
+  "groove_miss_penalty": 10.0,
   "song_name": "DivineFoxPlay-152BPM",
   "audio_file": "res://assets/audio/music/DivineFoxPlay-152BPM.ogg",
   "bpm": 152,

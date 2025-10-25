@@ -154,6 +154,20 @@ func _ready():
 		else:
 			push_error("Failed to load audio file: " + audio_path)
 
+	# Start battle with BattleManager
+	var battle_data = {
+		"battle_id": level_data.get("battle_id", ""),
+		"battle_level": level_data.get("battle_level", 1),
+		"battle_type": level_data.get("battle_type", "story"),
+		"groove_start": level_data.get("groove_start", 50.0),
+		"groove_miss_penalty": level_data.get("groove_miss_penalty", 10.0)
+	}
+	BattleManager.start_battle(battle_data)
+
+	# Connect to battle failure signal
+	if not BattleManager.battle_failed.is_connected(_on_battle_failed):
+		BattleManager.battle_failed.connect(_on_battle_failed)
+
 	# Create fade overlay
 	create_fade_overlay()
 	fade_from_black()
@@ -420,6 +434,33 @@ func stop_hit_zone_indicators():
 	hit_zone_indicator_nodes.clear()
 
 func fade_to_title():
+	# End battle and get results
+	var results = BattleManager.end_battle()
+
+	if results.get("battle_completed", false):
+		# Battle completed successfully - award Strength (XP)
+		var strength_awarded = results.get("strength_awarded", 0)
+		GameManager.add_strength(strength_awarded)
+
+		# Record story battle completion
+		if results.get("battle_type", "") == "story":
+			var battle_id = results.get("battle_id", "")
+			var strength_total = results.get("strength_total", 0)
+			GameManager.record_story_battle_completion(battle_id, strength_total)
+
+		# Mark tutorial as completed
+		if results.get("battle_id", "") == "tutorial":
+			GameManager.complete_tutorial()
+
+		# TODO: Show battle results UI here
+		# For now, print results
+		print("=== BATTLE COMPLETE ===")
+		print("Strength Earned: ", results.get("strength_total", 0))
+		print("Strength Awarded: ", strength_awarded)
+		print("Max Combo: ", results.get("combo_max", 0))
+		print("Hit Counts: ", results.get("hit_counts", {}))
+		print("======================")
+
 	if not is_instance_valid(fade_overlay):
 		change_to_title()
 		return
@@ -430,6 +471,21 @@ func fade_to_title():
 		if is_instance_valid(self):
 			change_to_title()
 	)
+
+func _on_battle_failed():
+	"""Called when groove reaches 0% - battle failure."""
+	print("=== BATTLE FAILED ===")
+	print("Groove reached 0%!")
+	print("====================")
+
+	# Stop the music
+	if conductor:
+		conductor.stop()
+
+	# TODO: Show battle failed UI with options to restart or quit
+	# For now, just fade to title after a delay
+	await get_tree().create_timer(2.0).timeout
+	fade_to_title()
 
 func change_to_title():
 	if is_instance_valid(GameManager):
@@ -597,29 +653,31 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 	else: return "OKAY"
 
 func process_hit(quality: String, note: Node, effect_pos: Vector2):
+	# Register hit with BattleManager (handles combo, groove, strength)
+	BattleManager.register_hit(quality)
+
 	var feedback_text = get_random_feedback_text(quality)
-	
+
 	match quality:
 		"PERFECT":
 			score += 100
-			combo += 1
+			combo = BattleManager.get_combo_current()
 			explode_note_at_position(note, "rainbow", 5, effect_pos)
 			show_feedback_at_position(feedback_text, effect_pos, false)
 			play_pecs_animation()
 			player_jump()
 		"GOOD":
 			score += 50
-			combo += 1
+			combo = BattleManager.get_combo_current()
 			explode_note_at_position(note, get_track_color(note.track_key), 3, effect_pos)
 			show_feedback_at_position(feedback_text, effect_pos, false)
 		"OKAY":
 			score += 25
-			combo += 1
+			combo = BattleManager.get_combo_current()
 			explode_note_at_position(note, get_track_color(note.track_key), 2, effect_pos)
 			show_feedback_at_position(feedback_text, effect_pos, false)
-	
-	if combo > max_combo:
-		max_combo = combo
+
+	max_combo = BattleManager.get_combo_max()
 
 func get_track_color(track_key: String) -> String:
 	match track_key:
@@ -662,6 +720,8 @@ func trainer_jump():
 		).set_delay(0.5)
 
 func process_miss():
+	# Register miss with BattleManager (handles combo reset, groove penalty, etc.)
+	BattleManager.register_hit("MISS")
 	combo = 0
 	trainer_jump()
 
