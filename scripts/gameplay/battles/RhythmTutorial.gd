@@ -78,6 +78,7 @@ var groove_bar: Control
 var combo_display: Label
 var xp_popup: Label
 var battle_results: Control
+var battle_failure: Control
 
 # ============================================================================
 # UNIVERSAL BAR/BEAT SYSTEM
@@ -216,10 +217,15 @@ func create_battle_ui():
 	xp_popup = xp_popup_scene.instantiate()
 	ui_layer.add_child(xp_popup)
 
-	# Battle results (hidden until battle completes)
+	# Battle results (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/game/hud/BattleResults.tscn")
 	battle_results = battle_results_scene.instantiate()
 	ui_layer.add_child(battle_results)
+
+	# Battle failure dialog (hidden until battle fails)
+	var battle_failure_scene = preload("res://scenes/ui/game/hud/BattleFailure.tscn")
+	battle_failure = battle_failure_scene.instantiate()
+	ui_layer.add_child(battle_failure)
 
 func load_level_data():
 	var file = FileAccess.open(level_data_path, FileAccess.READ)
@@ -505,94 +511,11 @@ func fade_to_title():
 
 func _on_battle_failed():
 	"""Called when groove reaches 0% - battle failure."""
-	print("=== BATTLE FAILED ===")
-	print("Groove reached 0%!")
-	print("====================")
-
 	# Stop the music
 	if conductor:
 		conductor.stop()
 
-	# Show battle failed dialog
-	show_battle_failed_dialog()
-
-func show_battle_failed_dialog():
-	"""Show modal dialog for battle failure."""
-	# Pause the game
-	get_tree().paused = true
-
-	# Create dialog overlay
-	var overlay = ColorRect.new()
-	overlay.color = Color(0, 0, 0, 0.8)
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.z_index = 1000
-	add_child(overlay)
-
-	# Create dialog panel
-	var panel = Panel.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-300, -200)
-	panel.size = Vector2(600, 400)
-	overlay.add_child(panel)
-
-	# Create VBox for content
-	var vbox = VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.add_theme_constant_override("separation", 20)
-	panel.add_child(vbox)
-
-	# Add spacer
-	var spacer1 = Control.new()
-	spacer1.custom_minimum_size = Vector2(0, 50)
-	vbox.add_child(spacer1)
-
-	# Title label
-	var title = Label.new()
-	title.text = "BATTLE FAILED!"
-	title.add_theme_font_size_override("font_size", 48)
-	title.add_theme_color_override("font_color", Color.RED)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(title)
-
-	# Message label
-	var message = Label.new()
-	message.text = "Your groove hit zero!\nWhat would you like to do?"
-	message.add_theme_font_size_override("font_size", 24)
-	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(message)
-
-	# Add spacer
-	var spacer2 = Control.new()
-	spacer2.custom_minimum_size = Vector2(0, 20)
-	vbox.add_child(spacer2)
-
-	# Button container
-	var button_container = HBoxContainer.new()
-	button_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	button_container.add_theme_constant_override("separation", 20)
-	vbox.add_child(button_container)
-
-	# Restart button
-	var restart_btn = Button.new()
-	restart_btn.text = "Restart"
-	restart_btn.custom_minimum_size = Vector2(150, 50)
-	restart_btn.add_theme_font_size_override("font_size", 24)
-	restart_btn.pressed.connect(func():
-		get_tree().paused = false
-		get_tree().reload_current_scene()
-	)
-	button_container.add_child(restart_btn)
-
-	# Quit button
-	var quit_btn = Button.new()
-	quit_btn.text = "Quit to Title"
-	quit_btn.custom_minimum_size = Vector2(150, 50)
-	quit_btn.add_theme_font_size_override("font_size", 24)
-	quit_btn.pressed.connect(func():
-		get_tree().paused = false
-		get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
-	)
-	button_container.add_child(quit_btn)
+	# BattleFailure dialog automatically shows via BattleManager.battle_failed signal
 
 func change_to_title():
 	if is_instance_valid(GameManager):

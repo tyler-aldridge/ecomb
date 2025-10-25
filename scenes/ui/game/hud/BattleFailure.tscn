@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv8qm5n7kypse"]
+
+[ext_resource type="Script" path="res://scripts/ui/game/hud/BattleFailure.gd" id="1_failure"]
+
+[node name="BattleFailure" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_failure")
+
+[node name="DialogOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="FailureDialog" type="ConfirmationDialog" parent="."]
+title = "BATTLE FAILED"
+initial_position = 2
+size = Vector2i(400, 150)
+dialog_text = "Battle Failed!
+Groove reached 0%"
+ok_button_text = "Restart"
+cancel_button_text = "Exit to Title"

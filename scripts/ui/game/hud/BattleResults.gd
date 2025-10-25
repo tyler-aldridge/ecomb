@@ -1,19 +1,17 @@
 extends Control
 
 # ============================================================================
-# BATTLE RESULTS - End-of-battle results screen
+# BATTLE RESULTS - End-of-battle SUCCESS screen
 # ============================================================================
-# Shows battle completion stats and level-up notifications
-# Connects to BattleManager.battle_completed signal
+# Shows detailed battle completion stats for SUCCESSFUL battles only:
+# - Hit breakdown (PERFECT, GOOD, OKAY, MISS counts)
+# - Total XP earned and awarded
+# - Max combo achieved
+# - Level up notifications
+# - Battle name and "You did it!" message
 #
-# DESIGN PATTERN:
-# This follows the same modal pause pattern as MainTitle's QuitDialog:
-# - Pauses the game with get_tree().paused = true
-# - Shows as modal overlay that blocks all other input
-# - TODO: Add sound effects for button interactions (hover, click) like QuitDialog
-# - CRITICAL DIFFERENCE: Unlike QuitDialog, this CANNOT be dismissed to return
-#   to gameplay. User MUST choose an action (Continue/Restart/Quit). There is
-#   no "Cancel" or ESC handler - the battle is over and must be acknowledged.
+# Connects to BattleManager.battle_completed signal
+# NOTE: Battle FAILURE uses a separate simple dialog (BattleFailure.gd)
 #
 # SCENE STRUCTURE:
 # BattleResults (Control) - this script
@@ -63,19 +61,16 @@ func _on_battle_completed(results: Dictionary):
 	show_results()
 
 func show_results():
-	"""Display the battle results."""
+	"""Display the battle results for successful completion."""
 	visible = true
 
 	# Pause the game
 	get_tree().paused = true
 
-	# Check if battle was completed or failed
-	var completed = battle_results.get("battle_completed", false)
-
-	# Update title
+	# Update title - Always success (failure uses BattleFailure dialog)
 	if title_label:
-		title_label.text = "BATTLE COMPLETE!" if completed else "BATTLE FAILED!"
-		title_label.modulate = Color.GREEN if completed else Color.RED
+		title_label.text = "YOU DID IT!"
+		title_label.modulate = Color.GREEN
 
 	# Update stats
 	if strength_earned_label:
@@ -84,7 +79,6 @@ func show_results():
 	if strength_awarded_label:
 		var awarded = battle_results.get("strength_awarded", 0)
 		strength_awarded_label.text = "Strength Awarded: %d" % awarded
-		strength_awarded_label.visible = completed
 
 	if max_combo_label:
 		max_combo_label.text = "Max Combo: %d" % battle_results.get("combo_max", 0)
@@ -107,9 +101,9 @@ func show_results():
 		# User will see level up in future implementation
 		level_up_label.visible = false
 
-	# Show restart button only if failed
+	# Hide restart button (only for success - failure has its own dialog)
 	if restart_button:
-		restart_button.visible = not completed
+		restart_button.visible = false
 
 func _on_continue_pressed():
 	"""Continue to next scene or return to title."""
