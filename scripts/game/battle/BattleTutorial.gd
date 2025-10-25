@@ -76,7 +76,7 @@ var hit_zone_indicator_nodes = []
 # Battle UI elements
 var groove_bar: Control
 var combo_display: Label
-var xp_gain: Label
+var xp_gain_display: Label
 var battle_results: Control
 var battle_failure: Control
 
@@ -213,9 +213,9 @@ func create_battle_ui():
 	ui_layer.add_child(combo_display)
 
 	# XP gain display (above combo display)
-	var xp_gain_scene = preload("res://scenes/ui/battle/XPGain.tscn")
-	xp_gain = xp_gain_scene.instantiate()
-	ui_layer.add_child(xp_gain)
+	var xp_gain_display_scene = preload("res://scenes/ui/battle/XPGainDisplay.tscn")
+	xp_gain_display = xp_gain_display_scene.instantiate()
+	ui_layer.add_child(xp_gain_display)
 
 	# Battle results menu (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/battle/BattleResults.tscn")

@@ -1,7 +1,7 @@
 {
   "battle_id": "battle_tutorial",
   "battle_level": 1,
-  "battle_type": "lessons",
+  "battle_type": "lesson",
   "groove_start": 50.0,
   "groove_miss_penalty": 10.0,
   "song_name": "DivineFoxPlay-152BPM",
