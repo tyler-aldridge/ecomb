@@ -26,6 +26,7 @@ grow_vertical = 2
 script = ExtResource("1_results")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+visible = false
 layer = 100
 
 [node name="Panel" type="Panel" parent="CanvasLayer"]

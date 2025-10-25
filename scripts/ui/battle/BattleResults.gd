@@ -40,12 +40,13 @@ extends Control
 var battle_results: Dictionary = {}
 
 func _ready():
-	# Hide by default
+	# Start hidden - will only show when explicitly called
 	visible = false
+	if canvas_layer:
+		canvas_layer.visible = false
 
-	# Connect to BattleManager
-	if BattleManager:
-		BattleManager.battle_completed.connect(_on_battle_completed)
+	# DO NOT auto-connect to BattleManager signal
+	# Results will be shown manually by the battle scene when appropriate
 
 	# Connect buttons
 	if continue_button:
@@ -55,16 +56,23 @@ func _ready():
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
 
-func _on_battle_completed(results: Dictionary):
-	"""Show battle results when battle completes SUCCESSFULLY."""
-	# Only show if battle was actually completed successfully
-	if results.get("battle_completed", false):
-		battle_results = results
-		show_results()
+func _exit_tree():
+	"""Clean up when scene is freed."""
+	# Ensure we disconnect any lingering signal connections if they exist
+	# (though we don't auto-connect anymore, this is a safety measure)
+	if BattleManager and BattleManager.battle_completed.is_connected(Callable(self, "_on_battle_completed")):
+		BattleManager.battle_completed.disconnect(Callable(self, "_on_battle_completed"))
+
+func show_battle_results(results: Dictionary):
+	"""Show battle results - called manually by battle scene at end."""
+	battle_results = results
+	show_results()
 
 func show_results():
 	"""Display the battle results for successful completion."""
 	visible = true
+	if canvas_layer:
+		canvas_layer.visible = true
 
 	# Pause the game
 	get_tree().paused = true

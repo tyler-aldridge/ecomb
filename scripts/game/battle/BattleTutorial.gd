@@ -489,31 +489,45 @@ func fade_to_title():
 	if BattleManager.is_battle_active():
 		results = BattleManager.end_battle()
 
-	if results.get("battle_completed", false):
+	var battle_succeeded = results.get("battle_completed", false)
+
+	if battle_succeeded:
 		# Battle completed successfully - award Strength (XP)
 		var strength_awarded = results.get("strength_awarded", 0)
 		GameManager.add_strength(strength_awarded)
 
-		# Record story battle completion
-		if results.get("battle_type", "") == "story":
+		# Record story/lesson battle completion
+		if results.get("battle_type", "") == "story" or results.get("battle_type", "") == "lesson":
 			var battle_id = results.get("battle_id", "")
 			var strength_total = results.get("strength_total", 0)
 			GameManager.record_story_battle_completion(battle_id, strength_total)
 
 		# Mark tutorial as completed
-		if results.get("battle_id", "") == "tutorial":
+		if results.get("battle_id", "") == "battle_tutorial":
 			GameManager.complete_tutorial()
 
-		# BattleResults UI automatically shows via BattleManager.battle_completed signal
-
+	# Fade to black
 	if not is_instance_valid(fade_overlay):
-		change_to_title()
+		if battle_succeeded and is_instance_valid(battle_results):
+			battle_results.show_battle_results(results)
+		else:
+			change_to_title()
 		return
+
 	fade_overlay.modulate.a = 0.0
 	var fade_tween = create_tween()
 	fade_tween.tween_property(fade_overlay, "modulate:a", 1.0, 2.0)
+
+	# Capture variables for lambda to avoid freed object errors
+	var succeeded = battle_succeeded
+	var results_copy = results.duplicate()
+	var br = battle_results
+
 	fade_tween.tween_callback(func():
-		if is_instance_valid(self):
+		# After fade to black, show BattleResults if succeeded, otherwise go to title
+		if succeeded and is_instance_valid(br):
+			br.show_battle_results(results_copy)
+		elif is_instance_valid(self):
 			change_to_title()
 	)
 
