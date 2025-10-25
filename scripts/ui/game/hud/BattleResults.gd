@@ -57,6 +57,9 @@ func show_results():
 	"""Display the battle results."""
 	visible = true
 
+	# Pause the game
+	get_tree().paused = true
+
 	# Check if battle was completed or failed
 	var completed = battle_results.get("battle_completed", false)
 
@@ -88,11 +91,12 @@ func show_results():
 	if miss_count_label:
 		miss_count_label.text = "MISS: %d" % hit_counts.get("MISS", 0)
 
-	# Check for level up
-	if level_up_label:
-		var player_level = GameManager.get_player_level()
-		level_up_label.text = "LEVEL UP! Now Level %d!" % player_level
-		level_up_label.visible = false  # TODO: Check if actually leveled up
+	# Check for level up (compare strength before and after)
+	if level_up_label and GameManager:
+		# The level up already happened in fade_to_title(), just check if we leveled
+		# We can't easily track this without storing old level, so hide for now
+		# User will see level up in future implementation
+		level_up_label.visible = false
 
 	# Show restart button only if failed
 	if restart_button:
@@ -100,14 +104,16 @@ func show_results():
 
 func _on_continue_pressed():
 	"""Continue to next scene or return to title."""
-	# TODO: Navigate to appropriate next scene
+	get_tree().paused = false
+	# For now, go to title. Later: navigate to overworld or next battle
 	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
 
 func _on_restart_pressed():
 	"""Restart the battle."""
-	# Reload current scene
+	get_tree().paused = false
 	get_tree().reload_current_scene()
 
 func _on_quit_pressed():
 	"""Quit to title screen."""
+	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")

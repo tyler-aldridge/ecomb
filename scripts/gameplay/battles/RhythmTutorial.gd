@@ -77,6 +77,7 @@ var hit_zone_indicator_nodes = []
 var groove_bar: Control
 var combo_display: Label
 var xp_popup: Label
+var battle_results: Control
 
 # ============================================================================
 # UNIVERSAL BAR/BEAT SYSTEM
@@ -201,19 +202,24 @@ func create_battle_ui():
 	add_child(ui_layer)
 
 	# Groove bar (full width at top)
-	var groove_bar_scene = preload("res://scenes/ui/battle/GrooveBar.tscn")
+	var groove_bar_scene = preload("res://scenes/ui/game/hud/GrooveBar.tscn")
 	groove_bar = groove_bar_scene.instantiate()
 	ui_layer.add_child(groove_bar)
 
 	# Combo display (center of screen, 313px from center)
-	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
+	var combo_display_scene = preload("res://scenes/ui/game/hud/ComboDisplay.tscn")
 	combo_display = combo_display_scene.instantiate()
 	ui_layer.add_child(combo_display)
 
 	# XP popup (above combo display)
-	var xp_popup_scene = preload("res://scenes/ui/battle/XPPopup.tscn")
+	var xp_popup_scene = preload("res://scenes/ui/game/hud/XPPopup.tscn")
 	xp_popup = xp_popup_scene.instantiate()
 	ui_layer.add_child(xp_popup)
+
+	# Battle results (hidden until battle completes)
+	var battle_results_scene = preload("res://scenes/ui/game/hud/BattleResults.tscn")
+	battle_results = battle_results_scene.instantiate()
+	ui_layer.add_child(battle_results)
 
 func load_level_data():
 	var file = FileAccess.open(level_data_path, FileAccess.READ)
@@ -484,14 +490,7 @@ func fade_to_title():
 		if results.get("battle_id", "") == "tutorial":
 			GameManager.complete_tutorial()
 
-		# TODO: Show battle results UI here
-		# For now, print results
-		print("=== BATTLE COMPLETE ===")
-		print("Strength Earned: ", results.get("strength_total", 0))
-		print("Strength Awarded: ", strength_awarded)
-		print("Max Combo: ", results.get("combo_max", 0))
-		print("Hit Counts: ", results.get("hit_counts", {}))
-		print("======================")
+		# BattleResults UI automatically shows via BattleManager.battle_completed signal
 
 	if not is_instance_valid(fade_overlay):
 		change_to_title()
@@ -762,18 +761,10 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 
 func process_hit(quality: String, note: Node, effect_pos: Vector2):
 	# Register hit with BattleManager (handles combo, groove, strength)
+	# XP popup automatically shows via BattleManager.hit_registered signal
 	BattleManager.register_hit(quality)
 
 	var feedback_text = get_random_feedback_text(quality)
-
-	# Get strength gained (with combo multiplier)
-	var base_strength = BattleManager.HIT_VALUES[quality]["strength"]
-	var combo_multiplier = BattleManager.get_combo_multiplier()
-	var strength_gain = int(base_strength * combo_multiplier)
-
-	# Show XP popup if XP was gained
-	if strength_gain > 0 and xp_popup:
-		xp_popup.show_xp(strength_gain, quality == "PERFECT")
 
 	match quality:
 		"PERFECT":

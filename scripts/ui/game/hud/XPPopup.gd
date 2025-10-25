@@ -3,6 +3,7 @@ extends Label
 # ============================================================================
 # XP POPUP - Shows XP gain floating text
 # ============================================================================
+# Connects to BattleManager.hit_registered signal
 # Displays "+5XP", "+10XP" etc.
 # - White text for GOOD/OKAY hits
 # - Rainbow text for PERFECT hits
@@ -28,6 +29,15 @@ func _ready():
 	# Start invisible
 	modulate.a = 0.0
 	scale = Vector2(0.5, 0.5)
+
+	# Connect to BattleManager signals
+	if BattleManager:
+		BattleManager.hit_registered.connect(_on_hit_registered)
+
+func _on_hit_registered(quality: String, strength_gain: int, groove_change: float):
+	"""Show XP popup when hit is registered."""
+	if strength_gain > 0:
+		show_xp(strength_gain, quality == "PERFECT")
 
 func show_xp(amount: int, perfect: bool = false):
 	"""Show XP popup with amount and color."""

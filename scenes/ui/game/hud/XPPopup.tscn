@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bmx7k4n8qxw2p"]
 
-[ext_resource type="Script" path="res://scripts/ui/battle/XPPopup.gd" id="1_xppopup"]
+[ext_resource type="Script" path="res://scripts/ui/game/hud/XPPopup.gd" id="1_xppopup"]
 
 [node name="XPPopup" type="Label"]
 anchors_preset = 8
