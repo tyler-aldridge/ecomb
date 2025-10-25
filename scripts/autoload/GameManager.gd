@@ -255,12 +255,6 @@ func get_player_hp() -> int:
 func get_player_max_hp() -> int:
 	return player_data.get("max_hp", 100)
 
-func get_player_strength() -> int:
-	return player_data.get("strength", 10)
-
-func get_player_groove() -> int:
-	return player_data.get("groove", 10)
-
 func is_tutorial_completed() -> bool:
 	return player_data.get("tutorial_completed", false)
 
