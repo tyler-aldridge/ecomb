@@ -1065,5 +1065,5 @@ func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_
 					if is_instance_valid(opponent_sprite) and opponent_sprite.sprite_frames:
 						if opponent_sprite.sprite_frames.has_animation("idle"):
 							opponent_sprite.play("idle")
-				, CONNECT_ONE_SHOT
+			, CONNECT_ONE_SHOT
 			)
