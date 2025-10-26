@@ -35,13 +35,11 @@ extends Control
 @onready var level_up_label: Label = $CanvasLayer/Panel/VBoxContainer/LevelUpLabel
 @onready var continue_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/ContinueButton
 @onready var restart_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/RestartButton
-@onready var quit_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/QuitButton
 
 # Sound effects
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
 @onready var success_sound: AudioStreamPlayer = $SuccessSound
 @onready var restart_sound: AudioStreamPlayer = $RestartSound
-@onready var cancel_sound: AudioStreamPlayer = $CancelSound
 
 var battle_results: Dictionary = {}
 
@@ -61,9 +59,6 @@ func _ready():
 	if restart_button:
 		restart_button.pressed.connect(_on_restart_pressed)
 		restart_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
-	if quit_button:
-		quit_button.pressed.connect(_on_quit_pressed)
-		quit_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 
 func _exit_tree():
 	"""Clean up when scene is freed."""
@@ -91,12 +86,12 @@ func show_results():
 		title_label.text = "YOU DID IT!"
 		title_label.modulate = Color.GREEN
 
-	# Update stats - show "Earned X of Total" format to avoid redundancy
-	var strength_total = battle_results.get("strength_total", 0)
+	# Update stats - show "Earned X of Y" where Y is max possible
 	var strength_awarded = battle_results.get("strength_awarded", 0)
+	var strength_max_possible = battle_results.get("strength_max_possible", 0)
 
 	if strength_earned_label:
-		strength_earned_label.text = "Earned %d of %d Strength" % [strength_awarded, strength_total]
+		strength_earned_label.text = "Earned %d of %d Strength" % [strength_awarded, strength_max_possible]
 
 	# Hide the redundant second label
 	if strength_awarded_label:
@@ -139,14 +134,5 @@ func _on_restart_pressed():
 	"""Restart the battle."""
 	if restart_sound:
 		restart_sound.play()
-	"""Restart the battle."""
 	get_tree().paused = false
 	get_tree().reload_current_scene()
-
-func _on_quit_pressed():
-	"""Quit to title screen."""
-	if cancel_sound:
-		cancel_sound.play()
-	"""Quit to title screen."""
-	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")

@@ -161,13 +161,19 @@ func _ready():
 		else:
 			push_error("Failed to load audio file: " + audio_path)
 
+	# Calculate max possible strength (assuming all PERFECT hits)
+	# PERFECT = 30 strength per note (from BattleManager.HIT_VALUES)
+	var total_notes = level_data.get("notes", []).size()
+	var max_strength = total_notes * 30  # 30 is PERFECT strength value
+
 	# Start battle with BattleManager
 	var battle_data = {
 		"battle_id": level_data.get("battle_id", ""),
 		"battle_level": level_data.get("battle_level", 1),
 		"battle_type": level_data.get("battle_type", "story"),
 		"groove_start": level_data.get("groove_start", 50.0),
-		"groove_miss_penalty": level_data.get("groove_miss_penalty", 10.0)
+		"groove_miss_penalty": level_data.get("groove_miss_penalty", 10.0),
+		"max_strength": max_strength
 	}
 	BattleManager.start_battle(battle_data)
 

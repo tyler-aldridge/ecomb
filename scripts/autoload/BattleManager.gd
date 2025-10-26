@@ -74,6 +74,7 @@ var hit_counts = {
 
 # Strength (XP) tracking
 var strength_total: int = 0
+var strength_max_possible: int = 0  # Maximum strength if all notes hit PERFECT
 
 # ============================================================================
 # BATTLE LIFECYCLE
@@ -89,6 +90,7 @@ func start_battle(battle_data: Dictionary):
 			- battle_type: String ("story", "lesson", or "random")
 			- groove_miss_penalty: float (optional, default 10.0)
 			- groove_start: float (optional, default 50.0)
+			- max_strength: int (optional, max possible strength from all PERFECT hits)
 	"""
 	battle_active = true
 	battle_id = battle_data.get("battle_id", "")
@@ -106,6 +108,7 @@ func start_battle(battle_data: Dictionary):
 	combo_max = 0
 	combo_multiplier = 1.0
 	strength_total = 0
+	strength_max_possible = battle_data.get("max_strength", 0)
 	hit_counts = {"PERFECT": 0, "GOOD": 0, "OKAY": 0, "MISS": 0}
 
 	# Emit initial state
@@ -138,6 +141,7 @@ func end_battle() -> Dictionary:
 		"battle_type": battle_type,
 		"strength_total": strength_total,
 		"strength_awarded": strength_awarded,
+		"strength_max_possible": strength_max_possible,
 		"combo_max": combo_max,
 		"hit_counts": hit_counts.duplicate(),
 		"battle_completed": battle_completed_successfully,

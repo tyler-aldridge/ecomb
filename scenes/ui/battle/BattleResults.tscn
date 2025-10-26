@@ -1,10 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://cr2mx8n5qbv7k"]
+[gd_scene load_steps=6 format=3 uid="uid://cr2mx8n5qbv7k"]
 
 [ext_resource type="Script" path="res://scripts/ui/battle/BattleResults.gd" id="1_results"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="2_hover"]
 [ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="3_success"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="4_restart"]
-[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="5_cancel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0, 0, 0, 0.85)
@@ -161,12 +160,6 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "Continue"
 
-[node name="QuitButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
-custom_minimum_size = Vector2(150, 60)
-layout_mode = 2
-theme_override_font_sizes/font_size = 36
-text = "Quit to Title"
-
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_hover")
 bus = &"SFX"
@@ -177,8 +170,4 @@ bus = &"SFX"
 
 [node name="RestartSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_restart")
-bus = &"SFX"
-
-[node name="CancelSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("5_cancel")
 bus = &"SFX"
