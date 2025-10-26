@@ -68,7 +68,7 @@ func _process(delta):
 			var wave_offset = sin(flag_wave_time) * 8.0
 			var wave_rotation = sin(flag_wave_time * 0.7) * 0.08
 			groove_label.rotation = wave_rotation
-			groove_label.position.y = 170.0 + wave_offset
+			groove_label.position.y = 145.0 + wave_offset
 
 			# Rainbow text color cycling
 			rainbow_time += delta * 3.0
@@ -82,7 +82,7 @@ func _process(delta):
 		# Reset label position and rotation when not full
 		if groove_label:
 			groove_label.rotation = 0.0
-			groove_label.position.y = 170.0
+			groove_label.position.y = 145.0
 			groove_label.modulate = Color.WHITE
 
 func _on_groove_changed(current_groove: float, max_groove: float):

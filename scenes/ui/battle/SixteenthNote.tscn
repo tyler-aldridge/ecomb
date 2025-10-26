@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://c7p2x9n4vwm5k"]
 
-[ext_resource type="Script" uid="uid://brue8os5ofsw2" path="res://scripts/ui/battle/Note.gd" id="1_note"]
+[ext_resource type="Script" path="res://scripts/ui/battle/Note.gd" id="1_note"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sixteenth"]
 size = Vector2(201, 100)
