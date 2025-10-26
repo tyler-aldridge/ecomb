@@ -45,6 +45,60 @@ const COMBO_THRESHOLDS = {
 const MAX_COMBO_MULTIPLIER = 3.0
 
 # ============================================================================
+# NOTE TYPE CONFIGURATION - Universal Note Definitions
+# ============================================================================
+
+# Note type configuration (scalable for future note types)
+# To add a new note type:
+#   1. Create scene file with appropriate size (e.g., HalfNote.tscn at 200x400)
+#   2. Add entry here with scene path, travel_time, and spawn_offset
+#   3. Add note type to level JSON files
+#   4. All hit detection, spawn positioning, and timing automatically scale!
+const NOTE_TYPE_CONFIG = {
+	"whole": {
+		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
+		"travel_time": 3.0,
+		"spawn_offset": 17  # 3.0s at 152 BPM = 15.2, but empirically needs 17
+	},
+	"half": {
+		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
+		"travel_time": 1.55,
+		"spawn_offset": 8
+	},
+	"quarter": {
+		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
+		"travel_time": 1.55,
+		"spawn_offset": 8  # 1.55s at 152 BPM = 7.85 ≈ 8 half-beats
+	},
+	"sixteenth": {
+		"scene": preload("res://scenes/ui/battle/SixteenthNote.tscn"),  # 200x100
+		"travel_time": 1.55,
+		"spawn_offset": 8  # Same as quarter for now
+	}
+}
+
+# ============================================================================
+# HIT ZONE CONFIGURATION - Universal Hit Zone Settings
+# ============================================================================
+
+# Hit zone height (universal for now, may become dynamic for SixteenthNote songs)
+const HITZONE_HEIGHT = 200.0
+
+# Hit zone lane positions (3 lanes at y=650)
+const HIT_ZONE_POSITIONS = {
+	"1": Vector2(660.0, 650.0),
+	"2": Vector2(860.0, 650.0),
+	"3": Vector2(1060.0, 650.0)
+}
+
+# Spawn settings
+const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
+
+# Lane overlap prevention
+const OVERLAP_PREVENTION_WINDOW = 6  # Half-beats window to prevent same-lane spawns
+var recent_note_spawns = {}  # {beat_position: lane} - tracks recent spawns to avoid overlap
+
+# ============================================================================
 # DIFFICULTY SYSTEM - Hit Detection Thresholds
 # ============================================================================
 
@@ -410,3 +464,162 @@ func get_combo_max() -> int:
 
 func get_hit_counts() -> Dictionary:
 	return hit_counts.duplicate()
+
+# ============================================================================
+# UNIVERSAL BATTLE MECHANICS - Hit Detection & Lane Selection
+# ============================================================================
+
+func get_hit_quality_for_note(_distance: float, note: Node, hit_zone_y: float) -> String:
+	"""
+	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
+
+	The HitZone is the source of truth. We measure how much of each HitZone edge
+	is exposed (not covered by the note) as a PERCENTAGE of HitZone height.
+	The WORST exposure determines quality.
+
+	Hit windows (percentage of HitZone height exposed):
+	- Perfect: ≤12.5% exposed (e.g., ≤25px for 200px HitZone, ≤12.5px for 100px HitZone)
+	- Good: 12.6-25% exposed (e.g., 26-50px for 200px, 13-25px for 100px)
+	- Okay: 25.1-75% exposed (e.g., 51-150px for 200px, 26-75px for 100px)
+	- Miss: ≥75.1% exposed OR completely outside
+
+	Examples (HitZone 200px):
+	- QuarterNote 20px off: 20px/200px = 10% exposed = PERFECT
+	- QuarterNote 40px off: 40px/200px = 20% exposed = GOOD
+	- WholeNote 40px off: 0px exposed (still fully covered) = PERFECT
+	- WholeNote 360px off: 60px/200px = 30% exposed = OKAY
+	"""
+	# Get note's actual height dynamically
+	var note_height = 200.0  # Default
+	if note.has_node("NoteTemplate"):
+		note_height = note.get_node("NoteTemplate").size.y
+
+	# Calculate edge positions
+	var note_top = note.position.y
+	var note_bottom = note.position.y + note_height
+	var hitzone_top = hit_zone_y
+	var hitzone_bottom = hit_zone_y + HITZONE_HEIGHT
+
+	# Check if completely outside (no overlap at all)
+	if note_bottom < hitzone_top or note_top > hitzone_bottom:
+		return "MISS"
+
+	# Calculate how much of HitZone edges are EXPOSED (not covered by note)
+	# If note_top > hitzone_top: HitZone's top edge is exposed
+	# If note_bottom < hitzone_bottom: HitZone's bottom edge is exposed
+	var top_exposure = max(0.0, note_top - hitzone_top)
+	var bottom_exposure = max(0.0, hitzone_bottom - note_bottom)
+
+	# The WORST exposure (largest gap) determines hit quality
+	var max_exposure = max(top_exposure, bottom_exposure)
+
+	# Get difficulty thresholds (global settings)
+	var difficulty = get_difficulty_thresholds()
+
+	# Calculate thresholds as percentages of HitZone height based on current difficulty
+	var perfect_threshold = HITZONE_HEIGHT * difficulty["perfect"]  # e.g., 12.5% of 200px = 25px
+	var good_threshold = HITZONE_HEIGHT * difficulty["good"]        # e.g., 25% of 200px = 50px
+	var okay_threshold = HITZONE_HEIGHT * difficulty["okay"]        # e.g., 75% of 200px = 150px
+
+	# Determine hit quality based on worst exposure
+	if max_exposure <= perfect_threshold:
+		return "PERFECT"
+	elif max_exposure <= good_threshold:
+		return "GOOD"
+	elif max_exposure <= okay_threshold:
+		return "OKAY"
+	else:
+		return "MISS"
+
+func choose_lane_avoiding_overlap(current_beat: int) -> String:
+	"""Choose a lane that avoids recent spawns to prevent visual overlap."""
+	var tracks = ["1", "2", "3"]
+	var available_tracks = tracks.duplicate()
+
+	# Remove lanes that have recent spawns within the overlap window
+	for beat_pos in recent_note_spawns.keys():
+		if abs(current_beat - beat_pos) <= OVERLAP_PREVENTION_WINDOW:
+			var used_lane = recent_note_spawns[beat_pos]
+			available_tracks.erase(used_lane)
+
+	# If all lanes are blocked, just use any lane
+	if available_tracks.size() == 0:
+		available_tracks = tracks.duplicate()
+
+	# Choose random from available lanes
+	var chosen_lane = available_tracks[randi() % available_tracks.size()]
+
+	# Record this spawn
+	recent_note_spawns[current_beat] = chosen_lane
+
+	# Clean up old entries to prevent dict from growing indefinitely
+	for beat_pos in recent_note_spawns.keys():
+		if abs(current_beat - beat_pos) > OVERLAP_PREVENTION_WINDOW * 2:
+			recent_note_spawns.erase(beat_pos)
+
+	return chosen_lane
+
+func create_fade_out_tween(note: Node, bpm: float) -> Tween:
+	"""
+	Create a universal fade out tween for hit notes.
+
+	Notes fade based on their beat duration:
+	- Whole notes: 4 beats
+	- Half notes: 2 beats
+	- Quarter notes: 1 beat
+	- Sixteenth notes: 0.5 beats
+
+	Notes continue falling by half their height during the fade.
+
+	Args:
+		note: The note node to fade
+		bpm: Current song BPM for timing calculation
+
+	Returns:
+		Tween configured for fade animation
+	"""
+	if not is_instance_valid(note):
+		return null
+
+	# Stop the note from moving
+	if note.has_method("stop_movement"):
+		note.stop_movement()
+
+	# Get note type from metadata to determine fade duration
+	var note_type = note.get_meta("note_type", "quarter")
+
+	# Map note type to beats
+	var beats_to_fade = 1.0  # Default: quarter note = 1 beat
+	match note_type:
+		"whole":
+			beats_to_fade = 4.0
+		"half":
+			beats_to_fade = 2.0
+		"quarter":
+			beats_to_fade = 1.0
+		"sixteenth":
+			beats_to_fade = 0.5
+
+	# Calculate fade duration in seconds based on BPM
+	var seconds_per_beat = 60.0 / bpm if bpm > 0 else 0.395  # Default 152 BPM
+	var fade_duration = beats_to_fade * seconds_per_beat
+
+	# Get note height to calculate fall distance (half of note height)
+	var note_height = 200.0
+	if note.has_node("NoteTemplate"):
+		note_height = note.get_node("NoteTemplate").size.y
+	var fall_distance = note_height / 2.0
+
+	var current_y = note.position.y
+
+	# Create fade out tween
+	var fade_tween = note.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.tween_property(note, "modulate:a", 0.0, fade_duration)
+	fade_tween.tween_property(note, "position:y", current_y + fall_distance, fade_duration)
+	fade_tween.chain().tween_callback(func():
+		if is_instance_valid(note):
+			note.queue_free()
+	)
+
+	return fade_tween

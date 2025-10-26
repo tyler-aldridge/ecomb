@@ -9,58 +9,28 @@ extends Node2D
 @export var level_data_path: String = "res://data/battles/BattleTutorial.json"
 var level_data: Dictionary = {}
 
-# Note type configuration (scalable for future note types)
-# To add a new note type:
-#   1. Create scene file with appropriate size (e.g., HalfNote.tscn at 200x400)
-#   2. Add entry here with scene path, travel_time, and spawn_offset
-#   3. Add note type to level JSON files
-#   4. All hit detection, spawn positioning, and timing automatically scale!
-const NOTE_TYPE_CONFIG = {
-	"whole": {
-		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
-		"travel_time": 3.0,
-		"spawn_offset": 17  # 3.0s at 152 BPM = 15.2, but empirically needs 17
-	},
-	"half": {
-		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
-		"travel_time": 1.55,
-		"spawn_offset": 8
-	},
-	"quarter": {
-		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
-		"travel_time": 1.55,
-		"spawn_offset": 8  # 1.55s at 152 BPM = 7.85 ≈ 8 half-beats
-	},
-	"sixteenth": {
-		"scene": preload("res://scenes/ui/battle/SixteenthNote.tscn"),  # 200x100
-		"travel_time": 1.55,
-		"spawn_offset": 8  # Same as quarter for now
-	}
-}
-
-var hit_zone_positions = {
-	"1": Vector2(660.0, 650.0),
-	"2": Vector2(860.0, 650.0),
-	"3": Vector2(1060.0, 650.0)
-}
-
-# Spawn settings
-const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
-
-# Hit detection difficulty - managed globally by BattleManager autoload
-# Access via: BattleManager.get_difficulty_thresholds()
-# Set via: BattleManager.set_difficulty("wimpy|casual|gymbro|meathead|gigachad")
-# Default: "gymbro" (respect the grind!)
+# ============================================================================
+# UNIVERSAL BATTLE MECHANICS - See BattleManager autoload
+# ============================================================================
+# The following are now universal across all battles (defined in BattleManager):
+# - NOTE_TYPE_CONFIG: Note scenes, travel times, spawn offsets
+# - HIT_ZONE_POSITIONS: Lane positions for all 3 tracks
+# - SPAWN_HEIGHT_ABOVE_TARGET: How far above screen notes spawn
+# - HITZONE_HEIGHT: HitZone height constant
+# - OVERLAP_PREVENTION_WINDOW: Lane overlap prevention window
+# - get_hit_quality_for_note(): Edge-based hit detection logic
+# - choose_lane_avoiding_overlap(): Lane selection with overlap prevention
+# - create_fade_out_tween(): Beat-based note fade animation
+# - Difficulty system: DIFFICULTY_PRESETS and thresholds
+#
+# To modify universal mechanics, edit scripts/autoload/BattleManager.gd
+# ============================================================================
 
 # Miss threshold for notes that passed HitZone completely
 const MISS_WINDOW = 150.0
 
 # Hit detection
 var active_notes = []
-
-# Track recent note spawns to prevent overlapping
-var recent_note_spawns = {}  # {beat_position: lane}
-const OVERLAP_PREVENTION_WINDOW = 6  # Half-beats window to prevent same-lane spawns
 
 # Scoring
 var score = 0
@@ -308,7 +278,7 @@ func convert_bar_beat_to_spawn_positions():
 				hit_position = bar_beat_to_position(bar, beat)
 
 			# Calculate spawn time by subtracting travel offset
-			var spawn_offset = NOTE_TYPE_CONFIG[note_type]["spawn_offset"] if NOTE_TYPE_CONFIG.has(note_type) else 8
+			var spawn_offset = BattleManager.NOTE_TYPE_CONFIG[note_type]["spawn_offset"] if BattleManager.NOTE_TYPE_CONFIG.has(note_type) else 8
 			var spawn_position = hit_position - spawn_offset
 
 			# Store spawn position for use in _on_beat
@@ -419,15 +389,15 @@ func delayed_fade_to_title():
 	fade_to_title()
 
 func spawn_note_by_type(note_type: String):
-	"""Unified note spawning function that uses NOTE_TYPE_CONFIG for scalability"""
-	if not NOTE_TYPE_CONFIG.has(note_type):
+	"""Unified note spawning function that uses BattleManager.NOTE_TYPE_CONFIG for scalability"""
+	if not BattleManager.NOTE_TYPE_CONFIG.has(note_type):
 		push_warning("Unknown note type '" + note_type + "', defaulting to 'quarter'")
 		note_type = "quarter"
 
-	var config = NOTE_TYPE_CONFIG[note_type]
+	var config = BattleManager.NOTE_TYPE_CONFIG[note_type]
 	var current_beat = conductor.song_position_in_beats if conductor else 0
-	var random_track = choose_lane_avoiding_overlap(current_beat)
-	var target_pos = hit_zone_positions[random_track]
+	var random_track = BattleManager.choose_lane_avoiding_overlap(current_beat)
+	var target_pos = BattleManager.HIT_ZONE_POSITIONS[random_track]
 
 	# Instantiate note from config
 	var note = config["scene"].instantiate()
@@ -441,7 +411,7 @@ func spawn_note_by_type(note_type: String):
 	# Calculate spawn position: center-align all notes with HitZone
 	# Adjust spawn position so note's CENTER aligns with HitZone center (not top/bottom edge)
 	var center_offset = (note_height - 200.0) / 2.0
-	var spawn_pos = Vector2(target_pos.x, target_pos.y - SPAWN_HEIGHT_ABOVE_TARGET - center_offset)
+	var spawn_pos = Vector2(target_pos.x, target_pos.y - BattleManager.SPAWN_HEIGHT_ABOVE_TARGET - center_offset)
 
 	note.z_index = 50
 	note.setup(random_track, spawn_pos, target_pos.y)
@@ -455,7 +425,7 @@ func create_hit_zone_indicators():
 
 	for i in range(3):
 		var zone_key = str(i + 1)
-		var pos = hit_zone_positions[zone_key]
+		var pos = BattleManager.HIT_ZONE_POSITIONS[zone_key]
 
 		var border = Line2D.new()
 		border.width = 5.0
@@ -588,38 +558,10 @@ func change_to_title():
 	if is_instance_valid(get_tree()):
 		get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
 
-func choose_lane_avoiding_overlap(current_beat: int) -> String:
-	"""Choose a lane that avoids recent spawns to prevent visual overlap."""
-	var tracks = ["1", "2", "3"]
-	var available_tracks = tracks.duplicate()
-
-	# Remove lanes that have recent spawns within the overlap window
-	for beat_pos in recent_note_spawns.keys():
-		if abs(current_beat - beat_pos) <= OVERLAP_PREVENTION_WINDOW:
-			var used_lane = recent_note_spawns[beat_pos]
-			available_tracks.erase(used_lane)
-
-	# If all lanes are blocked, just use any lane
-	if available_tracks.size() == 0:
-		available_tracks = tracks.duplicate()
-
-	# Choose random from available lanes
-	var chosen_lane = available_tracks[randi() % available_tracks.size()]
-
-	# Record this spawn
-	recent_note_spawns[current_beat] = chosen_lane
-
-	# Clean up old entries to prevent dict from growing indefinitely
-	for beat_pos in recent_note_spawns.keys():
-		if abs(current_beat - beat_pos) > OVERLAP_PREVENTION_WINDOW * 2:
-			recent_note_spawns.erase(beat_pos)
-
-	return chosen_lane
-
 func check_automatic_misses():
 	for note in active_notes:
 		if is_instance_valid(note):
-			var hit_zone_y = hit_zone_positions[note.track_key].y
+			var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[note.track_key].y
 			if note.position.y > hit_zone_y + MISS_WINDOW:
 				# Get note's actual height dynamically
 				var note_height = 200.0  # Default
@@ -632,7 +574,7 @@ func check_automatic_misses():
 				explode_note_at_position(note, "black", 2, effect_pos)
 				show_feedback_at_position(get_random_feedback_text("MISS"), effect_pos, true)
 				process_miss()
-				fade_out_note(note)
+				BattleManager.create_fade_out_tween(note, conductor.bpm)
 				active_notes.erase(note)
 
 func _unhandled_input(event):
@@ -661,7 +603,7 @@ func flash_hit_zone(track_key: String):
 		flash_tween.tween_property(hit_zone_node, "modulate", Color(1, 1, 1, 1), 0.1)
 
 func check_hit(track_key: String):
-	var hit_zone_y = hit_zone_positions[track_key].y
+	var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[track_key].y
 	var closest_note = null
 	var best_distance = 999999.0
 
@@ -699,7 +641,7 @@ func check_hit(track_key: String):
 			note_height = closest_note.get_node("NoteTemplate").size.y
 
 		# Pass note position and hitzone position for edge-based checking
-		var hit_quality = get_hit_quality_for_note(best_distance, closest_note, hit_zone_y)
+		var hit_quality = BattleManager.get_hit_quality_for_note(best_distance, closest_note, hit_zone_y)
 
 		# Calculate effect position at note's center (dynamic for any note size)
 		var effect_pos = closest_note.position + Vector2(100, note_height / 2.0)
@@ -711,73 +653,8 @@ func check_hit(track_key: String):
 		else:
 			process_hit(hit_quality, closest_note, effect_pos)
 
-		fade_out_note(closest_note)
+		BattleManager.create_fade_out_tween(closest_note, conductor.bpm)
 		active_notes.erase(closest_note)
-
-func get_hit_quality_for_note(_distance: float, note: Node, hit_zone_y: float) -> String:
-	"""
-	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
-
-	The HitZone is the source of truth. We measure how much of each HitZone edge
-	is exposed (not covered by the note) as a PERCENTAGE of HitZone height.
-	The WORST exposure determines quality.
-
-	Hit windows (percentage of HitZone height exposed):
-	- Perfect: ≤12.5% exposed (e.g., ≤25px for 200px HitZone, ≤12.5px for 100px HitZone)
-	- Good: 12.6-25% exposed (e.g., 26-50px for 200px, 13-25px for 100px)
-	- Okay: 25.1-75% exposed (e.g., 51-150px for 200px, 26-75px for 100px)
-	- Miss: ≥75.1% exposed OR completely outside
-
-	Examples (HitZone 200px):
-	- QuarterNote 20px off: 20px/200px = 10% exposed = PERFECT
-	- QuarterNote 40px off: 40px/200px = 20% exposed = GOOD
-	- WholeNote 40px off: 0px exposed (still fully covered) = PERFECT
-	- WholeNote 360px off: 60px/200px = 30% exposed = OKAY
-	"""
-	# Get note's actual height dynamically
-	var note_height = 200.0  # Default
-	if note.has_node("NoteTemplate"):
-		note_height = note.get_node("NoteTemplate").size.y
-
-	# HitZone is always 200px tall (will be dynamic in future for SixteenthNote songs)
-	const HITZONE_HEIGHT = 200.0
-
-	# Calculate edge positions
-	var note_top = note.position.y
-	var note_bottom = note.position.y + note_height
-	var hitzone_top = hit_zone_y
-	var hitzone_bottom = hit_zone_y + HITZONE_HEIGHT
-
-	# Check if completely outside (no overlap at all)
-	if note_bottom < hitzone_top or note_top > hitzone_bottom:
-		return "MISS"
-
-	# Calculate how much of HitZone edges are EXPOSED (not covered by note)
-	# If note_top > hitzone_top: HitZone's top edge is exposed
-	# If note_bottom < hitzone_bottom: HitZone's bottom edge is exposed
-	var top_exposure = max(0.0, note_top - hitzone_top)
-	var bottom_exposure = max(0.0, hitzone_bottom - note_bottom)
-
-	# The WORST exposure (largest gap) determines hit quality
-	var max_exposure = max(top_exposure, bottom_exposure)
-
-	# Get difficulty thresholds from BattleManager (global settings)
-	var difficulty = BattleManager.get_difficulty_thresholds()
-
-	# Calculate thresholds as percentages of HitZone height based on current difficulty
-	var perfect_threshold = HITZONE_HEIGHT * difficulty["perfect"]  # e.g., 12.5% of 200px = 25px
-	var good_threshold = HITZONE_HEIGHT * difficulty["good"]        # e.g., 25% of 200px = 50px
-	var okay_threshold = HITZONE_HEIGHT * difficulty["okay"]        # e.g., 75% of 200px = 150px
-
-	# Determine quality based on maximum edge exposure
-	if max_exposure <= perfect_threshold:
-		return "PERFECT"
-	elif max_exposure <= good_threshold:
-		return "GOOD"
-	elif max_exposure <= okay_threshold:
-		return "OKAY"
-	else:
-		return "MISS"  # Too much of HitZone exposed
 
 func process_hit(quality: String, note: Node, effect_pos: Vector2):
 	# Register hit with BattleManager (handles combo, groove, strength)
@@ -965,47 +842,3 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 			lbl.queue_free()
 	).set_delay(1.0)
 
-func fade_out_note(note: Node):
-	if is_instance_valid(note):
-		# Stop the note from moving
-		if note.has_method("stop_movement"):
-			note.stop_movement()
-
-		# Get note type from metadata to determine fade duration
-		var note_type = note.get_meta("note_type", "quarter")
-
-		# Map note type to beats
-		var beats_to_fade = 1.0  # Default: quarter note = 1 beat
-		match note_type:
-			"whole":
-				beats_to_fade = 4.0
-			"half":
-				beats_to_fade = 2.0
-			"quarter":
-				beats_to_fade = 1.0
-			"sixteenth":
-				beats_to_fade = 0.5
-
-		# Calculate fade duration in seconds based on BPM
-		var seconds_per_beat = 60.0 / conductor.bpm if conductor else 0.395  # Default 152 BPM
-		var fade_duration = beats_to_fade * seconds_per_beat
-
-		# Get note height to calculate fall distance (half of note height)
-		var note_height = 200.0
-		if note.has_node("NoteTemplate"):
-			note_height = note.get_node("NoteTemplate").size.y
-		var fall_distance = note_height / 2.0
-
-		# Capture note in local variable for lambda
-		var n = note
-		var current_y = note.position.y
-
-		# Fade out and continue falling
-		var fade_tween = create_tween()
-		fade_tween.set_parallel(true)
-		fade_tween.tween_property(n, "modulate:a", 0.0, fade_duration)
-		fade_tween.tween_property(n, "position:y", current_y + fall_distance, fade_duration)
-		fade_tween.chain().tween_callback(func():
-			if is_instance_valid(n):
-				n.queue_free()
-		)
