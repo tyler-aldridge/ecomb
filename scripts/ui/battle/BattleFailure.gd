@@ -47,8 +47,8 @@ func _ready():
 	dialog.unresizable = true
 
 	# Connect dialog signals
-	dialog.confirmed.connect(_on_restart_confirmed)
-	dialog.canceled.connect(_on_exit_confirmed)
+	dialog.confirmed.connect(_on_exit_confirmed)
+	dialog.canceled.connect(_on_restart_confirmed)
 
 	# Connect hover sounds to dialog buttons (deferred to allow dialog to initialize)
 	call_deferred("_connect_dialog_button_sounds")

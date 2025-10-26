@@ -633,10 +633,13 @@ func check_hit(track_key: String):
 			BattleManager.explode_note_at_position(closest_note, "black", 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 			process_miss()
+			# Use fast black fade for misses
+			BattleManager.create_miss_fade_tween(closest_note)
 		else:
 			process_hit(hit_quality, closest_note, effect_pos)
+			# Use normal fade for hits
+			BattleManager.create_fade_out_tween(closest_note, conductor.bpm)
 
-		BattleManager.create_fade_out_tween(closest_note, conductor.bpm)
 		active_notes.erase(closest_note)
 
 func process_hit(quality: String, note: Node, effect_pos: Vector2):

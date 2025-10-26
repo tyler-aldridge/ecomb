@@ -1,38 +1,17 @@
-[gd_scene load_steps=4 format=3 uid="uid://bvt8qm3n6yprd"]
+[gd_scene load_steps=2 format=3 uid="uid://bvt8qm3n6yprd"]
 
 [ext_resource type="Script" path="res://scripts/ui/battle/GrooveBar.gd" id="1_groove"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
-bg_color = Color(0, 0, 0, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_label_bg"]
-bg_color = Color(0, 0, 0, 0.8)
-content_margin_left = 10.0
-content_margin_top = 5.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-
-[sub_resource type="Gradient" id="Gradient_rainbow"]
-offsets = PackedFloat32Array(0, 0.2, 0.4, 0.6, 0.8, 1)
-colors = PackedColorArray(1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1)
-
 [node name="GrooveBar" type="Control"]
+z_index = 100
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
 offset_top = 0.0
 offset_bottom = 150.0
 grow_horizontal = 2
+mouse_filter = 2
 script = ExtResource("1_groove")
-
-[node name="Background" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -41,6 +20,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
@@ -48,23 +28,33 @@ theme_override_constants/margin_bottom = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 15
 
 [node name="TopSpacer" type="Control" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 15)
 layout_mode = 2
+mouse_filter = 2
 
 [node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 50
 text = "Groove Meter"
 horizontal_alignment = 1
 
-[node name="ProgressBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
+[node name="BarContainer" type="Control" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
-size_flags_vertical = 3
-max_value = 100.0
-value = 50.0
-show_percentage = false
+mouse_filter = 2
+
+[node name="GrooveBarFill" type="ColorRect" parent="MarginContainer/VBoxContainer/BarContainer"]
+layout_mode = 0
+anchor_top = 0.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 960.0
+offset_bottom = 0.0
+mouse_filter = 2

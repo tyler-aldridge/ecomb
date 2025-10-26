@@ -59,9 +59,11 @@ func _process(_delta):
 
 func play_popup_animation():
 	"""Animate the popup: scale in, float up, fade out."""
-	# Always start from same position (0,0 is player sprite center)
-	position = Vector2(0, 0)
-	var float_distance = -80.0  # Float up 80px
+	# Always start from base position (set by BattleManager, typically Vector2(0, -150))
+	# Store starting Y position to float up from there
+	var start_y = position.y
+	var float_up_distance = 80.0  # Float up 80px
+	var target_y = start_y - float_up_distance  # Move up (negative direction)
 
 	var tween = create_tween()
 	tween.set_parallel(true)
@@ -76,13 +78,13 @@ func play_popup_animation():
 
 	# Float up and fade out
 	tween.set_parallel(true)
-	tween.tween_property(self, "position:y", float_distance, 0.8).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "position:y", target_y, 0.8).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "modulate:a", 0.0, 0.5).set_delay(0.3)
 
-	# Clean up after animation - reset to original position
+	# Clean up after animation - reset to starting position
 	tween.chain()
 	tween.tween_callback(func():
-		position = Vector2(0, 0)
+		position.y = start_y  # Reset Y to starting position
 		scale = Vector2(0.5, 0.5)
 		color_index = 0.0
 	)

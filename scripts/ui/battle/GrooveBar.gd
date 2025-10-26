@@ -3,105 +3,60 @@ extends Control
 # ============================================================================
 # GROOVE BAR - Universal Battle Health System
 # ============================================================================
-# Displays the current groove percentage as a health bar
-# Connects to BattleManager.groove_changed signal
-#
-# SCENE STRUCTURE (create in Godot editor):
-# GrooveBar (Control) - this script
-# ├─ Background (Panel or ColorRect)
-# ├─ ProgressBar (ProgressBar)
-# │   └─ Label (Label) - shows percentage "75%"
-# └─ Title (Label) - shows "GROOVE"
-#
-# STYLING NOTES:
-# - ProgressBar should have custom theme for colors
-# - Green when > 50%, Yellow when 25-50%, Red when < 25%
-# - Add visual effects for low groove warning
+# Displays groove as a rainbow-filled bar with curved right edge
+# - No background (transparent)
+# - Bar originates from left, curved right side
+# - Rainbow lava lamp fill
+# - Empty space is transparent
+# - Animates growth and shrinkage
+# - Z-indexed to top
 
-@onready var progress_bar: ProgressBar = $MarginContainer/VBoxContainer/ProgressBar
-@onready var title_label: Label = $MarginContainer/VBoxContainer/Title
+@onready var bar_fill: ColorRect = $MarginContainer/VBoxContainer/BarContainer/GrooveBarFill
+@onready var bar_container: Control = $MarginContainer/VBoxContainer/BarContainer
 
-var lava_shader: Shader
-var lava_material: ShaderMaterial
-var shader_rect: ColorRect
+var groove_shader: Shader
+var groove_material: ShaderMaterial
+var current_percentage: float = 50.0
+var max_bar_width: float = 1920.0
 
 func _ready():
 	# Connect to BattleManager signals
 	if BattleManager:
 		BattleManager.groove_changed.connect(_on_groove_changed)
 
-	# Initialize progress bar
-	if progress_bar:
-		progress_bar.min_value = 0
-		progress_bar.max_value = 100
-		progress_bar.value = 50
+	# Wait for layout to complete
+	await get_tree().process_frame
 
-		# Hide the ProgressBar's native rendering completely
-		var invisible_bg = StyleBoxEmpty.new()
-		progress_bar.add_theme_stylebox_override("background", invisible_bg)
-		progress_bar.add_theme_stylebox_override("fill", invisible_bg)
+	# Get max width from screen size
+	max_bar_width = get_viewport_rect().size.x
 
-		# Wait for size to be available before creating shader
-		await get_tree().process_frame
+	# Load and apply groove bar shader
+	groove_shader = load("res://assets/shaders/groove_bar.gdshader")
+	if groove_shader and bar_fill:
+		groove_material = ShaderMaterial.new()
+		groove_material.shader = groove_shader
+		groove_material.set_shader_parameter("speed", 0.3)
+		groove_material.set_shader_parameter("curve_radius", 30.0)
+		bar_fill.material = groove_material
 
-		# Create grey background layer (for empty portion)
-		var grey_bg = ColorRect.new()
-		grey_bg.name = "GreyBackground"
-		grey_bg.color = Color(0.3, 0.3, 0.3, 1)
-		grey_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		progress_bar.add_child(grey_bg)
-		grey_bg.anchor_left = 0.0
-		grey_bg.anchor_top = 0.0
-		grey_bg.anchor_right = 1.0
-		grey_bg.anchor_bottom = 1.0
-		grey_bg.offset_left = 0.0
-		grey_bg.offset_top = 0.0
-		grey_bg.offset_right = 0.0
-		grey_bg.offset_bottom = 0.0
-		grey_bg.z_index = -2
-
-		# Load lava lamp shader from file
-		lava_shader = load("res://assets/shaders/lava_lamp.gdshader")
-		if lava_shader:
-			lava_material = ShaderMaterial.new()
-			lava_material.shader = lava_shader
-			lava_material.set_shader_parameter("use_rainbow", true)  # Always rainbow
-			lava_material.set_shader_parameter("speed", 0.3)
-
-			# Create a ColorRect with shader for the filled portion
-			shader_rect = ColorRect.new()
-			shader_rect.name = "LavaEffect"
-			shader_rect.material = lava_material
-			shader_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-			# Add as child of progress bar
-			progress_bar.add_child(shader_rect)
-			shader_rect.anchor_left = 0.0
-			shader_rect.anchor_top = 0.0
-			shader_rect.anchor_right = 0.0
-			shader_rect.anchor_bottom = 1.0
-			shader_rect.offset_left = 0.0
-			shader_rect.offset_top = 0.0
-			shader_rect.offset_right = progress_bar.size.x * 0.5  # Start at 50%
-			shader_rect.offset_bottom = 0.0
-			shader_rect.z_index = -1
+		# Set initial width to 50% (starting groove)
+		var initial_width = max_bar_width * 0.5
+		bar_fill.offset_right = initial_width
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
-	if not progress_bar:
+	if not bar_fill:
 		return
 
 	var percentage = (current_groove / max_groove) * 100.0 if max_groove > 0 else 0.0
-	progress_bar.value = percentage
+	current_percentage = percentage
 
-	# Animate resize of shader rect to show fill effect (rainbow fills from left)
-	if shader_rect:
-		var bar_width = progress_bar.size.x
-		var fill_width = bar_width * (percentage / 100.0)
+	# Calculate target width based on percentage
+	var target_width = max_bar_width * (percentage / 100.0)
 
-		# Animate the width change
-		var tween = create_tween()
-		tween.tween_property(shader_rect, "offset_right", fill_width, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	# Animate the width change with smooth easing
+	var tween = create_tween()
+	tween.tween_property(bar_fill, "offset_right", target_width, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 
 	# Play warning animation if low
 	if percentage < 25.0:
@@ -109,7 +64,7 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 
 func play_low_groove_warning():
 	"""Play warning animation when groove is low."""
-	# Create a pulsing effect on the border
+	# Create a pulsing effect
 	var tween = create_tween()
 	tween.set_loops(2)
 	tween.tween_property(self, "modulate:a", 0.7, 0.2)

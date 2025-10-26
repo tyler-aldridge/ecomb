@@ -32,8 +32,8 @@ size = Vector2i(600, 375)
 max_size = Vector2i(1920, 1080)
 dialog_text = "You gassed out! Respect for the effort, though."
 dialog_autowrap = true
-ok_button_text = "Restart"
-cancel_button_text = "Exit to Title"
+ok_button_text = "Exit to Title"
+cancel_button_text = "Restart"
 
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_hover")
