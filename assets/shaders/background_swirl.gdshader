@@ -1,9 +1,9 @@
 shader_type canvas_item;
 
-// Slow-moving swirling background shader
-// Dark purples, reds, blues for visual interest without affecting white text contrast
+// Vaporwave-style swirling background shader
+// Bright shifting colors: pinks, purples, cyans, magentas
 
-uniform float speed = 0.15;
+uniform float speed = 0.5;  // Faster movement
 
 // Noise function for organic movement
 float noise(vec2 p) {
@@ -39,21 +39,26 @@ float fbm(vec2 p) {
     return value;
 }
 
-// Color palette - dark purples, reds, blues
-vec3 get_color(float t) {
-    // Three color stops for smooth transitions
-    vec3 color1 = vec3(0.15, 0.05, 0.25);  // Dark purple
-    vec3 color2 = vec3(0.2, 0.05, 0.15);   // Dark red-purple
-    vec3 color3 = vec3(0.05, 0.1, 0.3);    // Dark blue
+// Vaporwave color palette - bright pinks, purples, cyans
+vec3 get_vaporwave_color(float t) {
+    // Vaporwave colors cycling through the spectrum
+    vec3 color1 = vec3(0.3, 0.15, 0.5);   // Deep purple
+    vec3 color2 = vec3(0.5, 0.1, 0.4);    // Magenta
+    vec3 color3 = vec3(0.1, 0.3, 0.6);    // Cyan-blue
+    vec3 color4 = vec3(0.4, 0.15, 0.5);   // Purple-pink
 
-    // Create smooth color transitions
-    float step1 = smoothstep(0.0, 0.5, t);
-    float step2 = smoothstep(0.5, 1.0, t);
+    // Cycle through colors
+    float pos = fract(t + TIME * 0.05) * 4.0;
 
-    vec3 mix1 = mix(color1, color2, step1);
-    vec3 mix2 = mix(color2, color3, step2);
-
-    return mix(mix1, mix2, step2);
+    if (pos < 1.0) {
+        return mix(color1, color2, pos);
+    } else if (pos < 2.0) {
+        return mix(color2, color3, pos - 1.0);
+    } else if (pos < 3.0) {
+        return mix(color3, color4, pos - 2.0);
+    } else {
+        return mix(color4, color1, pos - 3.0);
+    }
 }
 
 void fragment() {
@@ -61,9 +66,9 @@ void fragment() {
     float time = TIME * speed;
 
     // Create multiple layers of swirling patterns at different scales
-    vec2 offset1 = vec2(cos(time * 0.3) * 0.3, sin(time * 0.2) * 0.3);
-    vec2 offset2 = vec2(sin(time * 0.4) * 0.5, cos(time * 0.3) * 0.5);
-    vec2 offset3 = vec2(cos(time * 0.5) * 0.2, sin(time * 0.4) * 0.2);
+    vec2 offset1 = vec2(cos(time * 0.5) * 0.3, sin(time * 0.4) * 0.3);
+    vec2 offset2 = vec2(sin(time * 0.6) * 0.5, cos(time * 0.5) * 0.5);
+    vec2 offset3 = vec2(cos(time * 0.7) * 0.2, sin(time * 0.6) * 0.2);
 
     // Combine noise layers for swirling effect
     float n1 = fbm(uv * 2.0 + offset1);
@@ -73,15 +78,15 @@ void fragment() {
     // Blend noise layers
     float noise_val = (n1 * 0.5 + n2 * 0.3 + n3 * 0.2);
 
-    // Add some slow rotation effect
-    float rotation = sin(time * 0.5 + uv.x * 2.0) * 0.5 + 0.5;
-    noise_val = mix(noise_val, rotation, 0.3);
+    // Add spiral rotation for more movement
+    float rotation = atan(uv.y - 0.5, uv.x - 0.5) / 6.28318;
+    noise_val = mix(noise_val, rotation + time * 0.1, 0.4);
 
-    // Get color from palette
-    vec3 color = get_color(noise_val);
+    // Get vaporwave colors
+    vec3 color = get_vaporwave_color(noise_val);
 
-    // Add slight brightness variation for depth
-    float brightness = 0.8 + noise_val * 0.4;
+    // Add brightness variation for depth (brighter overall)
+    float brightness = 1.0 + noise_val * 0.3;
     color *= brightness;
 
     COLOR = vec4(color, 1.0);

@@ -87,8 +87,8 @@ const HITZONE_HEIGHT = 200.0
 # Hit zone lane positions (3 lanes at y=650)
 const HIT_ZONE_POSITIONS = {
 	"1": Vector2(660.0, 650.0),
-	"2": Vector2(885.0, 650.0),
-	"3": Vector2(1110.0, 650.0)
+	"2": Vector2(910.0, 650.0),
+	"3": Vector2(1160.0, 650.0)
 }
 
 # Spawn settings
@@ -633,7 +633,7 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	Universal setup for Combo and XP displays.
 
 	This ensures ALL battles have consistent positioning and behavior for:
-	- Combo display (50px below HitZones, centered, 100px font, hidden when 0)
+	- Combo display (centered between HitZones and bottom edge, 100px font, hidden when 0)
 	- XP display (on top of Player sprite, white, 100px font)
 
 	Args:
@@ -648,22 +648,23 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	"""
 	var displays = {}
 
-	# Combo Display - 50px below HitZones, centered
+	# Combo Display - centered between HitZones and bottom edge
 	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
 	var combo_display = combo_display_scene.instantiate()
 
 	# Add to UI layer (not player sprite)
 	ui_layer.add_child(combo_display)
 
-	# Position 50px below HitZones (HitZones are at Y=650-850, so combo at Y=900)
+	# Position centered between HitZones (bottom at Y=850) and screen bottom (Y=1080)
+	# Center: (850 + 1080) / 2 = 965
 	combo_display.anchor_left = 0.5
 	combo_display.anchor_top = 0.0
 	combo_display.anchor_right = 0.5
 	combo_display.anchor_bottom = 0.0
 	combo_display.offset_left = -200.0  # Half of 400px width to center
-	combo_display.offset_top = 900.0    # 50px below HitZones (850 + 50)
+	combo_display.offset_top = 965.0    # Centered between HitZones and bottom
 	combo_display.offset_right = 200.0
-	combo_display.offset_bottom = 962.5  # 900 + 62.5 (half of 125px height at 100px font)
+	combo_display.offset_bottom = 1027.5  # 965 + 62.5 (half of 125px height at 100px font)
 
 	# Start hidden (will show when combo > 0)
 	combo_display.visible = false

@@ -171,8 +171,16 @@ func apply_background_shader():
 		if shader:
 			var material = ShaderMaterial.new()
 			material.shader = shader
-			material.set_shader_parameter("speed", 0.15)
+			material.set_shader_parameter("speed", 0.5)
 			background.material = material
+
+	# Apply color invert shader to opponent
+	if opponent_sprite:
+		var invert_shader = load("res://assets/shaders/color_invert.gdshader")
+		if invert_shader:
+			var invert_material = ShaderMaterial.new()
+			invert_material.shader = invert_shader
+			opponent_sprite.material = invert_material
 
 func _exit_tree():
 	"""Clean up tweens to prevent lambda capture errors when scene is freed."""

@@ -19,7 +19,6 @@ extends Control
 # - Add visual effects for low groove warning
 
 @onready var progress_bar: ProgressBar = $MarginContainer/VBoxContainer/ProgressBar
-@onready var percentage_label: Label = $MarginContainer/VBoxContainer/ProgressBar/Label
 @onready var title_label: Label = $MarginContainer/VBoxContainer/Title
 
 var lava_shader: Shader
@@ -37,6 +36,18 @@ func _ready():
 		progress_bar.max_value = 100
 		progress_bar.value = 50
 
+		# Set progress bar background to grey, fill to transparent
+		var grey_bg = StyleBoxFlat.new()
+		grey_bg.bg_color = Color(0.3, 0.3, 0.3, 1)  # Grey for empty portion
+		progress_bar.add_theme_stylebox_override("background", grey_bg)
+
+		var transparent_fill = StyleBoxFlat.new()
+		transparent_fill.bg_color = Color(0, 0, 0, 0)
+		progress_bar.add_theme_stylebox_override("fill", transparent_fill)
+
+		# Wait for size to be available before creating shader
+		await get_tree().process_frame
+
 		# Load lava lamp shader from file
 		lava_shader = load("res://assets/shaders/lava_lamp.gdshader")
 		if lava_shader:
@@ -53,21 +64,15 @@ func _ready():
 
 			# Add as child of progress bar
 			progress_bar.add_child(shader_rect)
-			shader_rect.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+			shader_rect.anchor_left = 0.0
 			shader_rect.anchor_top = 0.0
+			shader_rect.anchor_right = 0.0
 			shader_rect.anchor_bottom = 1.0
+			shader_rect.offset_left = 0.0
 			shader_rect.offset_top = 0.0
+			shader_rect.offset_right = progress_bar.size.x * 0.5  # Start at 50%
 			shader_rect.offset_bottom = 0.0
 			shader_rect.z_index = -1  # Behind the percentage label
-
-			# Set progress bar background to grey, fill to transparent
-			var grey_bg = StyleBoxFlat.new()
-			grey_bg.bg_color = Color(0.3, 0.3, 0.3, 1)  # Grey for empty portion
-			progress_bar.add_theme_stylebox_override("background", grey_bg)
-
-			var transparent_fill = StyleBoxFlat.new()
-			transparent_fill.bg_color = Color(0, 0, 0, 0)
-			progress_bar.add_theme_stylebox_override("fill", transparent_fill)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -77,16 +82,14 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 	var percentage = (current_groove / max_groove) * 100.0 if max_groove > 0 else 0.0
 	progress_bar.value = percentage
 
-	# Update percentage label
-	if percentage_label:
-		percentage_label.text = "%d%%" % int(percentage)
-
-	# Resize shader rect to show fill effect (rainbow fills from left)
+	# Animate resize of shader rect to show fill effect (rainbow fills from left)
 	if shader_rect:
-		await get_tree().process_frame  # Wait for layout to update
 		var bar_width = progress_bar.size.x
 		var fill_width = bar_width * (percentage / 100.0)
-		shader_rect.size.x = fill_width
+
+		# Animate the width change
+		var tween = create_tween()
+		tween.tween_property(shader_rect, "offset_right", fill_width, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 
 	# Play warning animation if low
 	if percentage < 25.0:
