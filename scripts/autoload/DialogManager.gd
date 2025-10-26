@@ -31,34 +31,55 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 	if text_node:
 		# Set the text
 		_set_text(text_node, text)
-		
-		# Calculate desired width based on text length
+
+		# Calculate desired width based on text length and character position
+		# Side dialogs (opponent/player) should be narrower to avoid blocking gameplay
 		var char_count = text.length()
 		var estimated_width = char_count * 15
-		var min_width = 400
-		var max_width = get_viewport().get_visible_rect().size.x * 0.8
+		var min_width = 300
+		var max_width = 600 if (_character == "opponent" or _character == "player") else get_viewport().get_visible_rect().size.x * 0.8
 		var desired_width = clamp(estimated_width + 60, min_width, max_width)
-		
+
 		# Set the size of the main dialog container - let the children follow
 		current_dialog.size.x = desired_width
-		
-		# If the text is very long, allow wrapping and increase height
-		if estimated_width > max_width - 60:
-			text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			current_dialog.size.y = 120  # Taller for wrapped text
-		else:
-			text_node.autowrap_mode = TextServer.AUTOWRAP_OFF
-			current_dialog.size.y = 80   # Standard height
+
+		# Enable text wrapping for better readability
+		text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+		# Calculate height dynamically based on text length
+		# Estimate lines needed: char_count / chars_per_line
+		var chars_per_line = (desired_width - 100) / 12  # Rough estimate
+		var estimated_lines = ceil(float(char_count) / chars_per_line)
+		var line_height = 25  # Approximate height per line
+		var base_height = 60  # Padding
+		var calculated_height = base_height + (estimated_lines * line_height)
+		current_dialog.size.y = clamp(calculated_height, 80, 200)
 	
 	# Wait for the dialog to process its new size
 	await get_tree().process_frame
-	
-	# Center the dialog at the top of the screen
+
+	# Position based on character speaking
 	var viewport_size = get_viewport().get_visible_rect().size
-	var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
-	var top_margin = 300.0
-	
-	current_dialog.position = Vector2(center_x, top_margin)
+	var dialog_pos: Vector2
+
+	if _character == "opponent":
+		# Position on right side near opponent sprite
+		# Place dialog to the right and above HitZones (which are at Y=650-850)
+		var right_x = viewport_size.x - current_dialog.size.x - 100  # 100px margin from right
+		var top_y = 200.0  # Above HitZones, below GrooveBar (which ends at ~150px)
+		dialog_pos = Vector2(right_x, top_y)
+	elif _character == "player":
+		# Position on left side near player sprite
+		var left_x = 100.0  # 100px margin from left
+		var top_y = 200.0  # Above HitZones
+		dialog_pos = Vector2(left_x, top_y)
+	else:
+		# Default: center at top
+		var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
+		var top_margin = 300.0
+		dialog_pos = Vector2(center_x, top_margin)
+
+	current_dialog.position = dialog_pos
 	
 	# Reset anchors to ensure proper positioning
 	current_dialog.anchor_left = 0.0
