@@ -51,7 +51,7 @@ theme_override_constants/separation = 5
 [node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 100
+theme_override_font_sizes/font_size = 50
 text = "Groove Meter"
 horizontal_alignment = 1
 
@@ -73,7 +73,7 @@ grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 100
+theme_override_font_sizes/font_size = 50
 text = "50%"
 horizontal_alignment = 1
 vertical_alignment = 1

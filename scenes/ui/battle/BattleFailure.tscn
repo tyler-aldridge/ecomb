@@ -34,6 +34,7 @@ dialog_text = "You gassed out! Respect for the effort, though."
 dialog_autowrap = true
 ok_button_text = "Restart"
 cancel_button_text = "Exit to Title"
+theme_override_constants/buttons_separation = 50
 
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_hover")
