@@ -14,6 +14,9 @@ var is_perfect: bool = false
 var xp_amount: int = 0
 var active_tween: Tween = null
 
+# FIXED offset position - matches what BattleManager sets (scripts/autoload/BattleManager.gd:724)
+const BASE_OFFSET = Vector2(0, -150)
+
 # Rainbow colors
 var rainbow_colors = [
 	Color(1, 0, 0, 1),    # Red
@@ -59,13 +62,15 @@ func _process(_delta):
 	pass
 
 func play_popup_animation():
-	"""Animate the popup: scale in, float up, fade out - WITH position reset."""
+	"""Animate the popup: scale in, float up, fade out - ALWAYS resets to BASE_OFFSET."""
 	# Kill any existing tween to prevent overlap
 	if active_tween and active_tween.is_valid():
 		active_tween.kill()
 
-	# Store starting position to reset to after animation
-	var start_pos = position
+	# ALWAYS reset position to base offset before starting animation
+	# This prevents drift from accumulated position changes
+	position = BASE_OFFSET
+
 	var float_up_distance = 80.0  # Float up 80px
 
 	# Ensure we're at starting scale and alpha
@@ -85,13 +90,13 @@ func play_popup_animation():
 
 	# Float up and fade out
 	active_tween.set_parallel(true)
-	active_tween.tween_property(self, "position:y", start_pos.y - float_up_distance, 0.8).set_ease(Tween.EASE_OUT)
+	active_tween.tween_property(self, "position:y", BASE_OFFSET.y - float_up_distance, 0.8).set_ease(Tween.EASE_OUT)
 	active_tween.tween_property(self, "modulate:a", 0.0, 0.5).set_delay(0.3)
 
-	# Reset to starting state INCLUDING position
+	# Reset to BASE_OFFSET (not whatever position was before)
 	active_tween.chain()
 	active_tween.tween_callback(func():
-		position = start_pos  # CRITICAL: Reset to exact starting position
+		position = BASE_OFFSET  # ALWAYS reset to constant base offset
 		scale = Vector2(0.5, 0.5)
 		modulate.a = 0.0
 		active_tween = null

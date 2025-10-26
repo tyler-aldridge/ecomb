@@ -743,12 +743,18 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	# Apply opponent visual effect (color invert shader)
 	if opponent_sprite:
 		apply_opponent_shader(opponent_sprite)
-		# Ensure opponent sprite stays within screen bounds
-		clamp_sprite_to_screen(opponent_sprite)
 
-	# Ensure player sprite stays within screen bounds
-	if player_sprite:
-		clamp_sprite_to_screen(player_sprite)
+	# Defer sprite clamping until after sprites are fully initialized and playing
+	# This ensures we have valid texture data for size calculations
+	var callable_clamp = func():
+		await ui_layer.get_tree().process_frame
+		await ui_layer.get_tree().process_frame  # Wait 2 frames to ensure animations are loaded
+		if player_sprite and is_instance_valid(player_sprite):
+			clamp_sprite_to_screen(player_sprite)
+		if opponent_sprite and is_instance_valid(opponent_sprite):
+			clamp_sprite_to_screen(opponent_sprite)
+
+	callable_clamp.call()
 
 	return displays
 

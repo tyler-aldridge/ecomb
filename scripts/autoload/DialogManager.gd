@@ -58,21 +58,41 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 	# Wait for the dialog to process its new size
 	await get_tree().process_frame
 
-	# Position based on character speaking - closer to sprites
+	# Position based on character speaking
 	var viewport_size = get_viewport().get_visible_rect().size
 	var dialog_pos: Vector2
 
 	if _character == "opponent":
-		# Position on right side near opponent sprite (sprite at X=~1734, Y=~903)
-		# Place dialog close to sprite, above HitZones (Y=650-850)
-		var right_x = viewport_size.x - current_dialog.size.x - 50  # 50px margin from right edge
-		var top_y = 450.0  # Lower, closer to sprite
-		dialog_pos = Vector2(right_x, top_y)
+		# Position centered over opponent sprite (typically at world X=~1734)
+		# Center the dialog horizontally around X=1620 (accounting for dialog width)
+		var center_x = 1620.0 - current_dialog.size.x / 2.0
+		# Position above HitZones (Y=650-850), below Groove bar (Y=120)
+		var top_y = 300.0
+
+		# Clamp to screen bounds
+		center_x = clamp(center_x, 50.0, viewport_size.x - current_dialog.size.x - 50.0)
+
+		# Avoid HitZone overlap (HitZones are Y=650-850)
+		# Make sure bottom of dialog doesn't go into HitZones
+		var dialog_bottom = top_y + current_dialog.size.y
+		if dialog_bottom > 600.0:  # 50px buffer above HitZones
+			top_y = 600.0 - current_dialog.size.y
+
+		dialog_pos = Vector2(center_x, top_y)
 	elif _character == "player":
-		# Position on left side near player sprite (sprite at X=~202, Y=~923)
-		var left_x = 50.0  # 50px margin from left edge
-		var top_y = 450.0  # Lower, closer to sprite
-		dialog_pos = Vector2(left_x, top_y)
+		# Position centered over player sprite (typically at world X=~202)
+		var center_x = 300.0 - current_dialog.size.x / 2.0
+		var top_y = 300.0
+
+		# Clamp to screen bounds
+		center_x = clamp(center_x, 50.0, viewport_size.x - current_dialog.size.x - 50.0)
+
+		# Avoid HitZone overlap
+		var dialog_bottom = top_y + current_dialog.size.y
+		if dialog_bottom > 600.0:
+			top_y = 600.0 - current_dialog.size.y
+
+		dialog_pos = Vector2(center_x, top_y)
 	else:
 		# Default: center at top
 		var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
@@ -111,7 +131,7 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
 		var delay := float(i) * per_number_seconds
-		_spawn_number_later(str(numbers[i]), delay, font_size, Color.WHITE if str(numbers[i]) != "GO!" else Color.RED, 0.8)
+		_spawn_number_later(str(numbers[i]), delay, font_size, Color.WHITE if str(numbers[i]) != "GO!" else Color.RED, 0.2)
 
 func show_countdown_number(text: String, seconds: float, font_size: int, color: Color) -> void:
 	_spawn_number_later(text, 0.0, font_size, color, seconds)
@@ -156,6 +176,7 @@ func _spawn_number_now(text: String, font_size: int, color: Color, linger: float
 	
 	var tw := create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(label, "position:y", label.position.y - 80.0, 0.8 + linger)
-	tw.tween_property(label, "modulate:a", 0.0, 0.8 + linger)
-	tw.tween_callback(layer.queue_free).set_delay(0.8 + linger)
+	var fade_duration = 0.4 + linger
+	tw.tween_property(label, "position:y", label.position.y - 80.0, fade_duration)
+	tw.tween_property(label, "modulate:a", 0.0, fade_duration)
+	tw.tween_callback(layer.queue_free).set_delay(fade_duration)
