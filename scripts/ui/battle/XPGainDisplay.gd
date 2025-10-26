@@ -58,33 +58,37 @@ func _process(_delta):
 	pass
 
 func play_popup_animation():
-	"""Animate the popup: scale in, float up, fade out."""
-	# Always start from base position (set by BattleManager, typically Vector2(0, -150))
-	# Store starting Y position to float up from there
-	var start_y = position.y
-	var float_up_distance = 80.0  # Float up 80px
-	var target_y = start_y - float_up_distance  # Move up (negative direction)
+	"""Animate the popup: scale in, fade out - IN PLACE (no movement)."""
+	# Kill any existing tweens to prevent drift
+	var existing_tweens = get_tree().get_processed_tweens()
+	for tween in existing_tweens:
+		if tween.is_valid():
+			var bound_node = tween.get_bound_node()
+			if bound_node == self:
+				tween.kill()
+
+	# Ensure we're at starting scale and alpha
+	scale = Vector2(0.5, 0.5)
+	modulate.a = 0.0
 
 	var tween = create_tween()
 	tween.set_parallel(true)
 
-	# Scale in
+	# Scale in quickly
 	tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	tween.tween_property(self, "modulate:a", 1.0, 0.1)
 
-	# Hold and start floating
+	# Hold at full size and visibility
 	tween.chain()
-	tween.tween_interval(0.3)
+	tween.tween_interval(0.4)
 
-	# Float up and fade out
+	# Fade out
 	tween.set_parallel(true)
-	tween.tween_property(self, "position:y", target_y, 0.8).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "modulate:a", 0.0, 0.5).set_delay(0.3)
+	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 
-	# Clean up after animation - reset to starting position
+	# Reset to starting state
 	tween.chain()
 	tween.tween_callback(func():
-		position.y = start_y  # Reset Y to starting position
 		scale = Vector2(0.5, 0.5)
-		color_index = 0.0
+		modulate.a = 0.0
 	)

@@ -1,6 +1,31 @@
-[gd_scene load_steps=2 format=3 uid="uid://bvt8qm3n6yprd"]
+[gd_scene load_steps=4 format=3 uid="uid://bvt8qm3n6yprd"]
 
 [ext_resource type="Script" path="res://scripts/ui/battle/GrooveBar.gd" id="1_groove"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.2, 0.2, 0.2, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0, 0.7, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.3)
+corner_radius_top_left = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0.5, 0.8, 0.3)
+shadow_size = 3
+shadow_offset = Vector2(2, 2)
 
 [node name="GrooveBar" type="Control"]
 z_index = 100
@@ -44,17 +69,11 @@ theme_override_font_sizes/font_size = 50
 text = "Groove Meter"
 horizontal_alignment = 1
 
-[node name="BarContainer" type="Control" parent="MarginContainer/VBoxContainer"]
+[node name="ProgressBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
-mouse_filter = 2
-
-[node name="GrooveBarFill" type="ColorRect" parent="MarginContainer/VBoxContainer/BarContainer"]
-layout_mode = 0
-anchor_top = 0.0
-anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 960.0
-offset_bottom = 0.0
-mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+max_value = 100.0
+value = 50.0
+show_percentage = false

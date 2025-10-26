@@ -36,8 +36,8 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 		# Side dialogs (opponent/player) should be narrower to avoid blocking gameplay
 		var char_count = text.length()
 		var estimated_width = char_count * 15
-		var min_width = 300
-		var max_width = 600 if (_character == "opponent" or _character == "player") else get_viewport().get_visible_rect().size.x * 0.8
+		var min_width = 300.0
+		var max_width = 600.0 if (_character == "opponent" or _character == "player") else get_viewport().get_visible_rect().size.x * 0.8
 		var desired_width = clamp(estimated_width + 60, min_width, max_width)
 
 		# Set the size of the main dialog container - let the children follow
