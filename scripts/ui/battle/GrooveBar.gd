@@ -42,30 +42,32 @@ func _ready():
 		if lava_shader:
 			lava_material = ShaderMaterial.new()
 			lava_material.shader = lava_shader
-			lava_material.set_shader_parameter("use_rainbow", true)  # Start with rainbow
+			lava_material.set_shader_parameter("use_rainbow", true)  # Always rainbow
 			lava_material.set_shader_parameter("speed", 0.3)
 
-			# Create a ColorRect with shader behind the progress bar
+			# Create a ColorRect with shader for the filled portion
 			shader_rect = ColorRect.new()
 			shader_rect.name = "LavaEffect"
 			shader_rect.material = lava_material
 			shader_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-			# Add as sibling to progress bar (under VBoxContainer)
-			var vbox = progress_bar.get_parent()
-			vbox.add_child(shader_rect)
-			vbox.move_child(shader_rect, progress_bar.get_index())  # Place before progress bar
+			# Add as child of progress bar
+			progress_bar.add_child(shader_rect)
+			shader_rect.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+			shader_rect.anchor_top = 0.0
+			shader_rect.anchor_bottom = 1.0
+			shader_rect.offset_top = 0.0
+			shader_rect.offset_bottom = 0.0
+			shader_rect.z_index = -1  # Behind the percentage label
 
-			# Match progress bar size and position
-			shader_rect.custom_minimum_size = progress_bar.custom_minimum_size
-			shader_rect.size_flags_horizontal = progress_bar.size_flags_horizontal
-			shader_rect.size_flags_vertical = progress_bar.size_flags_vertical
+			# Set progress bar background to grey, fill to transparent
+			var grey_bg = StyleBoxFlat.new()
+			grey_bg.bg_color = Color(0.3, 0.3, 0.3, 1)  # Grey for empty portion
+			progress_bar.add_theme_stylebox_override("background", grey_bg)
 
-			# Make progress bar background transparent so shader shows through
-			var transparent_bg = StyleBoxFlat.new()
-			transparent_bg.bg_color = Color(0, 0, 0, 0)  # Fully transparent
-			progress_bar.add_theme_stylebox_override("background", transparent_bg)
-			progress_bar.add_theme_stylebox_override("fill", transparent_bg)
+			var transparent_fill = StyleBoxFlat.new()
+			transparent_fill.bg_color = Color(0, 0, 0, 0)
+			progress_bar.add_theme_stylebox_override("fill", transparent_fill)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -79,19 +81,12 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 	if percentage_label:
 		percentage_label.text = "%d%%" % int(percentage)
 
-	# Resize shader rect to show fill effect
-	if shader_rect and progress_bar:
+	# Resize shader rect to show fill effect (rainbow fills from left)
+	if shader_rect:
+		await get_tree().process_frame  # Wait for layout to update
 		var bar_width = progress_bar.size.x
 		var fill_width = bar_width * (percentage / 100.0)
-		shader_rect.custom_minimum_size.x = fill_width
 		shader_rect.size.x = fill_width
-
-	# Switch between rainbow (filling, >50%) and grayscale (missing, <50%)
-	if lava_material:
-		if percentage >= 50.0:
-			lava_material.set_shader_parameter("use_rainbow", true)
-		else:
-			lava_material.set_shader_parameter("use_rainbow", false)
 
 	# Play warning animation if low
 	if percentage < 25.0:

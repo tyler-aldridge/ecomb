@@ -87,8 +87,8 @@ const HITZONE_HEIGHT = 200.0
 # Hit zone lane positions (3 lanes at y=650)
 const HIT_ZONE_POSITIONS = {
 	"1": Vector2(660.0, 650.0),
-	"2": Vector2(860.0, 650.0),
-	"3": Vector2(1060.0, 650.0)
+	"2": Vector2(885.0, 650.0),
+	"3": Vector2(1110.0, 650.0)
 }
 
 # Spawn settings
@@ -633,7 +633,7 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	Universal setup for Combo and XP displays.
 
 	This ensures ALL battles have consistent positioning and behavior for:
-	- Combo display (100px below groove bar, centered, 250px font, hidden when 0)
+	- Combo display (50px below HitZones, centered, 100px font, hidden when 0)
 	- XP display (on top of Player sprite, white, 100px font)
 
 	Args:
@@ -648,23 +648,22 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	"""
 	var displays = {}
 
-	# Combo Display - 100px below groove bar, centered, BIG text
+	# Combo Display - 50px below HitZones, centered
 	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
 	var combo_display = combo_display_scene.instantiate()
 
 	# Add to UI layer (not player sprite)
 	ui_layer.add_child(combo_display)
 
-	# Position 100px below where groove bar will be (groove bar is at top)
-	# Groove bar is roughly 0-50px from top, so combo at ~150px from top
+	# Position 50px below HitZones (HitZones are at Y=650-850, so combo at Y=900)
 	combo_display.anchor_left = 0.5
 	combo_display.anchor_top = 0.0
 	combo_display.anchor_right = 0.5
 	combo_display.anchor_bottom = 0.0
-	combo_display.offset_left = -300.0  # Half of 600px width to center
-	combo_display.offset_top = 150.0    # 100px below groove bar (estimated)
-	combo_display.offset_right = 300.0
-	combo_display.offset_bottom = 275.0  # 150 + 125 (half of 250px height)
+	combo_display.offset_left = -200.0  # Half of 400px width to center
+	combo_display.offset_top = 900.0    # 50px below HitZones (850 + 50)
+	combo_display.offset_right = 200.0
+	combo_display.offset_bottom = 962.5  # 900 + 62.5 (half of 125px height at 100px font)
 
 	# Start hidden (will show when combo > 0)
 	combo_display.visible = false

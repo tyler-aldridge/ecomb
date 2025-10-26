@@ -76,9 +76,9 @@ func _on_combo_changed(current_combo: int, multiplier: float):
 func update_display():
 	"""Update the label text."""
 	if multiplier_current > 1.0:
-		text = "Combo: %.1fx" % multiplier_current
+		text = "Combo %.1fx" % multiplier_current
 	else:
-		text = "Combo: %dx" % combo_current
+		text = "Combo %dx" % combo_current
 
 	# Set to white if no combo
 	if combo_current == 0:
