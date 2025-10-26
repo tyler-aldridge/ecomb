@@ -161,9 +161,10 @@ frame_progress = 1.0
 
 [node name="Opponent" type="AnimatedSprite2D" parent="TutorialUI"]
 position = Vector2(771, 472)
-scale = Vector2(0.27708334, 0.27708334)
-sprite_frames = SubResource("SpriteFrames_ce8bx")
+scale = Vector2(1.5, 1.5)
+sprite_frames = SubResource("SpriteFrames_te63p")
 animation = &"idle"
+self_modulate = Color(1, 0.3, 0.3, 1)
 frame_progress = 0.018732514
 
 [node name="HitZones" type="Node" parent="."]
