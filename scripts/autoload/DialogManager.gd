@@ -11,10 +11,13 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 		current_dialog.queue_free()
 	
 	current_dialog = dialog_box_scene.instantiate()
-	
+
 	# Set high z-index to appear above everything else
 	current_dialog.z_index = 1000
-	
+
+	# Start off-screen to prevent flash at default position
+	current_dialog.position = Vector2(-5000, -5000)
+
 	# Add to scene first
 	if get_tree().current_scene:
 		get_tree().current_scene.add_child(current_dialog)
