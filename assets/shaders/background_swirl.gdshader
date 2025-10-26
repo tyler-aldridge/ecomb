@@ -126,15 +126,15 @@ void fragment() {
     float ring2 = smoothstep(0.25, 0.2, abs(blob2_dist)) - smoothstep(0.2, 0.15, abs(blob2_dist));
     float ring3 = smoothstep(0.35, 0.3, abs(blob3_dist)) - smoothstep(0.3, 0.25, abs(blob3_dist));
 
-    // Add subtle ring effects to color value
-    noise_val += ring1 * 0.12;
-    noise_val += ring2 * 0.10;
-    noise_val += ring3 * 0.15;
+    // Add extremely subtle ring effects to color value (alpha ≤ 0.1)
+    noise_val += ring1 * 0.05;
+    noise_val += ring2 * 0.04;
+    noise_val += ring3 * 0.06;
 
-    // Subtle color shifts in blob areas
-    noise_val += blob1_strength * 0.2;
-    noise_val += blob2_strength * 0.15;
-    noise_val += blob3_strength * 0.25;
+    // Extremely subtle color shifts in blob areas (alpha ≤ 0.1)
+    noise_val += blob1_strength * 0.08;
+    noise_val += blob2_strength * 0.06;
+    noise_val += blob3_strength * 0.10;
 
     noise_val = smoothstep(0.0, 1.0, noise_val);
 
@@ -144,13 +144,13 @@ void fragment() {
     // Brightness variation
     float brightness = 1.0 + (noise_val - 0.5) * 0.3;
 
-    // Subtle highlights on blob areas (low alpha)
-    brightness += blob1_strength * 0.25;
-    brightness += blob2_strength * 0.20;
-    brightness += blob3_strength * 0.30;
+    // Extremely subtle highlights on blob areas (alpha ≤ 0.1)
+    brightness += blob1_strength * 0.10;
+    brightness += blob2_strength * 0.08;
+    brightness += blob3_strength * 0.10;
 
-    // Subtle ring highlights
-    brightness += (ring1 + ring2 + ring3) * 0.4;
+    // Extremely subtle ring highlights (alpha ≤ 0.1)
+    brightness += (ring1 + ring2 + ring3) * 0.10;
 
     color *= brightness;
 
