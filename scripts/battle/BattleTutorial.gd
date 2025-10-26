@@ -47,11 +47,11 @@ var hit_zone_positions = {
 # Spawn settings
 const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 
-# Hit detection windows (scalable for difficulty settings - scale with note size)
-const PERFECT_WINDOW = 25.0   # Perfect: within 25px (base, scales up for larger notes)
-const GOOD_WINDOW = 50.0      # Good: 26-50px (base, scales up for larger notes)
-const OKAY_WINDOW = 100.0     # Okay: 51-100px (base, scales up for larger notes)
-# Miss: completely outside HitZone (no overlap)
+# Hit detection windows (edge-based: how much HitZone is exposed/not covered)
+const PERFECT_WINDOW = 25.0   # Perfect: HitZone edges exposed by ≤25px
+const GOOD_WINDOW = 50.0      # Good: HitZone edges exposed by 26-50px
+const OKAY_WINDOW = 150.0     # Okay: HitZone edges exposed by 51-150px
+# Miss: HitZone edges exposed by ≥151px OR note completely outside
 const MISS_WINDOW = 150.0     # Auto-miss threshold for notes that passed HitZone
 
 # Hit detection
@@ -713,20 +713,23 @@ func check_hit(track_key: String):
 		fade_out_note(closest_note)
 		active_notes.erase(closest_note)
 
-func get_hit_quality_for_note(distance: float, note: Node, _hit_zone_y: float) -> String:
+func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) -> String:
 	"""
-	Hit detection with FIXED timing windows for all note sizes.
+	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
 
-	Bigger notes are already easier to hit because they overlap the HitZone
-	for a longer time. No need to make the timing windows bigger too!
+	The HitZone is the source of truth. We measure how much of each HitZone edge
+	is exposed (not covered by the note). The WORST exposure determines quality.
 
-	Hit windows (same for all notes):
-	- Perfect: within 25px of center alignment
-	- Good: 26-50px from center
-	- Okay: 51-100px from center
-	- Miss: no overlap OR >100px from center
+	Examples (WholeNote 800px over HitZone 200px):
+	- Perfectly aligned: extends 300px beyond each edge = 0px exposed = PERFECT
+	- 30px off: one edge has 270px coverage, other has 330px = 0px exposed = PERFECT
+	- 350px off: one edge has 50px EXPOSED = GOOD
 
-	The timing requirement is identical regardless of note size.
+	Hit windows (based on maximum edge exposure):
+	- Perfect: ≤25px of HitZone edge exposed
+	- Good: 26-50px exposed
+	- Okay: 51-150px exposed
+	- Miss: ≥151px exposed OR completely outside
 	"""
 	# Get note's actual height dynamically
 	var note_height = 200.0  # Default
@@ -736,24 +739,34 @@ func get_hit_quality_for_note(distance: float, note: Node, _hit_zone_y: float) -
 	# HitZone is always 200px tall
 	const HITZONE_HEIGHT = 200.0
 
-	# Calculate overlap threshold: notes overlap if distance < sum of half-heights
-	var note_half_height = note_height / 2.0
-	var hitzone_half_height = HITZONE_HEIGHT / 2.0
-	var overlap_threshold = note_half_height + hitzone_half_height
+	# Calculate edge positions
+	var note_top = note.position.y
+	var note_bottom = note.position.y + note_height
+	var hitzone_top = hit_zone_y
+	var hitzone_bottom = hit_zone_y + HITZONE_HEIGHT
 
-	# Check if note overlaps HitZone at all
-	if distance >= overlap_threshold:
-		return "MISS"  # Completely outside, no overlap
+	# Check if completely outside (no overlap at all)
+	if note_bottom < hitzone_top or note_top > hitzone_bottom:
+		return "MISS"
 
-	# Note is overlapping - use FIXED windows (same for all note sizes)
-	if distance <= PERFECT_WINDOW:
+	# Calculate how much of HitZone edges are EXPOSED (not covered by note)
+	# If note_top > hitzone_top: HitZone's top edge is exposed
+	# If note_bottom < hitzone_bottom: HitZone's bottom edge is exposed
+	var top_exposure = max(0.0, note_top - hitzone_top)
+	var bottom_exposure = max(0.0, hitzone_bottom - note_bottom)
+
+	# The WORST exposure (largest gap) determines hit quality
+	var max_exposure = max(top_exposure, bottom_exposure)
+
+	# Determine quality based on maximum edge exposure
+	if max_exposure <= PERFECT_WINDOW:
 		return "PERFECT"
-	elif distance <= GOOD_WINDOW:
+	elif max_exposure <= GOOD_WINDOW:
 		return "GOOD"
-	elif distance <= OKAY_WINDOW:
+	elif max_exposure <= OKAY_WINDOW:
 		return "OKAY"
 	else:
-		return "MISS"  # Too far from center even though overlapping
+		return "MISS"  # Too much of HitZone exposed
 
 func process_hit(quality: String, note: Node, effect_pos: Vector2):
 	# Register hit with BattleManager (handles combo, groove, strength)
