@@ -65,28 +65,32 @@ void fragment() {
     vec2 uv = UV;
     float time = TIME * speed;
 
-    // Create multiple layers of swirling patterns at different scales
-    vec2 offset1 = vec2(cos(time * 0.5) * 0.3, sin(time * 0.4) * 0.3);
-    vec2 offset2 = vec2(sin(time * 0.6) * 0.5, cos(time * 0.5) * 0.5);
-    vec2 offset3 = vec2(cos(time * 0.7) * 0.2, sin(time * 0.6) * 0.2);
+    // Create multiple layers of smooth flowing patterns
+    vec2 offset1 = vec2(cos(time * 0.3) * 0.5, sin(time * 0.2) * 0.5);
+    vec2 offset2 = vec2(sin(time * 0.4) * 0.3, cos(time * 0.3) * 0.3);
+    vec2 offset3 = vec2(cos(time * 0.25) * 0.4, sin(time * 0.35) * 0.4);
 
-    // Combine noise layers for swirling effect
-    float n1 = fbm(uv * 2.0 + offset1);
-    float n2 = fbm(uv * 3.0 + offset2);
-    float n3 = fbm(uv * 1.5 + offset3);
+    // Combine noise layers for smooth gradient effect
+    float n1 = fbm(uv * 1.5 + offset1);
+    float n2 = fbm(uv * 2.0 + offset2);
+    float n3 = fbm(uv * 2.5 + offset3);
 
-    // Blend noise layers
-    float noise_val = (n1 * 0.5 + n2 * 0.3 + n3 * 0.2);
+    // Blend noise layers with smooth weights
+    float noise_val = (n1 * 0.4 + n2 * 0.4 + n3 * 0.2);
 
-    // Add spiral rotation for more movement
-    float rotation = atan(uv.y - 0.5, uv.x - 0.5) / 6.28318;
-    noise_val = mix(noise_val, rotation + time * 0.1, 0.4);
+    // Add smooth diagonal gradient for consistent flow
+    // This creates movement without discontinuities
+    float diagonal = (uv.x + uv.y) * 0.5;
+    noise_val = mix(noise_val, diagonal + time * 0.15, 0.3);
+
+    // Smooth out the value to eliminate any remaining harsh transitions
+    noise_val = smoothstep(0.0, 1.0, noise_val);
 
     // Get vaporwave colors
     vec3 color = get_vaporwave_color(noise_val);
 
-    // Add brightness variation for depth (brighter overall)
-    float brightness = 1.0 + noise_val * 0.3;
+    // Add subtle brightness variation for depth
+    float brightness = 1.0 + (noise_val - 0.5) * 0.2;
     color *= brightness;
 
     COLOR = vec4(color, 1.0);

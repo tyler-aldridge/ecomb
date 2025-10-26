@@ -557,7 +557,7 @@ func check_automatic_misses():
 				BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
 				BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 				process_miss()
-				BattleManager.create_fade_out_tween(note, conductor.bpm)
+				BattleManager.create_miss_fade_tween(note)
 				active_notes.erase(note)
 
 func _unhandled_input(event):

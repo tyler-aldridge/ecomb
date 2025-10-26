@@ -624,6 +624,46 @@ func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 
 	return fade_tween
 
+func create_miss_fade_tween(note: Node) -> Tween:
+	"""
+	Create a fast fade out tween for missed notes.
+
+	Missed notes:
+	- Turn black
+	- Stop in place (no movement)
+	- Fade out quickly (0.4 seconds)
+
+	Args:
+		note: The note node to fade
+
+	Returns:
+		Tween configured for miss animation
+	"""
+	if not is_instance_valid(note):
+		return null
+
+	# Stop the note from moving
+	if note.has_method("stop_movement"):
+		note.stop_movement()
+
+	# Turn note black and fade out fast
+	var tween = note.create_tween()
+	tween.set_parallel(true)
+
+	# Turn black immediately
+	tween.tween_property(note, "modulate", Color(0, 0, 0, 1), 0.0)
+
+	# Fade out quickly
+	tween.tween_property(note, "modulate:a", 0.0, 0.4)
+
+	# Free the note after fade completes
+	tween.chain().tween_callback(func():
+		if is_instance_valid(note):
+			note.queue_free()
+	)
+
+	return tween
+
 # ============================================================================
 # UNIVERSAL UI SETUP
 # ============================================================================
@@ -682,15 +722,13 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 		# Position on top of player sprite (0,0 is sprite center)
 		xp_display.position = Vector2(0, 0)
 
-		# Reset anchors for child-based positioning
-		xp_display.anchor_left = 0.0
-		xp_display.anchor_top = 0.0
-		xp_display.anchor_right = 0.0
-		xp_display.anchor_bottom = 0.0
+		# Keep center anchors from scene file (0.5, 0.5) for proper centering
+		# Just ensure offsets are symmetric for dead center positioning
 		xp_display.offset_left = -100.0  # Half of 200px width to center
-		xp_display.offset_top = -50.0   # Half of 100px height
 		xp_display.offset_right = 100.0
-		xp_display.offset_bottom = 50.0
+		# Top/bottom offsets handle vertical positioning above sprite
+		xp_display.offset_top = -150.0   # Position above sprite center
+		xp_display.offset_bottom = -110.0  # 40px height label
 
 		displays["xp_display"] = xp_display
 

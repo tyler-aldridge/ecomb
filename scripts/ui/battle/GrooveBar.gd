@@ -36,17 +36,29 @@ func _ready():
 		progress_bar.max_value = 100
 		progress_bar.value = 50
 
-		# Set progress bar background to grey, fill to transparent
-		var grey_bg = StyleBoxFlat.new()
-		grey_bg.bg_color = Color(0.3, 0.3, 0.3, 1)  # Grey for empty portion
-		progress_bar.add_theme_stylebox_override("background", grey_bg)
-
-		var transparent_fill = StyleBoxFlat.new()
-		transparent_fill.bg_color = Color(0, 0, 0, 0)
-		progress_bar.add_theme_stylebox_override("fill", transparent_fill)
+		# Hide the ProgressBar's native rendering completely
+		var invisible_bg = StyleBoxEmpty.new()
+		progress_bar.add_theme_stylebox_override("background", invisible_bg)
+		progress_bar.add_theme_stylebox_override("fill", invisible_bg)
 
 		# Wait for size to be available before creating shader
 		await get_tree().process_frame
+
+		# Create grey background layer (for empty portion)
+		var grey_bg = ColorRect.new()
+		grey_bg.name = "GreyBackground"
+		grey_bg.color = Color(0.3, 0.3, 0.3, 1)
+		grey_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		progress_bar.add_child(grey_bg)
+		grey_bg.anchor_left = 0.0
+		grey_bg.anchor_top = 0.0
+		grey_bg.anchor_right = 1.0
+		grey_bg.anchor_bottom = 1.0
+		grey_bg.offset_left = 0.0
+		grey_bg.offset_top = 0.0
+		grey_bg.offset_right = 0.0
+		grey_bg.offset_bottom = 0.0
+		grey_bg.z_index = -2
 
 		# Load lava lamp shader from file
 		lava_shader = load("res://assets/shaders/lava_lamp.gdshader")
@@ -72,7 +84,7 @@ func _ready():
 			shader_rect.offset_top = 0.0
 			shader_rect.offset_right = progress_bar.size.x * 0.5  # Start at 50%
 			shader_rect.offset_bottom = 0.0
-			shader_rect.z_index = -1  # Behind the percentage label
+			shader_rect.z_index = -1
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""

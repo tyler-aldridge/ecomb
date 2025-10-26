@@ -152,7 +152,7 @@ color = Color(0.1, 0.05, 0.2, 1)
 metadata/_edit_use_anchors_ = true
 
 [node name="Player" type="AnimatedSprite2D" parent="TutorialUI"]
-position = Vector2(-760.9999, 348)
+position = Vector2(-760.9999, 388)
 scale = Vector2(1.2612306, 1.2612305)
 sprite_frames = SubResource("SpriteFrames_te63p")
 animation = &"pecs"
@@ -160,7 +160,7 @@ frame = 5
 frame_progress = 1.0
 
 [node name="Opponent" type="AnimatedSprite2D" parent="TutorialUI"]
-position = Vector2(771, 312)
+position = Vector2(771, 368)
 scale = Vector2(1.5, 1.5)
 sprite_frames = SubResource("SpriteFrames_te63p")
 animation = &"idle"
