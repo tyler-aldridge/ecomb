@@ -236,8 +236,8 @@ func create_battle_ui():
 	if player_sprite:
 		player_sprite.add_child(combo_display)
 		# Position above player's head (player sprite is ~256px tall, scaled by 1.26)
-		# Roughly 320px tall, so position at -180 to appear above
-		combo_display.position = Vector2(0, -180)
+		# Roughly 320px tall, so position at -230 to appear 50px above sprite
+		combo_display.position = Vector2(0, -230)
 		combo_display.anchor_left = 0.0
 		combo_display.anchor_top = 0.0
 		combo_display.anchor_right = 0.0
@@ -438,10 +438,10 @@ func spawn_note_by_type(note_type: String):
 	if note.has_node("NoteTemplate"):
 		note_height = note.get_node("NoteTemplate").size.y
 
-	# Calculate spawn position: spawn above screen + note's full height
-	# So the note spawns completely off-screen regardless of size
-	var extra_offset = note_height - 200.0  # Extra height beyond standard 200px note
-	var spawn_pos = Vector2(target_pos.x, target_pos.y - SPAWN_HEIGHT_ABOVE_TARGET - extra_offset)
+	# Calculate spawn position: center-align all notes with HitZone
+	# Adjust spawn position so note's CENTER aligns with HitZone center (not top/bottom edge)
+	var center_offset = (note_height - 200.0) / 2.0
+	var spawn_pos = Vector2(target_pos.x, target_pos.y - SPAWN_HEIGHT_ABOVE_TARGET - center_offset)
 
 	note.z_index = 50
 	note.setup(random_track, spawn_pos, target_pos.y)
@@ -714,7 +714,7 @@ func check_hit(track_key: String):
 		fade_out_note(closest_note)
 		active_notes.erase(closest_note)
 
-func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) -> String:
+func get_hit_quality_for_note(_distance: float, note: Node, hit_zone_y: float) -> String:
 	"""
 	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
 
