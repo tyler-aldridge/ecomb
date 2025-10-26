@@ -38,7 +38,7 @@ const BUTTON_DELAY := 1.5
 
 const CHAR_CREATE_SCENE:  PackedScene = preload("res://scenes/title/CharacterCreation.tscn")
 const LOAD_MENU_SCENE:   PackedScene = preload("res://scenes/title/LoadMenu.tscn")
-const OPTIONS_MENU_SCENE: PackedScene = preload("res://scenes/title/OptionsMenu.tscn")
+const OPTIONS_MENU_SCENE: PackedScene = preload("res://scenes/title/TitleOptionsMenu.tscn")
 
 func _ready():
 	# Add the title scene to a group so Muscle Man can find it
