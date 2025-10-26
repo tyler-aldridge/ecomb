@@ -740,6 +740,10 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 
 		displays["xp_display"] = xp_display
 
+	# Apply opponent visual effect (color invert shader)
+	if opponent_sprite:
+		apply_opponent_shader(opponent_sprite)
+
 	return displays
 
 func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_above: float, label_height: float) -> Vector2:
@@ -779,6 +783,25 @@ func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_abov
 	var label_y = top_edge - offset_above - (label_height / 2.0)
 
 	return Vector2(0, label_y)
+
+func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
+	"""
+	Apply visual effect to opponent sprite.
+
+	Currently applies color invert shader to make opponent visually distinct.
+	This is a universal function that all battles should use for consistency.
+
+	Args:
+		opponent_sprite: The opponent's AnimatedSprite2D node
+	"""
+	if not opponent_sprite:
+		return
+
+	var invert_shader = load("res://assets/shaders/color_invert.gdshader")
+	if invert_shader:
+		var invert_material = ShaderMaterial.new()
+		invert_material.shader = invert_shader
+		opponent_sprite.material = invert_material
 
 # ============================================================================
 # UTILITY FUNCTIONS

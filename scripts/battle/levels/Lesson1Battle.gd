@@ -103,9 +103,6 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	return base_pos
 
 func _ready():
-	# Apply background shader
-	apply_background_shader()
-
 	# Load level data
 	load_level_data()
 
@@ -162,25 +159,6 @@ func _ready():
 	# Start with beat offset
 	await get_tree().create_timer(1.0).timeout
 	conductor.play_with_beat_offset()
-
-func apply_background_shader():
-	"""Apply slow-moving swirl shader to background."""
-	var background = $TutorialUI/Background
-	if background:
-		var shader = load("res://assets/shaders/background_swirl.gdshader")
-		if shader:
-			var material = ShaderMaterial.new()
-			material.shader = shader
-			material.set_shader_parameter("speed", 0.5)
-			background.material = material
-
-	# Apply color invert shader to opponent
-	if opponent_sprite:
-		var invert_shader = load("res://assets/shaders/color_invert.gdshader")
-		if invert_shader:
-			var invert_material = ShaderMaterial.new()
-			invert_material.shader = invert_shader
-			opponent_sprite.material = invert_material
 
 func _exit_tree():
 	"""Clean up tweens to prevent lambda capture errors when scene is freed."""
