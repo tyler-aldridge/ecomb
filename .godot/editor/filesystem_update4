@@ -1,6 +1,5 @@
-res://scenes/battle/Lesson1Battle.tscn
+res://scenes/title/SplashScreen.tscn
 res://assets/interface/themes/space-worm-theme/space_worm_theme.tres
-res://scenes/title/MainTitle.tscn
 res://scripts/autoload/GameManager.gd
-res://scenes/ui/battle/BattleFailure.tscn
-res://scripts/ui/battle/BattleFailure.gd
+res://scripts/battle/data/Lesson1Data.json
+res://scenes/title/CharacterCreation.tscn

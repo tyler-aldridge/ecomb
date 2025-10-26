@@ -1,10 +1,10 @@
+res://scenes/title
+/Users/tyler/Game Dev/ecomb/scripts/battle/data
 res://scenes/ui/battle
 /Users/tyler/Game Dev/ecomb/scripts/ui/battle
 /Users/tyler/Game Dev/ecomb/scripts/autoload
 res://assets/characters/muscle_man
-res://scenes/title
 res://scenes/battle
-/Users/tyler/Game Dev/ecomb/data/battles
 /Users/tyler/Game Dev/ecomb/builds/web
 /Users/tyler/Documents/Backups
 res://scripts/autoload

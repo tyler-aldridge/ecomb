@@ -128,8 +128,8 @@ layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 100
-text = "Start Your Adventure"
+theme_override_font_sizes/font_size = 85
+text = "Start Your Gym Membership"
 horizontal_alignment = 1
 vertical_alignment = 1
 
