@@ -171,3 +171,7 @@ bus = &"SFX"
 [node name="RestartSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_restart")
 bus = &"SFX"
+
+[node name="ContinueSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_hover")
+bus = &"SFX"

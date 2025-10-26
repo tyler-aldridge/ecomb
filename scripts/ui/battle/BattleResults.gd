@@ -40,14 +40,26 @@ extends Control
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
 @onready var success_sound: AudioStreamPlayer = $SuccessSound
 @onready var restart_sound: AudioStreamPlayer = $RestartSound
+@onready var continue_sound: AudioStreamPlayer = $ContinueSound
 
 var battle_results: Dictionary = {}
+var fade_rect: ColorRect
 
 func _ready():
 	# Start hidden - will only show when explicitly called
 	visible = false
 	if canvas_layer:
 		canvas_layer.visible = false
+
+	# Create fade overlay for scene transitions
+	fade_rect = ColorRect.new()
+	fade_rect.color = Color.BLACK
+	fade_rect.z_index = 1000
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fade_rect.anchor_right = 1.0
+	fade_rect.anchor_bottom = 1.0
+	fade_rect.modulate.a = 0.0
+	add_child(fade_rect)
 
 	# DO NOT auto-connect to BattleManager signal
 	# Results will be shown manually by the battle scene when appropriate
@@ -124,8 +136,12 @@ func show_results():
 
 func _on_continue_pressed():
 	"""Continue to next scene or return to title."""
-	if success_sound:
-		success_sound.play()
+	if continue_sound:
+		continue_sound.play()
+
+	# Fade to black then continue
+	_fade_to_black()
+	await get_tree().create_timer(1.5).timeout
 	get_tree().paused = false
 	# For now, go to title. Later: navigate to overworld or next battle
 	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
@@ -134,5 +150,17 @@ func _on_restart_pressed():
 	"""Restart the battle."""
 	if restart_sound:
 		restart_sound.play()
+
+	# Fade to black then restart
+	_fade_to_black()
+	await get_tree().create_timer(1.5).timeout
 	get_tree().paused = false
 	get_tree().reload_current_scene()
+
+func _fade_to_black():
+	"""Fade overlay to black for scene transition."""
+	if not is_instance_valid(fade_rect):
+		return
+	fade_rect.modulate.a = 0.0
+	var tween = create_tween()
+	tween.tween_property(fade_rect, "modulate:a", 1.0, 1.5)

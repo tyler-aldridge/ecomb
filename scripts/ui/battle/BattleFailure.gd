@@ -16,16 +16,28 @@ extends Control
 @onready var dialog_overlay: ColorRect = $DialogOverlay
 
 # Sound effects
-@onready var warning_sound: AudioStreamPlayer = $WarningSound
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
 @onready var restart_sound: AudioStreamPlayer = $RestartSound
 @onready var quit_sound: AudioStreamPlayer = $QuitSound
 @onready var battle_failure_sound: AudioStreamPlayer = $BattleFailureSound
 
+# Fade overlay for scene transitions
+var fade_rect: ColorRect
+
 func _ready():
 	visible = false
 	dialog_overlay.hide()
 	dialog.hide()
+
+	# Create fade overlay for scene transitions
+	fade_rect = ColorRect.new()
+	fade_rect.color = Color.BLACK
+	fade_rect.z_index = 1000
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fade_rect.anchor_right = 1.0
+	fade_rect.anchor_bottom = 1.0
+	fade_rect.modulate.a = 0.0
+	add_child(fade_rect)
 
 	# Connect to BattleManager
 	if BattleManager:
@@ -54,19 +66,33 @@ func _on_battle_failed():
 
 func _on_restart_confirmed():
 	"""Restart the battle."""
-	
-	# restart_sound.play()
+	if restart_sound:
+		restart_sound.play()
 
+	# Fade to black then restart
+	_fade_to_black()
+	await get_tree().create_timer(1.5).timeout
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
 func _on_exit_confirmed():
 	"""Exit to title screen."""
-	
-	# quit_sound.play()
+	if quit_sound:
+		quit_sound.play()
 
+	# Fade to black then exit
+	_fade_to_black()
+	await get_tree().create_timer(1.5).timeout
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
+
+func _fade_to_black():
+	"""Fade overlay to black for scene transition."""
+	if not is_instance_valid(fade_rect):
+		return
+	fade_rect.modulate.a = 0.0
+	var tween = create_tween()
+	tween.tween_property(fade_rect, "modulate:a", 1.0, 1.5)
 
 func _connect_dialog_button_sounds():
 	"""Connect hover sounds to dialog buttons after dialog is initialized."""

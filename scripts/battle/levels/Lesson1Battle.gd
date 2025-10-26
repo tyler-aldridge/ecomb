@@ -205,9 +205,9 @@ func create_battle_ui():
 	# Make it a child of player so it follows them (including jumps)
 	if player_sprite:
 		player_sprite.add_child(combo_display)
-		# Position above player's head (player sprite is ~256px tall, scaled by 1.26)
-		# Roughly 320px tall, so position at -370 to appear 50px above sprite
-		combo_display.position = Vector2(0, -370)
+		# Position above player's head (player sprite is 256px tall, scaled by 1.26 = 322px)
+		# Top edge at -161px, + 50px above + 25px (half combo height) = -236px
+		combo_display.position = Vector2(0, -236)
 		combo_display.anchor_left = 0.0
 		combo_display.anchor_top = 0.0
 		combo_display.anchor_right = 0.0

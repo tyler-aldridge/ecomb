@@ -1,10 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://bv8qm5n7kypse"]
+[gd_scene load_steps=4 format=3 uid="uid://bv8qm5n7kypse"]
 
 [ext_resource type="Script" path="res://scripts/ui/battle/BattleFailure.gd" id="1_failure"]
-[ext_resource type="AudioStream" uid="uid://d1gauqxolvwmu" path="res://assets/audio/sfx/warning.ogg" id="2_warning"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="3_hover"]
-[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="4_restart"]
-[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="5_quit"]
 [ext_resource type="AudioStream" uid="uid://cqwprn0gvxhma" path="res://assets/audio/sfx/ohno.ogg" id="6_failure"]
 
 [node name="BattleFailure" type="Control"]
@@ -31,26 +28,21 @@ color = Color(0, 0, 0, 0.5)
 [node name="FailureDialog" type="ConfirmationDialog" parent="."]
 title = "BATTLE FAILED"
 initial_position = 2
-size = Vector2i(400, 150)
-dialog_text = "Battle Failed!
-Groove reached 0%"
+size = Vector2i(400, 200)
+dialog_text = "You gassed out! Respect for the effort, though."
 ok_button_text = "Restart"
 cancel_button_text = "Exit to Title"
-
-[node name="WarningSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("2_warning")
-bus = &"SFX"
 
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_hover")
 bus = &"SFX"
 
 [node name="RestartSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("4_restart")
+stream = ExtResource("3_hover")
 bus = &"SFX"
 
 [node name="QuitSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("5_quit")
+stream = ExtResource("3_hover")
 bus = &"SFX"
 
 [node name="BattleFailureSound" type="AudioStreamPlayer" parent="."]
