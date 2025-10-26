@@ -180,9 +180,9 @@ func create_battle_ui():
 	groove_bar = groove_bar_scene.instantiate()
 	ui_layer.add_child(groove_bar)
 
-	# Universal character displays (combo on player, XP on opponent)
+	# Universal character displays (combo below groove bar, XP on player)
 	# Uses BattleManager's universal setup for consistent positioning across all battles
-	var displays = BattleManager.setup_battle_character_displays(player_sprite, opponent_sprite)
+	var displays = BattleManager.setup_battle_character_displays(player_sprite, opponent_sprite, ui_layer)
 	combo_display = displays.get("combo_display")
 	xp_gain_display = displays.get("xp_display")
 

@@ -628,60 +628,59 @@ func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 # UNIVERSAL UI SETUP
 # ============================================================================
 
-func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_sprite: AnimatedSprite2D) -> Dictionary:
+func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_sprite: AnimatedSprite2D, ui_layer: CanvasLayer) -> Dictionary:
 	"""
-	Universal setup for Combo and XP displays attached to character sprites.
+	Universal setup for Combo and XP displays.
 
 	This ensures ALL battles have consistent positioning and behavior for:
-	- Combo display (attached to Player sprite, 50px above)
-	- XP display (attached to Opponent sprite, 50px above)
-
-	Both displays use dynamic positioning that scales with sprite size/scale.
+	- Combo display (100px below groove bar, centered, 250px font, hidden when 0)
+	- XP display (on top of Player sprite, white, 100px font)
 
 	Args:
 		player_sprite: The player's AnimatedSprite2D node
-		opponent_sprite: The opponent's AnimatedSprite2D node
+		opponent_sprite: The opponent's AnimatedSprite2D node (unused for now)
+		ui_layer: The CanvasLayer for UI elements
 
 	Returns:
 		Dictionary with keys:
-			- combo_display: Label - Combo counter attached to player
-			- xp_display: Label - XP popup attached to opponent
+			- combo_display: Label - Combo counter below groove bar
+			- xp_display: Label - XP popup on player
 	"""
 	var displays = {}
 
-	# Combo Display - attached to Player sprite
+	# Combo Display - 100px below groove bar, centered, BIG text
+	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
+	var combo_display = combo_display_scene.instantiate()
+
+	# Add to UI layer (not player sprite)
+	ui_layer.add_child(combo_display)
+
+	# Position 100px below where groove bar will be (groove bar is at top)
+	# Groove bar is roughly 0-50px from top, so combo at ~150px from top
+	combo_display.anchor_left = 0.5
+	combo_display.anchor_top = 0.0
+	combo_display.anchor_right = 0.5
+	combo_display.anchor_bottom = 0.0
+	combo_display.offset_left = -300.0  # Half of 600px width to center
+	combo_display.offset_top = 150.0    # 100px below groove bar (estimated)
+	combo_display.offset_right = 300.0
+	combo_display.offset_bottom = 275.0  # 150 + 125 (half of 250px height)
+
+	# Start hidden (will show when combo > 0)
+	combo_display.visible = false
+
+	displays["combo_display"] = combo_display
+
+	# XP Gain Display - on top of Player sprite
 	if player_sprite:
-		var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
-		var combo_display = combo_display_scene.instantiate()
-
-		# Attach as child so it follows player (including jumps)
-		player_sprite.add_child(combo_display)
-
-		# Position dynamically based on sprite size (always 50px above sprite)
-		combo_display.position = calculate_label_position_above_sprite(player_sprite, 50.0, 50.0)
-
-		# Reset anchors for child-based positioning
-		combo_display.anchor_left = 0.0
-		combo_display.anchor_top = 0.0
-		combo_display.anchor_right = 0.0
-		combo_display.anchor_bottom = 0.0
-		combo_display.offset_left = -200.0  # Half of 400px width to center
-		combo_display.offset_top = -25.0   # Half of 50px height
-		combo_display.offset_right = 200.0
-		combo_display.offset_bottom = 25.0
-
-		displays["combo_display"] = combo_display
-
-	# XP Gain Display - attached to Opponent sprite
-	if opponent_sprite:
 		var xp_display_scene = preload("res://scenes/ui/battle/XPGainDisplay.tscn")
 		var xp_display = xp_display_scene.instantiate()
 
-		# Attach as child so it follows opponent (including jumps)
-		opponent_sprite.add_child(xp_display)
+		# Attach as child so it follows player (including jumps)
+		player_sprite.add_child(xp_display)
 
-		# Position dynamically based on sprite size (always 50px above sprite)
-		xp_display.position = calculate_label_position_above_sprite(opponent_sprite, 50.0, 50.0)
+		# Position on top of player sprite (0,0 is sprite center)
+		xp_display.position = Vector2(0, 0)
 
 		# Reset anchors for child-based positioning
 		xp_display.anchor_left = 0.0
@@ -689,9 +688,9 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 		xp_display.anchor_right = 0.0
 		xp_display.anchor_bottom = 0.0
 		xp_display.offset_left = -100.0  # Half of 200px width to center
-		xp_display.offset_top = -20.0   # Half of 40px height
+		xp_display.offset_top = -50.0   # Half of 100px height
 		xp_display.offset_right = 100.0
-		xp_display.offset_bottom = 20.0
+		xp_display.offset_bottom = 50.0
 
 		displays["xp_display"] = xp_display
 

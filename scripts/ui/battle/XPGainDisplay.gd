@@ -40,35 +40,22 @@ func _on_hit_registered(quality: String, strength_gain: int, _groove_change: flo
 		show_xp(strength_gain, quality == "PERFECT")
 
 func show_xp(amount: int, perfect: bool = false):
-	"""Show XP popup with amount and color."""
+	"""Show XP popup with amount - always white."""
 	xp_amount = amount
 	is_perfect = perfect
 
 	# Update text
 	text = "+%dXP" % amount
 
-	# Set color
-	if is_perfect:
-		modulate = Color(1, 0, 0, 1)  # Start with red, will cycle in _process
-	else:
-		modulate = Color(1, 1, 1, 1)  # White
+	# Always white (no rainbow effect)
+	modulate = Color(1, 1, 1, 1)
 
 	# Animate popup
 	play_popup_animation()
 
-func _process(delta):
-	# Rainbow color cycling for PERFECT hits
-	if is_perfect and modulate.a > 0.0:
-		color_index += delta * 5.0
-		if color_index >= rainbow_colors.size():
-			color_index = 0.0
-
-		var color_a = rainbow_colors[int(color_index)]
-		var color_b = rainbow_colors[int(color_index + 1) % rainbow_colors.size()]
-		var t = color_index - floor(color_index)
-		var rainbow_color = color_a.lerp(color_b, t)
-		rainbow_color.a = modulate.a  # Preserve alpha
-		modulate = rainbow_color
+func _process(_delta):
+	# No color cycling - always white
+	pass
 
 func play_popup_animation():
 	"""Animate the popup: scale in, float up, fade out."""

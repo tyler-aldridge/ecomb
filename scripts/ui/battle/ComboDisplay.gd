@@ -59,10 +59,15 @@ func _on_combo_changed(current_combo: int, multiplier: float):
 
 	update_display()
 
-	# Flash and scale animation on combo increase
-	if current_combo > old_combo and current_combo > 0:
-		play_combo_increase_animation()
-	elif current_combo == 0:
+	# Show/hide based on combo value
+	if current_combo > 0:
+		visible = true
+		# Flash and scale animation on combo increase
+		if current_combo > old_combo:
+			play_combo_increase_animation()
+	else:
+		# Hide when combo is 0
+		visible = false
 		# Reset to white when combo breaks
 		modulate = Color(1, 1, 1, 1)
 		rotation = 0.0
