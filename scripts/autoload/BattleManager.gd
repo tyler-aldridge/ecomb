@@ -936,12 +936,19 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 # CHARACTER ANIMATIONS
 # ============================================================================
 
+# Animation pools - Add new animations here to randomly select from
+const PLAYER_PERFECT_ANIMATIONS = ["pecs"]  # Add more: ["pecs", "flex", "dance"]
+const PLAYER_GOOD_ANIMATIONS = []           # Add if desired: ["nod", "thumbsup"]
+const PLAYER_OKAY_ANIMATIONS = []           # Add if desired: ["shrug"]
+const OPPONENT_MISS_ANIMATIONS = []         # Add more: ["laugh", "taunt", "celebrate"]
+
 func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Vector2, quality: String, scene_root: Node):
 	"""Animate player character on successful hit.
 
-	Universal player animations:
-	- PERFECT: Play "pecs" animation + jump 60px
-	- GOOD/OKAY: No animation (could add in future)
+	Universal player animations with random selection:
+	- PERFECT: Randomly picks from PLAYER_PERFECT_ANIMATIONS + jump 60px
+	- GOOD: Randomly picks from PLAYER_GOOD_ANIMATIONS (optional)
+	- OKAY: Randomly picks from PLAYER_OKAY_ANIMATIONS (optional)
 
 	Args:
 		player_sprite: Player's AnimatedSprite2D
@@ -949,31 +956,44 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 		quality: Hit quality ("PERFECT", "GOOD", "OKAY")
 		scene_root: Root node for create_tween()
 	"""
-	if quality == "PERFECT":
-		# Play pecs animation
-		if player_sprite and player_sprite.sprite_frames:
-			if player_sprite.sprite_frames.has_animation("pecs"):
-				# Disconnect any existing connection
-				if player_sprite.animation_finished.is_connected(_on_player_pecs_finished):
-					player_sprite.animation_finished.disconnect(_on_player_pecs_finished)
+	var animation_pool = []
 
-				player_sprite.play("pecs")
+	match quality:
+		"PERFECT":
+			animation_pool = PLAYER_PERFECT_ANIMATIONS
+		"GOOD":
+			animation_pool = PLAYER_GOOD_ANIMATIONS
+		"OKAY":
+			animation_pool = PLAYER_OKAY_ANIMATIONS
 
-				# Connect one-shot to return to idle
-				player_sprite.animation_finished.connect(
-					func():
-						if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
-							if player_sprite.sprite_frames.has_animation("idle"):
-								player_sprite.play("idle")
-					, CONNECT_ONE_SHOT
-				)
+	# Play random animation from pool if available
+	if animation_pool.size() > 0 and player_sprite and player_sprite.sprite_frames:
+		# Randomly select an animation from the pool
+		var random_animation = animation_pool[randi() % animation_pool.size()]
 
-		# Jump animation
-		if player_sprite:
-			var tween = scene_root.create_tween()
-			tween.set_parallel(true)
-			tween.tween_property(player_sprite, "position:y", player_original_pos.y - 60, 0.25)
-			tween.tween_property(player_sprite, "position:y", player_original_pos.y, 0.25).set_delay(0.25)
+		# Only play if the sprite actually has this animation
+		if player_sprite.sprite_frames.has_animation(random_animation):
+			# Disconnect any existing connection
+			if player_sprite.animation_finished.is_connected(_on_player_pecs_finished):
+				player_sprite.animation_finished.disconnect(_on_player_pecs_finished)
+
+			player_sprite.play(random_animation)
+
+			# Connect one-shot to return to idle
+			player_sprite.animation_finished.connect(
+				func():
+					if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
+						if player_sprite.sprite_frames.has_animation("idle"):
+							player_sprite.play("idle")
+				, CONNECT_ONE_SHOT
+			)
+
+	# Jump animation (only on PERFECT)
+	if quality == "PERFECT" and player_sprite:
+		var tween = scene_root.create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(player_sprite, "position:y", player_original_pos.y - 60, 0.25)
+		tween.tween_property(player_sprite, "position:y", player_original_pos.y, 0.25).set_delay(0.25)
 
 func _on_player_pecs_finished():
 	"""Callback stub for animation_finished signal."""
@@ -982,24 +1002,52 @@ func _on_player_pecs_finished():
 func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_pos: Vector2, scene_root: Node):
 	"""Animate opponent character on player MISS.
 
-	Universal opponent animation:
-	- Pause current animation
-	- Jump 60px
-	- Resume animation after jump
+	Universal opponent animation with random selection:
+	- Randomly picks from OPPONENT_MISS_ANIMATIONS (if pool not empty)
+	- Falls back to jump animation if pool is empty
+	- Returns to idle after animation finishes
 
 	Args:
 		opponent_sprite: Opponent's AnimatedSprite2D
 		opponent_original_pos: Opponent's original Y position for jump
 		scene_root: Root node for create_tween()
 	"""
-	if opponent_sprite:
-		opponent_sprite.pause()
-		var os = opponent_sprite  # Capture for lambda
-		var tween = scene_root.create_tween()
-		tween.set_parallel(true)
-		tween.tween_property(os, "position:y", opponent_original_pos.y - 60, 0.25)
-		tween.tween_property(os, "position:y", opponent_original_pos.y, 0.25).set_delay(0.25)
-		tween.tween_callback(func():
-			if is_instance_valid(os):
-				os.play()
-		).set_delay(0.5)
+	if not opponent_sprite:
+		return
+
+	# Try to play random animation from pool
+	if OPPONENT_MISS_ANIMATIONS.size() > 0 and opponent_sprite.sprite_frames:
+		# Randomly select an animation from the pool
+		var random_animation = OPPONENT_MISS_ANIMATIONS[randi() % OPPONENT_MISS_ANIMATIONS.size()]
+
+		# Only play if the sprite actually has this animation
+		if opponent_sprite.sprite_frames.has_animation(random_animation):
+			opponent_sprite.play(random_animation)
+
+			# Connect one-shot to return to idle
+			opponent_sprite.animation_finished.connect(
+				func():
+					if is_instance_valid(opponent_sprite) and opponent_sprite.sprite_frames:
+						if opponent_sprite.sprite_frames.has_animation("idle"):
+							opponent_sprite.play("idle")
+				, CONNECT_ONE_SHOT
+			)
+
+			# Jump during animation
+			var tween = scene_root.create_tween()
+			tween.set_parallel(true)
+			tween.tween_property(opponent_sprite, "position:y", opponent_original_pos.y - 60, 0.25)
+			tween.tween_property(opponent_sprite, "position:y", opponent_original_pos.y, 0.25).set_delay(0.25)
+			return
+
+	# Fallback: Just jump animation (original behavior)
+	opponent_sprite.pause()
+	var os = opponent_sprite  # Capture for lambda
+	var tween = scene_root.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(os, "position:y", opponent_original_pos.y - 60, 0.25)
+	tween.tween_property(os, "position:y", opponent_original_pos.y, 0.25).set_delay(0.25)
+	tween.tween_callback(func():
+		if is_instance_valid(os):
+			os.play()
+	).set_delay(0.5)
