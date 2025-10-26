@@ -27,6 +27,8 @@ func _physics_process(_delta: float) -> void:
 	if playing:
 		song_position = get_playback_position() + AudioServer.get_time_since_last_mix()
 		song_position -= AudioServer.get_output_latency()
+		# Apply user-configurable timing offset for audio latency compensation
+		song_position += GameManager.get_timing_offset()
 		song_position_in_beats = int((song_position / seconds_per_beat) * 2) - 8
 		_report_beat()
 
