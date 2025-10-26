@@ -713,6 +713,28 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 
 	displays["combo_display"] = combo_display
 
+	# Hit Zone ColorRects - Universal visual indicators for 3 lanes
+	var hitzones = []
+	for i in range(3):
+		var zone_key = str(i + 1)
+		var pos = HIT_ZONE_POSITIONS[zone_key]
+
+		var hitzone = ColorRect.new()
+		hitzone.position = pos
+		hitzone.size = Vector2(HITZONE_HEIGHT, HITZONE_HEIGHT)  # 200x200
+		hitzone.z_index = 100
+
+		# Color by lane (1=red, 2=blue, 3=green)
+		match zone_key:
+			"1": hitzone.color = Color(1, 0, 0, 1)  # Red
+			"2": hitzone.color = Color(0, 0, 1, 1)  # Blue
+			"3": hitzone.color = Color(0, 1, 0, 1)  # Green
+
+		ui_layer.add_child(hitzone)
+		hitzones.append(hitzone)
+
+	displays["hitzones"] = hitzones
+
 	# XP Gain Display - on top of Player sprite
 	if player_sprite:
 		var xp_display_scene = preload("res://scenes/ui/battle/XPGainDisplay.tscn")
