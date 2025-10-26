@@ -1,5 +1,5 @@
 e910c82af1378a97450e26817c58487e
-::res://::1761438740
+::res://::1761439068
 default_bus_layout.tres::AudioBusLayout::8184098035899748928::1761285051::0::1::::<><><>0<>0<><>::
 export_presets.cfg::TextFile::-1::1761285051::0::1::::<><><>0<>0<><>::
 icon.svg::CompressedTexture2D::5043215496737880353::1761285051::1761285051::1::::<><><>0<>0<>364eea09a31ab75372bb8e749b199748<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
@@ -168,8 +168,8 @@ VC_California101_VeniceBeach_Stock_RF_638340372_1280x640.jpg.webp::CompressedTex
 Venice-11.jpg::CompressedTexture2D::6832397963972095799::1761285051::1761285051::1::::<><><>0<>0<>09ee329ee736e45da116debd21919410<>res://.godot/imported/Venice-11.jpg-5d461528c847126fa0a5115bf8af105d.ctex::
 venice-127.jpg::CompressedTexture2D::595560901013770160::1761285051::1761285051::1::::<><><>0<>0<>049612f81a49a7ef686e80c280b803b9<>res://.godot/imported/venice-127.jpg-cad406b40a22f0524c59057bd7f238a1.ctex::
 ::res://scenes/::1761417405
-::res://scenes/battle/::1761417440
-BattleTutorial.tscn::PackedScene::4435845431135441162::1761417405::0::1::::<><><>0<>0<><>::uid://ctre86fxoju72::::res://scripts/game/battle/BattleTutorial.gd<>uid://dt1xxbp6gwgmt::::res://assets/audio/music/DivineFoxPlay-152BPM.ogg<>uid://cfvlcvrc6ylsq::::res://assets/characters/muscle_man/RipJackson_idel2size.png<>uid://crrmwhbyanjnc::::res://scripts/game/battle/Conductor.gd<>uid://1lct1vu4aghb::::res://assets/characters/crab/crab1.png<>uid://by7tx7memfuws::::res://assets/characters/crab/crab2.png<>uid://7mjvc5l1r2sf::::res://assets/interface/ui/panel-gradient-3.png<>uid://g4upotewd1ff::::res://assets/characters/crab/crab3.png<>uid://cm8m3c4ha8nwn::::res://assets/characters/crab/crab4.png<>uid://bilktb84t5goh::::res://assets/characters/muscle_man/RipJackson_peckflex2size.png
+::res://scenes/battle/::1761439039
+BattleTutorial.tscn::PackedScene::4435845431135441162::1761439039::0::1::::<><><>0<>0<><>::uid://dulbhqyj0com1::::res://scripts/game/battle/BattleTutorial.gd<>uid://dt1xxbp6gwgmt::::res://assets/audio/music/DivineFoxPlay-152BPM.ogg<>uid://cfvlcvrc6ylsq::::res://assets/characters/muscle_man/RipJackson_idel2size.png<>uid://crrmwhbyanjnc::::res://scripts/game/battle/Conductor.gd<>uid://1lct1vu4aghb::::res://assets/characters/crab/crab1.png<>uid://by7tx7memfuws::::res://assets/characters/crab/crab2.png<>uid://7mjvc5l1r2sf::::res://assets/interface/ui/panel-gradient-3.png<>uid://g4upotewd1ff::::res://assets/characters/crab/crab3.png<>uid://cm8m3c4ha8nwn::::res://assets/characters/crab/crab4.png<>uid://bilktb84t5goh::::res://assets/characters/muscle_man/RipJackson_peckflex2size.png
 ::res://scenes/overworld/::1761292599
 Overworld.tscn::PackedScene::1021922018024379187::1761285051::0::1::::<><><>0<>0<><>::
 ::res://scenes/title/::1761417440
@@ -216,10 +216,10 @@ MenuButton.gd::GDScript::5822065317478802610::1761417405::0::1::::<>Control<><>0
 OptionsMenu.gd::GDScript::6180145031423722183::1761417405::0::1::::<>Control<><>0<>0<><>::
 Splash.gd::GDScript::8768891444574028733::1761417405::0::1::::<>Node<><>0<>0<><>::
 ::res://scripts/ui/::1761417405
-::res://scripts/ui/battle/::1761438000
+::res://scripts/ui/battle/::1761439001
 BattleFailure.gd::GDScript::6159349773443023752::1761438000::0::1::::<>Control<><>0<>0<><>::
 BattleOptionsMenu.gd::GDScript::4429227446762424249::1761417406::0::1::::<>Control<><>0<>0<><>::
-BattleResults.gd::GDScript::4791186558296403366::1761438000::0::1::::<>Control<><>0<>0<><>::
+BattleResults.gd::GDScript::4791186558296403366::1761439039::0::1::::<>Control<><>0<>0<><>::
 ComboDisplay.gd::GDScript::4756885974615988144::1761433039::0::1::::<>Label<><>0<>0<><>::
 GrooveBar.gd::GDScript::1444790967171076899::1761412378::0::1::::<>Control<><>0<>0<><>::
 StrengthCounter.gd::GDScript::267015041975148411::1761410771::0::1::::<>Control<><>0<>0<><>::

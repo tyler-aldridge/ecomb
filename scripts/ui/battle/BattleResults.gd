@@ -35,6 +35,14 @@ extends Control
 @onready var level_up_label: Label = $CanvasLayer/Panel/VBoxContainer/LevelUpLabel
 @onready var continue_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/ContinueButton
 @onready var restart_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/RestartButton
+@onready var quit_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/QuitButton
+
+# Sound effects
+@onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
+@onready var success_sound: AudioStreamPlayer = $SuccessSound
+@onready var restart_sound: AudioStreamPlayer = $RestartSound
+@onready var cancel_sound: AudioStreamPlayer = $CancelSound
+
 var battle_results: Dictionary = {}
 
 func _ready():
@@ -120,6 +128,7 @@ func show_results():
 		restart_button.visible = true
 
 func _on_continue_pressed():
+	"""Continue to next scene or return to title."""
 	if success_sound:
 		success_sound.play()
 	get_tree().paused = false
@@ -127,6 +136,7 @@ func _on_continue_pressed():
 	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
 
 func _on_restart_pressed():
+	"""Restart the battle."""
 	if restart_sound:
 		restart_sound.play()
 	"""Restart the battle."""
@@ -134,6 +144,7 @@ func _on_restart_pressed():
 	get_tree().reload_current_scene()
 
 func _on_quit_pressed():
+	"""Quit to title screen."""
 	if cancel_sound:
 		cancel_sound.play()
 	"""Quit to title screen."""
