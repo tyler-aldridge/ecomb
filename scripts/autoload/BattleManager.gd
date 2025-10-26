@@ -623,3 +623,114 @@ func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 	)
 
 	return fade_tween
+
+# ============================================================================
+# UNIVERSAL UI SETUP
+# ============================================================================
+
+func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_sprite: AnimatedSprite2D) -> Dictionary:
+	"""
+	Universal setup for Combo and XP displays attached to character sprites.
+
+	This ensures ALL battles have consistent positioning and behavior for:
+	- Combo display (attached to Player sprite, 50px above)
+	- XP display (attached to Opponent sprite, 50px above)
+
+	Both displays use dynamic positioning that scales with sprite size/scale.
+
+	Args:
+		player_sprite: The player's AnimatedSprite2D node
+		opponent_sprite: The opponent's AnimatedSprite2D node
+
+	Returns:
+		Dictionary with keys:
+			- combo_display: Label - Combo counter attached to player
+			- xp_display: Label - XP popup attached to opponent
+	"""
+	var displays = {}
+
+	# Combo Display - attached to Player sprite
+	if player_sprite:
+		var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
+		var combo_display = combo_display_scene.instantiate()
+
+		# Attach as child so it follows player (including jumps)
+		player_sprite.add_child(combo_display)
+
+		# Position dynamically based on sprite size (always 50px above sprite)
+		combo_display.position = calculate_label_position_above_sprite(player_sprite, 50.0, 50.0)
+
+		# Reset anchors for child-based positioning
+		combo_display.anchor_left = 0.0
+		combo_display.anchor_top = 0.0
+		combo_display.anchor_right = 0.0
+		combo_display.anchor_bottom = 0.0
+		combo_display.offset_left = -200.0  # Half of 400px width to center
+		combo_display.offset_top = -25.0   # Half of 50px height
+		combo_display.offset_right = 200.0
+		combo_display.offset_bottom = 25.0
+
+		displays["combo_display"] = combo_display
+
+	# XP Gain Display - attached to Opponent sprite
+	if opponent_sprite:
+		var xp_display_scene = preload("res://scenes/ui/battle/XPGainDisplay.tscn")
+		var xp_display = xp_display_scene.instantiate()
+
+		# Attach as child so it follows opponent (including jumps)
+		opponent_sprite.add_child(xp_display)
+
+		# Position dynamically based on sprite size (always 50px above sprite)
+		xp_display.position = calculate_label_position_above_sprite(opponent_sprite, 50.0, 50.0)
+
+		# Reset anchors for child-based positioning
+		xp_display.anchor_left = 0.0
+		xp_display.anchor_top = 0.0
+		xp_display.anchor_right = 0.0
+		xp_display.anchor_bottom = 0.0
+		xp_display.offset_left = -100.0  # Half of 200px width to center
+		xp_display.offset_top = -20.0   # Half of 40px height
+		xp_display.offset_right = 100.0
+		xp_display.offset_bottom = 20.0
+
+		displays["xp_display"] = xp_display
+
+	return displays
+
+func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_above: float, label_height: float) -> Vector2:
+	"""
+	Calculate dynamic label position above an AnimatedSprite2D.
+
+	This ensures labels always appear at the correct distance above sprites,
+	regardless of sprite size or scale changes.
+
+	Args:
+		sprite: The AnimatedSprite2D to position above
+		offset_above: How many pixels above the sprite top edge (e.g., 50.0)
+		label_height: Height of the label in pixels (e.g., 50.0 for combo display)
+
+	Returns:
+		Vector2 position for the label relative to sprite center
+	"""
+	if not sprite or not sprite.sprite_frames:
+		return Vector2(0, -200)  # Fallback
+
+	# Get current frame texture to determine sprite size
+	var current_animation = sprite.animation
+	var current_frame = sprite.frame
+	var texture = sprite.sprite_frames.get_frame_texture(current_animation, current_frame)
+
+	if not texture:
+		return Vector2(0, -200)  # Fallback
+
+	# Calculate actual rendered height: texture height * sprite scale
+	var texture_height = texture.get_height()
+	var scaled_height = texture_height * sprite.scale.y
+
+	# Sprite center is at (0, 0), so top edge is at -half_height
+	var top_edge = -scaled_height / 2.0
+
+	# Position label: top edge - offset above - half label height
+	var label_y = top_edge - offset_above - (label_height / 2.0)
+
+	return Vector2(0, label_y)

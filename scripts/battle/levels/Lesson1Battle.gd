@@ -3,7 +3,7 @@ extends Node2D
 @onready var conductor = $Conductor
 @onready var hit_zones = $HitZones
 @onready var player_sprite = $TutorialUI/Player
-@onready var trainer_sprite = $TutorialUI/Trainer
+@onready var opponent_sprite = $TutorialUI/Opponent
 
 # Level data
 @export var level_data_path: String = "res://scripts/battle/data/Lesson1Data.json"
@@ -42,7 +42,7 @@ var effects_layer: Node2D
 
 # Character positions
 var player_original_pos: Vector2
-var trainer_original_pos: Vector2
+var opponent_original_pos: Vector2
 
 # Fade overlay
 var fade_overlay: ColorRect
@@ -198,31 +198,11 @@ func create_battle_ui():
 	groove_bar = groove_bar_scene.instantiate()
 	ui_layer.add_child(groove_bar)
 
-	# Combo display (attached to player sprite, follows player)
-	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
-	combo_display = combo_display_scene.instantiate()
-
-	# Make it a child of player so it follows them (including jumps)
-	if player_sprite:
-		player_sprite.add_child(combo_display)
-		# Position dynamically based on sprite size and scale (always 50px above sprite)
-		combo_display.position = calculate_label_position_above_sprite(player_sprite, 50.0, 50.0)
-		combo_display.anchor_left = 0.0
-		combo_display.anchor_top = 0.0
-		combo_display.anchor_right = 0.0
-		combo_display.anchor_bottom = 0.0
-		combo_display.offset_left = -200.0  # Half of 400px width to center
-		combo_display.offset_top = -25.0   # Half of 50px height
-		combo_display.offset_right = 200.0
-		combo_display.offset_bottom = 25.0
-	else:
-		# Fallback to ui_layer if player_sprite not found
-		ui_layer.add_child(combo_display)
-
-	# XP gain display (above combo display)
-	var xp_gain_display_scene = preload("res://scenes/ui/battle/XPGainDisplay.tscn")
-	xp_gain_display = xp_gain_display_scene.instantiate()
-	ui_layer.add_child(xp_gain_display)
+	# Universal character displays (combo on player, XP on opponent)
+	# Uses BattleManager's universal setup for consistent positioning across all battles
+	var displays = BattleManager.setup_battle_character_displays(player_sprite, opponent_sprite)
+	combo_display = displays.get("combo_display")
+	xp_gain_display = displays.get("xp_display")
 
 	# Battle results menu (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/battle/BattleResults.tscn")
@@ -318,11 +298,11 @@ func start_character_animations():
 		player_original_pos = player_sprite.position
 		if player_sprite.sprite_frames and player_sprite.sprite_frames.has_animation("idle"):
 			player_sprite.play("idle")
-	
-	if trainer_sprite:
-		trainer_original_pos = trainer_sprite.position
-		if trainer_sprite.sprite_frames and trainer_sprite.sprite_frames.has_animation("idle"):
-			trainer_sprite.play("idle")
+
+	if opponent_sprite:
+		opponent_original_pos = opponent_sprite.position
+		if opponent_sprite.sprite_frames and opponent_sprite.sprite_frames.has_animation("idle"):
+			opponent_sprite.play("idle")
 
 func _on_beat(beat_position: int):
 	check_automatic_misses()
@@ -332,7 +312,7 @@ func _on_beat(beat_position: int):
 		for dialogue in level_data["dialogue"]:
 			if int(dialogue.get("beat_position", 0)) == beat_position:
 				var text = dialogue.get("text", "")
-				var character = dialogue.get("character", "trainer")
+				var character = dialogue.get("character", "opponent")
 				var duration = dialogue.get("duration", 3.0)
 				DialogManager.show_dialog(text, character, duration)
 
@@ -710,24 +690,24 @@ func player_jump():
 		tween.tween_property(player_sprite, "position:y", player_original_pos.y - 60, 0.25)
 		tween.tween_property(player_sprite, "position:y", player_original_pos.y, 0.25).set_delay(0.25)
 
-func trainer_jump():
-	if trainer_sprite:
-		trainer_sprite.pause()
-		var ts = trainer_sprite  # Capture for lambda
+func opponent_jump():
+	if opponent_sprite:
+		opponent_sprite.pause()
+		var os = opponent_sprite  # Capture for lambda
 		var tween = create_tween()
 		tween.set_parallel(true)
-		tween.tween_property(ts, "position:y", trainer_original_pos.y - 60, 0.25)
-		tween.tween_property(ts, "position:y", trainer_original_pos.y, 0.25).set_delay(0.25)
+		tween.tween_property(os, "position:y", opponent_original_pos.y - 60, 0.25)
+		tween.tween_property(os, "position:y", opponent_original_pos.y, 0.25).set_delay(0.25)
 		tween.tween_callback(func():
-			if is_instance_valid(ts):
-				ts.play()
+			if is_instance_valid(os):
+				os.play()
 		).set_delay(0.5)
 
 func process_miss():
 	# Register miss with BattleManager (handles combo reset, groove penalty, etc.)
 	BattleManager.register_hit("MISS")
 	combo = 0
-	trainer_jump()
+	opponent_jump()
 
 func get_random_feedback_text(quality: String) -> String:
 	match quality:
@@ -840,42 +820,4 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 		if is_instance_valid(lbl):
 			lbl.queue_free()
 	).set_delay(1.0)
-
-func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_above: float, label_height: float) -> Vector2:
-	"""
-	Calculate dynamic label position above an AnimatedSprite2D.
-
-	This ensures labels always appear at the correct distance above sprites,
-	regardless of sprite size or scale changes.
-
-	Args:
-		sprite: The AnimatedSprite2D to position above
-		offset_above: How many pixels above the sprite top edge (e.g., 50.0)
-		label_height: Height of the label in pixels (e.g., 50.0 for combo display)
-
-	Returns:
-		Vector2 position for the label relative to sprite center
-	"""
-	if not sprite or not sprite.sprite_frames:
-		return Vector2(0, -200)  # Fallback
-
-	# Get current frame texture to determine sprite size
-	var current_animation = sprite.animation
-	var current_frame = sprite.frame
-	var texture = sprite.sprite_frames.get_frame_texture(current_animation, current_frame)
-
-	if not texture:
-		return Vector2(0, -200)  # Fallback
-
-	# Calculate actual rendered height: texture height * sprite scale
-	var texture_height = texture.get_height()
-	var scaled_height = texture_height * sprite.scale.y
-
-	# Sprite center is at (0, 0), so top edge is at -half_height
-	var top_edge = -scaled_height / 2.0
-
-	# Position label: top edge - offset above - half label height
-	var label_y = top_edge - offset_above - (label_height / 2.0)
-
-	return Vector2(0, label_y)
 

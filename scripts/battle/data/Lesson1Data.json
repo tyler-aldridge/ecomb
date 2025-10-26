@@ -11,13 +11,13 @@
   "beats_before_start": 28,
   "_note": "beat_position values represent HIT times (when note should line up with HitZone for Perfect hit in Logic Pro Bar/Beat). Game automatically calculates spawn time by subtracting travel offset. Formula: Bar N Beat B = (N-1)*8 + (B-1)*2 - 8. AND notes add +1.",
   "dialogue": [
-	{"beat_position": -26,"text": "Yo chump! Open them ears, this only gets said once!","character": "trainer","duration": 4.0,"triggers": "create_hit_zone_indicators"},
-	{"beat_position": -8,"text": "Hit 1, 2, or 3 on your keyboard with the beat! Miss it, and you might as well pack it up, cupcake!","character": "trainer","duration": 5.0},
-	{"beat_position": 96,"text": "Feelin' the pump yet, sweaty palms?","character": "trainer","duration": 8.0},
-	{"beat_position": 140,"text": "Alright, tough guy, let's see if you can handle the real grind. That was just the warmup!","character": "trainer","duration": 8.0},
-	{"beat_position": 388,"text": "Hope you stretched, chump! Time for a curveball!","character": "trainer","duration": 5.0},
-	{"beat_position": 472,"text": "BWAHAHA! Gotcha scared for a sec, huh?","character": "trainer","duration": 5.0},
-	{"beat_position": 756,"text": "Not bad, rookie... but that was light weight, baby! See ya in the gym, scrub!","character": "trainer","duration": 5.0}
+	{"beat_position": -26,"text": "Yo chump! Open them ears, this only gets said once!","character": "opponent","duration": 4.0,"triggers": "create_hit_zone_indicators"},
+	{"beat_position": -8,"text": "Hit 1, 2, or 3 on your keyboard with the beat! Miss it, and you might as well pack it up, cupcake!","character": "opponent","duration": 5.0},
+	{"beat_position": 96,"text": "Feelin' the pump yet, sweaty palms?","character": "opponent","duration": 8.0},
+	{"beat_position": 140,"text": "Alright, tough guy, let's see if you can handle the real grind. That was just the warmup!","character": "opponent","duration": 8.0},
+	{"beat_position": 388,"text": "Hope you stretched, chump! Time for a curveball!","character": "opponent","duration": 5.0},
+	{"beat_position": 472,"text": "BWAHAHA! Gotcha scared for a sec, huh?","character": "opponent","duration": 5.0},
+	{"beat_position": 756,"text": "Not bad, rookie... but that was light weight, baby! See ya in the gym, scrub!","character": "opponent","duration": 5.0}
   ],
   "triggers": [
 	{"beat_position": 48,"trigger": "stop_hit_zone_indicators"},

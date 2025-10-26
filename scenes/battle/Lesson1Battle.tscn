@@ -159,7 +159,7 @@ animation = &"pecs"
 frame = 5
 frame_progress = 1.0
 
-[node name="Trainer" type="AnimatedSprite2D" parent="TutorialUI"]
+[node name="Opponent" type="AnimatedSprite2D" parent="TutorialUI"]
 position = Vector2(771, 472)
 scale = Vector2(0.27708334, 0.27708334)
 sprite_frames = SubResource("SpriteFrames_ce8bx")
