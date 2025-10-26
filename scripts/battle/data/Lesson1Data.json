@@ -158,6 +158,7 @@
 	{"bar": 89,"beat": 3,"beat_position": 700,"note": "quarter"},
 	{"bar": 90,"beat": 1,"beat_position": 704,"note": "quarter"},
 	{"bar": 90,"beat": 3,"beat_position": 708,"note": "quarter"},
+	{"bar": 91,"beat": 1,"beat_position": 712,"note": "quarter"},
 	{"bar": 91,"beat": 3,"beat_position": 716,"note": "quarter"},
 	{"bar": 92,"beat": 1,"beat_position": 720,"note": "quarter"},
 	{"bar": 92,"beat": 3,"beat_position": 724,"note": "quarter"},
