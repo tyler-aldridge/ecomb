@@ -30,7 +30,7 @@ float fbm(vec2 p) {
     float amplitude = 0.5;
     float frequency = 1.0;
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 8; i++) {
         value += amplitude * smooth_noise(p * frequency);
         frequency *= 2.0;
         amplitude *= 0.5;
@@ -47,8 +47,8 @@ vec3 get_vaporwave_color(float t) {
     vec3 color3 = vec3(0.1, 0.3, 0.6);    // Cyan-blue
     vec3 color4 = vec3(0.4, 0.15, 0.5);   // Purple-pink
 
-    // Cycle through colors
-    float pos = fract(t + TIME * 0.05) * 4.0;
+    // Cycle through colors (faster for trippy effect)
+    float pos = fract(t + TIME * 0.15) * 4.0;
 
     if (pos < 1.0) {
         return mix(color1, color2, pos);

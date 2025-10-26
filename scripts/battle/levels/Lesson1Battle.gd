@@ -511,11 +511,15 @@ func _on_battle_failed():
 	# BattleFailure dialog automatically shows via BattleManager.battle_failed signal
 
 func hide_battle_ui():
-	"""Hide combo display and groove bar when battle ends."""
+	"""Hide combo display, groove bar, and hitzones when battle ends."""
 	if combo_display:
 		combo_display.visible = false
 	if groove_bar:
 		groove_bar.visible = false
+	# Hide hitzones before battle results
+	for hitzone in hit_zones:
+		if is_instance_valid(hitzone):
+			hitzone.visible = false
 
 func change_to_title():
 	if is_instance_valid(GameManager):

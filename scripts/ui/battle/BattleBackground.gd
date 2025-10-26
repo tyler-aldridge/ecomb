@@ -9,7 +9,7 @@ extends ColorRect
 # - Future: Add more styles as needed
 
 @export var background_style: String = "vaporwave"
-@export var animation_speed: float = 0.5
+@export var animation_speed: float = 1.5
 
 var background_shader: Shader
 var background_material: ShaderMaterial

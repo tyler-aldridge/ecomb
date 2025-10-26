@@ -35,7 +35,7 @@ func _ready():
 	update_display()
 
 func _process(delta):
-	# Animate rainbow and flag wave when combo > 0
+	# Animate rainbow when combo > 0
 	if combo_current > 0:
 		# Cycle through rainbow colors
 		color_index += delta * 3.0  # Speed of color change
@@ -46,10 +46,6 @@ func _process(delta):
 		var color_b = rainbow_colors[int(color_index + 1) % rainbow_colors.size()]
 		var t = color_index - floor(color_index)
 		modulate = color_a.lerp(color_b, t)
-
-		# Flag wave effect (subtle position offset)
-		wave_offset += delta * 5.0
-		rotation = sin(wave_offset) * 0.05  # Slight rotation wave
 
 func _on_combo_changed(current_combo: int, multiplier: float):
 	"""Update combo display when combo changes."""
