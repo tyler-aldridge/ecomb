@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Merge script for Claude Code branches
+# One-command merge script for Claude Code branches
 # Usage: ./merge-claude.sh
 
 set -e
@@ -20,16 +20,21 @@ else
     STASHED=false
 fi
 
-# Switch to main and pull latest
+# Switch to main
 echo "Switching to main branch..."
-git checkout main
+git checkout main 2>/dev/null || echo "Already on main"
 
-echo "Pulling latest changes..."
-git pull origin main
+# Fetch latest from remote
+echo "Fetching latest changes..."
+git fetch origin
 
-# Merge the Claude branch
-echo "Merging $BRANCH_NAME..."
-git merge "$BRANCH_NAME" --no-ff -m "Merge $BRANCH_NAME - Data-driven level system"
+# Pull latest from main
+echo "Updating main branch..."
+git pull origin main --no-rebase 2>/dev/null || echo "Main already up to date"
+
+# Merge the Claude branch with all latest changes from remote
+echo "Merging origin/$BRANCH_NAME..."
+git merge "origin/$BRANCH_NAME" --no-ff -m "Merge $BRANCH_NAME - Data-driven level system"
 
 # Pop stashed changes if any
 if [ "$STASHED" = true ]; then
@@ -37,8 +42,13 @@ if [ "$STASHED" = true ]; then
     git stash pop
 fi
 
+echo ""
 echo "======================================"
-echo "Merge complete!"
-echo "You are now on main branch with the changes merged."
-echo "Test the game, then run: git push origin main"
+echo "✅ Merge complete!"
+echo "======================================"
+echo "You are now on main with all changes merged."
+echo ""
+echo "Next steps:"
+echo "1. Test the game in Godot"
+echo "2. If everything works: git push origin main"
 echo "======================================"

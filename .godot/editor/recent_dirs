@@ -1,3 +1,5 @@
+res://scenes/rhythm
+/Users/tyler/Game Dev/ecomb/data/levels
 /Users/tyler/Game Dev/ecomb/scripts/ui/title
 res://scenes/ui/title
 res://scenes/ui/game/menus
@@ -6,7 +8,6 @@ res://scenes/ui/game/menus
 /Users/tyler/Documents/Backups
 res://scripts/autoload
 res://scenes/ui/game/dialog
-res://scenes/rhythm
 res://scripts/gameplay/battles
 res://assets/audio/music
 res://scenes/ui
@@ -19,4 +20,3 @@ res://assets/characters/muscle_man
 res://assets/interface/themes/space-worm-theme
 res://assets/interface/themes
 res://assets/interface/themes/
-res://assets/interface/fonts
