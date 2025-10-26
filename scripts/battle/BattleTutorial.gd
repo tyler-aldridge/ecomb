@@ -227,10 +227,27 @@ func create_battle_ui():
 	groove_bar = groove_bar_scene.instantiate()
 	ui_layer.add_child(groove_bar)
 
-	# Combo display (center of screen, 313px from center)
+	# Combo display (attached to player sprite, follows player)
 	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
 	combo_display = combo_display_scene.instantiate()
-	ui_layer.add_child(combo_display)
+
+	# Make it a child of player so it follows them (including jumps)
+	if player_sprite:
+		player_sprite.add_child(combo_display)
+		# Position above player's head (player sprite is ~256px tall, scaled by 1.26)
+		# Roughly 320px tall, so position at -180 to appear above
+		combo_display.position = Vector2(0, -180)
+		combo_display.anchor_left = 0.0
+		combo_display.anchor_top = 0.0
+		combo_display.anchor_right = 0.0
+		combo_display.anchor_bottom = 0.0
+		combo_display.offset_left = -200.0  # Half of 400px width to center
+		combo_display.offset_top = -25.0   # Half of 50px height
+		combo_display.offset_right = 200.0
+		combo_display.offset_bottom = 25.0
+	else:
+		# Fallback to ui_layer if player_sprite not found
+		ui_layer.add_child(combo_display)
 
 	# XP gain display (above combo display)
 	var xp_gain_display_scene = preload("res://scenes/ui/battle/XPGainDisplay.tscn")
