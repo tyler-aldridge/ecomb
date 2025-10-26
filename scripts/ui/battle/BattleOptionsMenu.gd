@@ -160,7 +160,7 @@ func _on_exit_pressed():
 func _on_exit_confirmed():
 	# Return to title screen after confirmation
 	_hide_dialog_overlay()
-	success_sound.play()
+	cancel_sound.play()  # Hurt sound for quitting/giving up
 	get_tree().paused = false
 
 	# Signal battle to end gracefully (not as a fail)
@@ -172,7 +172,7 @@ func _on_exit_confirmed():
 func _on_exit_canceled():
 	# Just hide the dialog
 	_hide_dialog_overlay()
-	cancel_sound.play()
+	success_sound.play()  # Success sound for staying in battle
 
 func _show_dialog_with_overlay():
 	if dialog_overlay:
