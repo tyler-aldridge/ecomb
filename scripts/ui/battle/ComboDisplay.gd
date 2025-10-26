@@ -71,7 +71,14 @@ func _on_combo_changed(current_combo: int, multiplier: float):
 
 func update_display():
 	"""Update the label text."""
-	text = "%d HIT COMBO" % combo_current
+	# Add letter spacing by inserting spaces between characters
+	var combo_text = "%d HIT COMBO" % combo_current
+	var spaced_text = ""
+	for i in range(combo_text.length()):
+		spaced_text += combo_text[i]
+		if i < combo_text.length() - 1:
+			spaced_text += " "
+	text = spaced_text
 
 	# Set to white if no combo
 	if combo_current == 0:
