@@ -12,6 +12,7 @@ extends Label
 
 var is_perfect: bool = false
 var xp_amount: int = 0
+var active_tween: Tween = null
 
 # Rainbow colors
 var rainbow_colors = [
@@ -59,36 +60,33 @@ func _process(_delta):
 
 func play_popup_animation():
 	"""Animate the popup: scale in, fade out - IN PLACE (no movement)."""
-	# Kill any existing tweens to prevent drift
-	var existing_tweens = get_tree().get_processed_tweens()
-	for tween in existing_tweens:
-		if tween.is_valid():
-			var bound_node = tween.get_bound_node()
-			if bound_node == self:
-				tween.kill()
+	# Kill any existing tween to prevent overlap
+	if active_tween and active_tween.is_valid():
+		active_tween.kill()
 
 	# Ensure we're at starting scale and alpha
 	scale = Vector2(0.5, 0.5)
 	modulate.a = 0.0
 
-	var tween = create_tween()
-	tween.set_parallel(true)
+	active_tween = create_tween()
+	active_tween.set_parallel(true)
 
 	# Scale in quickly
-	tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-	tween.tween_property(self, "modulate:a", 1.0, 0.1)
+	active_tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	active_tween.tween_property(self, "modulate:a", 1.0, 0.1)
 
 	# Hold at full size and visibility
-	tween.chain()
-	tween.tween_interval(0.4)
+	active_tween.chain()
+	active_tween.tween_interval(0.4)
 
 	# Fade out
-	tween.set_parallel(true)
-	tween.tween_property(self, "modulate:a", 0.0, 0.5)
+	active_tween.set_parallel(true)
+	active_tween.tween_property(self, "modulate:a", 0.0, 0.5)
 
 	# Reset to starting state
-	tween.chain()
-	tween.tween_callback(func():
+	active_tween.chain()
+	active_tween.tween_callback(func():
 		scale = Vector2(0.5, 0.5)
 		modulate.a = 0.0
+		active_tween = null
 	)
