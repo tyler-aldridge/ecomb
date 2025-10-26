@@ -734,3 +734,272 @@ func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_abov
 	var label_y = top_edge - offset_above - (label_height / 2.0)
 
 	return Vector2(0, label_y)
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+func clamp_to_screen(element_pos: Vector2, element_size: Vector2, margin: float = 50.0) -> Vector2:
+	"""Clamp a position to keep an element visible on screen.
+
+	Args:
+		element_pos: Top-left position of the element
+		element_size: Size of the element (width, height)
+		margin: Minimum margin from screen edge in pixels
+
+	Returns:
+		Clamped position that keeps the element visible
+	"""
+	var viewport_size = get_viewport().get_visible_rect().size
+
+	var clamped_x = clamp(element_pos.x, margin, viewport_size.x - element_size.x - margin)
+	var clamped_y = clamp(element_pos.y, margin, viewport_size.y - element_size.y - margin)
+
+	return Vector2(clamped_x, clamped_y)
+
+# ============================================================================
+# FEEDBACK TEXT SYSTEM
+# ============================================================================
+
+func get_random_feedback_text(quality: String) -> String:
+	"""Get random encouraging/fail text for hit quality.
+
+	Args:
+		quality: "PERFECT", "GOOD", "OKAY", or "MISS"
+
+	Returns:
+		Random feedback text string
+	"""
+	match quality:
+		"PERFECT":
+			var perfect_texts = ["Perfect!", "Wow!", "Super!", "Amazing!", "Awesome!"]
+			return perfect_texts[randi() % perfect_texts.size()]
+		"GOOD":
+			var good_texts = ["Nice!", "Good!", "Decent!", "Alright!", "Not bad!"]
+			return good_texts[randi() % good_texts.size()]
+		"OKAY":
+			var okay_texts = ["Almost!", "Close!", "Not quite!", "Barely!", "Off beat!"]
+			return okay_texts[randi() % okay_texts.size()]
+		"MISS":
+			var miss_texts = ["Missed!", "Oops!", "Miss!", "Nope!", "Fail!"]
+			return miss_texts[randi() % miss_texts.size()]
+		_:
+			return "?"
+
+# ============================================================================
+# TRACK COLOR SYSTEM
+# ============================================================================
+
+func get_track_color(track_key: String) -> String:
+	"""Get universal color scheme for note lanes.
+
+	Args:
+		track_key: "1", "2", or "3"
+
+	Returns:
+		Color string: "cyan", "magenta", "yellow", or "white"
+	"""
+	match track_key:
+		"1": return "cyan"
+		"2": return "magenta"
+		"3": return "yellow"
+		_: return "white"
+
+# ============================================================================
+# VISUAL EFFECTS
+# ============================================================================
+
+func explode_note_at_position(note: Node, color_type: String, intensity: int, explosion_pos: Vector2, effects_layer: Node2D, scene_root: Node):
+	"""Create particle explosion effect at note position.
+
+	Universal explosion system for all battles with different color schemes:
+	- Rainbow: PERFECT hits
+	- Cyan/Magenta/Yellow: Track-colored hits
+	- Black/Gray: MISS
+
+	Args:
+		note: The note node (unused, for future extensions)
+		color_type: "rainbow", "cyan", "magenta", "yellow", "white", or "black"
+		intensity: Explosion strength (1-5), affects particle count
+		explosion_pos: Center position for explosion
+		effects_layer: Node2D to add particles to
+		scene_root: Root node for create_tween()
+	"""
+	# Clamp explosion center to screen bounds so it's visible even if note is off-screen
+	var viewport_size = get_viewport().get_visible_rect().size
+	var note_center = Vector2(
+		clamp(explosion_pos.x, 100, viewport_size.x - 100),
+		clamp(explosion_pos.y, 100, viewport_size.y - 100)
+	)
+	var particle_count = intensity * 20
+
+	for i in range(particle_count):
+		var particle = ColorRect.new()
+		var particle_size = randi_range(8, 25)
+		particle.size = Vector2(particle_size, particle_size)
+		particle.pivot_offset = particle.size / 2
+
+		match color_type:
+			"rainbow":
+				var rainbow_colors = [Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.PURPLE, Color.MAGENTA, Color.PINK]
+				particle.color = rainbow_colors[i % rainbow_colors.size()]
+			"cyan":
+				var cyan_shades = [Color.CYAN, Color.LIGHT_CYAN, Color.AQUA, Color.TURQUOISE]
+				particle.color = cyan_shades[i % cyan_shades.size()]
+			"magenta":
+				var magenta_shades = [Color.MAGENTA, Color.DEEP_PINK, Color.HOT_PINK, Color.VIOLET]
+				particle.color = magenta_shades[i % magenta_shades.size()]
+			"yellow":
+				var yellow_shades = [Color.YELLOW, Color.GOLD, Color.ORANGE, Color.LIGHT_YELLOW]
+				particle.color = yellow_shades[i % yellow_shades.size()]
+			"white":
+				particle.color = Color.WHITE
+			"black":
+				var dark_colors = [Color.BLACK, Color.DIM_GRAY, Color.DARK_GRAY, Color.PURPLE]
+				particle.color = dark_colors[i % dark_colors.size()]
+
+		particle.rotation = randf() * TAU
+		particle.position = note_center + Vector2(randi_range(-40, 40), randi_range(-40, 40))
+		effects_layer.add_child(particle)
+
+		# Capture particle in local variable for lambda
+		var p = particle
+		var tween = scene_root.create_tween()
+		tween.set_parallel(true)
+
+		# Original explosion behavior: larger radius, longer duration
+		var explosion_radius = 600 if color_type == "rainbow" else 450
+		var random_direction = Vector2(randf_range(-explosion_radius, explosion_radius), randf_range(-explosion_radius, explosion_radius))
+		var duration = randf_range(0.8, 1.5)
+
+		tween.tween_property(p, "position", p.position + random_direction, duration)
+		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)
+		tween.tween_property(p, "modulate:a", 0.0, duration)
+		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
+		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
+		tween.tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		).set_delay(duration)
+
+func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool, effects_layer: Node2D, scene_root: Node):
+	"""Show floating feedback text at note position.
+
+	Universal feedback display for all battles:
+	- Floats up 80px over 0.8s
+	- Fades out over 1.0s
+	- Optional red screen flash on MISS
+
+	Args:
+		text: Feedback text to display (e.g., "Perfect!", "Missed!")
+		note_pos: Center position of the note
+		flash_screen: If true, flash screen red (for MISS)
+		effects_layer: Node2D to add label to
+		scene_root: Root node for create_tween() and modulate access
+	"""
+	var label = Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 80)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.z_index = 300
+
+	# note_pos passed in is the NOTE CENTER already
+	var note_center = note_pos
+	var desired_position = Vector2(note_center.x - 200, note_center.y - 100)
+	var label_size = Vector2(400, 200)
+
+	# Clamp to screen so feedback is always visible
+	label.position = clamp_to_screen(desired_position, label_size)
+	label.size = label_size
+	effects_layer.add_child(label)
+
+	if flash_screen:
+		scene_root.modulate = Color.RED
+		var flash_tween = scene_root.create_tween()
+		flash_tween.tween_property(scene_root, "modulate", Color.WHITE, 0.2)
+
+	# ALL feedback moves up and fades identically at the same rate
+	# Capture label in local variable for lambda
+	var lbl = label
+	var move_tween = scene_root.create_tween()
+	move_tween.set_parallel(true)
+	move_tween.tween_property(lbl, "position:y", lbl.position.y - 80, 0.8)
+	move_tween.tween_property(lbl, "modulate:a", 0.0, 1.0)
+	move_tween.tween_callback(func():
+		if is_instance_valid(lbl):
+			lbl.queue_free()
+	).set_delay(1.0)
+
+# ============================================================================
+# CHARACTER ANIMATIONS
+# ============================================================================
+
+func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Vector2, quality: String, scene_root: Node):
+	"""Animate player character on successful hit.
+
+	Universal player animations:
+	- PERFECT: Play "pecs" animation + jump 60px
+	- GOOD/OKAY: No animation (could add in future)
+
+	Args:
+		player_sprite: Player's AnimatedSprite2D
+		player_original_pos: Player's original Y position for jump
+		quality: Hit quality ("PERFECT", "GOOD", "OKAY")
+		scene_root: Root node for create_tween()
+	"""
+	if quality == "PERFECT":
+		# Play pecs animation
+		if player_sprite and player_sprite.sprite_frames:
+			if player_sprite.sprite_frames.has_animation("pecs"):
+				# Disconnect any existing connection
+				if player_sprite.animation_finished.is_connected(_on_player_pecs_finished):
+					player_sprite.animation_finished.disconnect(_on_player_pecs_finished)
+
+				player_sprite.play("pecs")
+
+				# Connect one-shot to return to idle
+				player_sprite.animation_finished.connect(
+					func():
+						if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
+							if player_sprite.sprite_frames.has_animation("idle"):
+								player_sprite.play("idle")
+					, CONNECT_ONE_SHOT
+				)
+
+		# Jump animation
+		if player_sprite:
+			var tween = scene_root.create_tween()
+			tween.set_parallel(true)
+			tween.tween_property(player_sprite, "position:y", player_original_pos.y - 60, 0.25)
+			tween.tween_property(player_sprite, "position:y", player_original_pos.y, 0.25).set_delay(0.25)
+
+func _on_player_pecs_finished():
+	"""Callback stub for animation_finished signal."""
+	pass
+
+func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_pos: Vector2, scene_root: Node):
+	"""Animate opponent character on player MISS.
+
+	Universal opponent animation:
+	- Pause current animation
+	- Jump 60px
+	- Resume animation after jump
+
+	Args:
+		opponent_sprite: Opponent's AnimatedSprite2D
+		opponent_original_pos: Opponent's original Y position for jump
+		scene_root: Root node for create_tween()
+	"""
+	if opponent_sprite:
+		opponent_sprite.pause()
+		var os = opponent_sprite  # Capture for lambda
+		var tween = scene_root.create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(os, "position:y", opponent_original_pos.y - 60, 0.25)
+		tween.tween_property(os, "position:y", opponent_original_pos.y, 0.25).set_delay(0.25)
+		tween.tween_callback(func():
+			if is_instance_valid(os):
+				os.play()
+		).set_delay(0.5)

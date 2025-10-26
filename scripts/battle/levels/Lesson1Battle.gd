@@ -58,26 +58,8 @@ var battle_results: Control
 var battle_failure: Control
 
 # ============================================================================
-# UNIVERSAL BAR/BEAT SYSTEM
+# BAR/BEAT SYSTEM (Level-specific timing calculations)
 # ============================================================================
-
-func clamp_to_screen(element_pos: Vector2, element_size: Vector2, margin: float = 50.0) -> Vector2:
-	"""Clamp a position to keep an element visible on screen.
-
-	Args:
-		element_pos: Top-left position of the element
-		element_size: Size of the element (width, height)
-		margin: Minimum margin from screen edge in pixels
-
-	Returns:
-		Clamped position that keeps the element visible
-	"""
-	var viewport_size = get_viewport().get_visible_rect().size
-
-	var clamped_x = clamp(element_pos.x, margin, viewport_size.x - element_size.x - margin)
-	var clamped_y = clamp(element_pos.y, margin, viewport_size.y - element_size.y - margin)
-
-	return Vector2(clamped_x, clamped_y)
 
 func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	"""Convert Bar/Beat notation to beat_position (HIT time).
@@ -550,8 +532,8 @@ func check_automatic_misses():
 				# Calculate effect position at note's center (dynamic for any note size)
 				var effect_pos = note.position + Vector2(100, note_height / 2.0)
 
-				explode_note_at_position(note, "black", 2, effect_pos)
-				show_feedback_at_position(get_random_feedback_text("MISS"), effect_pos, true)
+				BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
+				BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 				process_miss()
 				BattleManager.create_fade_out_tween(note, conductor.bpm)
 				active_notes.erase(note)
@@ -626,8 +608,8 @@ func check_hit(track_key: String):
 		var effect_pos = closest_note.position + Vector2(100, note_height / 2.0)
 
 		if hit_quality == "MISS":
-			explode_note_at_position(closest_note, "black", 2, effect_pos)
-			show_feedback_at_position(get_random_feedback_text("MISS"), effect_pos, true)
+			BattleManager.explode_note_at_position(closest_note, "black", 2, effect_pos, effects_layer, self)
+			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 			process_miss()
 		else:
 			process_hit(hit_quality, closest_note, effect_pos)
@@ -640,184 +622,31 @@ func process_hit(quality: String, note: Node, effect_pos: Vector2):
 	# XP popup automatically shows via BattleManager.hit_registered signal
 	BattleManager.register_hit(quality)
 
-	var feedback_text = get_random_feedback_text(quality)
+	var feedback_text = BattleManager.get_random_feedback_text(quality)
 
 	match quality:
 		"PERFECT":
 			score += 100
 			combo = BattleManager.get_combo_current()
-			explode_note_at_position(note, "rainbow", 5, effect_pos)
-			show_feedback_at_position(feedback_text, effect_pos, false)
-			play_pecs_animation()
-			player_jump()
+			BattleManager.explode_note_at_position(note, "rainbow", 5, effect_pos, effects_layer, self)
+			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, effects_layer, self)
+			BattleManager.animate_player_hit(player_sprite, player_original_pos, quality, self)
 		"GOOD":
 			score += 50
 			combo = BattleManager.get_combo_current()
-			explode_note_at_position(note, get_track_color(note.track_key), 3, effect_pos)
-			show_feedback_at_position(feedback_text, effect_pos, false)
+			BattleManager.explode_note_at_position(note, BattleManager.get_track_color(note.track_key), 3, effect_pos, effects_layer, self)
+			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, effects_layer, self)
 		"OKAY":
 			score += 25
 			combo = BattleManager.get_combo_current()
-			explode_note_at_position(note, get_track_color(note.track_key), 2, effect_pos)
-			show_feedback_at_position(feedback_text, effect_pos, false)
+			BattleManager.explode_note_at_position(note, BattleManager.get_track_color(note.track_key), 2, effect_pos, effects_layer, self)
+			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, effects_layer, self)
 
 	max_combo = BattleManager.get_combo_max()
-
-func get_track_color(track_key: String) -> String:
-	match track_key:
-		"1": return "cyan"
-		"2": return "magenta"
-		"3": return "yellow"
-		_: return "white"
-
-func play_pecs_animation():
-	if player_sprite and player_sprite.sprite_frames:
-		if player_sprite.sprite_frames.has_animation("pecs"):
-			if player_sprite.animation_finished.is_connected(_on_pecs_finished):
-				player_sprite.animation_finished.disconnect(_on_pecs_finished)
-			player_sprite.play("pecs")
-			player_sprite.animation_finished.connect(_on_pecs_finished, CONNECT_ONE_SHOT)
-
-func _on_pecs_finished():
-	if player_sprite and player_sprite.sprite_frames:
-		if player_sprite.sprite_frames.has_animation("idle"):
-			player_sprite.play("idle")
-
-func player_jump():
-	if player_sprite:
-		var tween = create_tween()
-		tween.set_parallel(true)
-		tween.tween_property(player_sprite, "position:y", player_original_pos.y - 60, 0.25)
-		tween.tween_property(player_sprite, "position:y", player_original_pos.y, 0.25).set_delay(0.25)
-
-func opponent_jump():
-	if opponent_sprite:
-		opponent_sprite.pause()
-		var os = opponent_sprite  # Capture for lambda
-		var tween = create_tween()
-		tween.set_parallel(true)
-		tween.tween_property(os, "position:y", opponent_original_pos.y - 60, 0.25)
-		tween.tween_property(os, "position:y", opponent_original_pos.y, 0.25).set_delay(0.25)
-		tween.tween_callback(func():
-			if is_instance_valid(os):
-				os.play()
-		).set_delay(0.5)
 
 func process_miss():
 	# Register miss with BattleManager (handles combo reset, groove penalty, etc.)
 	BattleManager.register_hit("MISS")
 	combo = 0
-	opponent_jump()
-
-func get_random_feedback_text(quality: String) -> String:
-	match quality:
-		"PERFECT":
-			var perfect_texts = ["Perfect!", "Wow!", "Super!", "Amazing!", "Awesome!"]
-			return perfect_texts[randi() % perfect_texts.size()]
-		"GOOD":
-			var good_texts = ["Nice!", "Good!", "Decent!", "Alright!", "Not bad!"]
-			return good_texts[randi() % good_texts.size()]
-		"OKAY":
-			var okay_texts = ["Almost!", "Close!", "Not quite!", "Barely!", "Off beat!"]
-			return okay_texts[randi() % okay_texts.size()]
-		"MISS":
-			var miss_texts = ["Missed!", "Oops!", "Miss!", "Nope!", "Fail!"]
-			return miss_texts[randi() % miss_texts.size()]
-		_:
-			return "?"
-
-func explode_note_at_position(_note: Node, color_type: String, intensity: int, explosion_pos: Vector2):
-	# Clamp explosion center to screen bounds so it's visible even if note is off-screen
-	var viewport_size = get_viewport().get_visible_rect().size
-	var note_center = Vector2(
-		clamp(explosion_pos.x, 100, viewport_size.x - 100),
-		clamp(explosion_pos.y, 100, viewport_size.y - 100)
-	)
-	var particle_count = intensity * 20
-
-	for i in range(particle_count):
-		var particle = ColorRect.new()
-		var particle_size = randi_range(8, 25)
-		particle.size = Vector2(particle_size, particle_size)
-		particle.pivot_offset = particle.size / 2
-
-		match color_type:
-			"rainbow":
-				var rainbow_colors = [Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.PURPLE, Color.MAGENTA, Color.PINK]
-				particle.color = rainbow_colors[i % rainbow_colors.size()]
-			"cyan":
-				var cyan_shades = [Color.CYAN, Color.LIGHT_CYAN, Color.AQUA, Color.TURQUOISE]
-				particle.color = cyan_shades[i % cyan_shades.size()]
-			"magenta":
-				var magenta_shades = [Color.MAGENTA, Color.DEEP_PINK, Color.HOT_PINK, Color.VIOLET]
-				particle.color = magenta_shades[i % magenta_shades.size()]
-			"yellow":
-				var yellow_shades = [Color.YELLOW, Color.GOLD, Color.ORANGE, Color.LIGHT_YELLOW]
-				particle.color = yellow_shades[i % yellow_shades.size()]
-			"white":
-				particle.color = Color.WHITE
-			"black":
-				var dark_colors = [Color.BLACK, Color.DIM_GRAY, Color.DARK_GRAY, Color.PURPLE]
-				particle.color = dark_colors[i % dark_colors.size()]
-
-		particle.rotation = randf() * TAU
-		particle.position = note_center + Vector2(randi_range(-40, 40), randi_range(-40, 40))
-		effects_layer.add_child(particle)
-
-		# Capture particle in local variable for lambda
-		var p = particle
-		var tween = create_tween()
-		tween.set_parallel(true)
-
-		# Original explosion behavior: larger radius, longer duration
-		var explosion_radius = 600 if color_type == "rainbow" else 450
-		var random_direction = Vector2(randf_range(-explosion_radius, explosion_radius), randf_range(-explosion_radius, explosion_radius))
-		var duration = randf_range(0.8, 1.5)
-
-		tween.tween_property(p, "position", p.position + random_direction, duration)
-		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)
-		tween.tween_property(p, "modulate:a", 0.0, duration)
-		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
-		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
-		tween.tween_callback(func():
-			if is_instance_valid(p):
-				p.queue_free()
-		).set_delay(duration)
-
-# SIMPLE feedback function - all feedback fades at same rate
-func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool):
-	var label = Label.new()
-	label.text = text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 80)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.z_index = 300
-
-	# note_pos passed in is the NOTE CENTER already
-	var note_center = note_pos
-	var desired_position = Vector2(note_center.x - 200, note_center.y - 100)
-	var label_size = Vector2(400, 200)
-
-	# Clamp to screen so feedback is always visible
-	label.position = clamp_to_screen(desired_position, label_size)
-	label.size = label_size
-	effects_layer.add_child(label)
-	
-	if flash_screen:
-		modulate = Color.RED
-		var flash_tween = create_tween()
-		flash_tween.tween_property(self, "modulate", Color.WHITE, 0.2)
-	
-	# ALL feedback moves up and fades identically at the same rate
-	# Capture label in local variable for lambda
-	var lbl = label
-	var move_tween = create_tween()
-	move_tween.set_parallel(true)
-	move_tween.tween_property(lbl, "position:y", lbl.position.y - 80, 0.8)
-	move_tween.tween_property(lbl, "modulate:a", 0.0, 1.0)
-	move_tween.tween_callback(func():
-		if is_instance_valid(lbl):
-			lbl.queue_free()
-	).set_delay(1.0)
+	BattleManager.animate_opponent_miss(opponent_sprite, opponent_original_pos, self)
 
