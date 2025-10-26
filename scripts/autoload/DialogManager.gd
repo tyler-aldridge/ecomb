@@ -63,11 +63,10 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 	var dialog_pos: Vector2
 
 	if _character == "opponent":
-		# Position centered over opponent sprite (typically at world X=~1734)
-		# Center the dialog horizontally around X=1620 (accounting for dialog width)
+		# Position centered over opponent sprite, closer to it (moved down from Y=300)
 		var center_x = 1620.0 - current_dialog.size.x / 2.0
-		# Position above HitZones (Y=650-850), below Groove bar (Y=120)
-		var top_y = 300.0
+		# Position lower, closer to sprite (sprite around Y=310)
+		var top_y = 450.0
 
 		# Clamp to screen bounds
 		center_x = clamp(center_x, 50.0, viewport_size.x - current_dialog.size.x - 50.0)

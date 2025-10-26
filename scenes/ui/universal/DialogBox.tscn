@@ -1,5 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://cpmn6rri7suv1"]
+[gd_scene load_steps=4 format=3 uid="uid://cpmn6rri7suv1"]
 
+[ext_resource type="Script" path="res://scripts/ui/universal/DialogContainer.gd" id="1_container"]
 [ext_resource type="Texture2D" uid="uid://bfqyixuu77pk6" path="res://assets/interface/ui/dialog-texture.png" id="1_eue2c"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bubble"]
@@ -28,11 +29,12 @@ anchors_preset = 0
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_bubble")
+script = ExtResource("1_container")
 
 [node name="DialogText" type="RichTextLabel" parent="."]
 layout_mode = 2
 theme_override_colors/default_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/normal_font_size = 22
+theme_override_font_sizes/normal_font_size = 28
 bbcode_enabled = true
 fit_content = true
 
