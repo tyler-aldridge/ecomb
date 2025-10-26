@@ -47,10 +47,10 @@ var hit_zone_positions = {
 # Spawn settings
 const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 
-# Hit detection windows (scalable for difficulty settings)
-const PERFECT_WINDOW = 25.0   # Perfect: within 25px of HitZone center
-const GOOD_WINDOW = 50.0      # Good: 26-50px from HitZone center
-# Okay: 50px+ but still overlapping (calculated dynamically based on note size)
+# Hit detection windows (scalable for difficulty settings - scale with note size)
+const PERFECT_WINDOW = 25.0   # Perfect: within 25px (base, scales up for larger notes)
+const GOOD_WINDOW = 50.0      # Good: 26-50px (base, scales up for larger notes)
+const OKAY_WINDOW = 100.0     # Okay: 51-100px (base, scales up for larger notes)
 # Miss: completely outside HitZone (no overlap)
 const MISS_WINDOW = 150.0     # Auto-miss threshold for notes that passed HitZone
 
@@ -713,15 +713,22 @@ func check_hit(track_key: String):
 		fade_out_note(closest_note)
 		active_notes.erase(closest_note)
 
-func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) -> String:
+func get_hit_quality_for_note(distance: float, note: Node, _hit_zone_y: float) -> String:
 	"""
 	Scalable hit detection that works for all note sizes.
 
-	Hit quality based on distance from HitZone center:
-	- Perfect: within 25px
-	- Good: 26-50px
-	- Okay: 50px+ but still overlapping
-	- Miss: completely outside (no overlap)
+	Larger notes (WholeNote, HalfNote) get larger perfect/good windows because
+	they cover more of the HitZone. The windows scale based on how much bigger
+	the note is than the HitZone.
+
+	Formula: window = base_window + size_bonus
+	where size_bonus = max(0, (note_height - hitzone_height) / 2)
+
+	Examples:
+	- WholeNote (800px): Perfect ≤325px, Good ≤350px, Okay ≤400px (base + 300px bonus)
+	- HalfNote (400px): Perfect ≤125px, Good ≤150px, Okay ≤200px (base + 100px bonus)
+	- QuarterNote (200px): Perfect ≤25px, Good ≤50px, Okay ≤100px (no bonus)
+	- SixteenthNote (100px): Perfect ≤25px, Good ≤50px, Okay ≤100px (no bonus, can't exceed HitZone)
 	"""
 	# Get note's actual height dynamically
 	var note_height = 200.0  # Default
@@ -730,6 +737,15 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 
 	# HitZone is always 200px tall
 	const HITZONE_HEIGHT = 200.0
+
+	# Calculate size bonus: larger notes get more lenient windows
+	# This represents how much "extra coverage" a larger note provides
+	var size_bonus = max(0.0, (note_height - HITZONE_HEIGHT) / 2.0)
+
+	# Scale ALL hit windows based on note size (Perfect, Good, AND Okay)
+	var perfect_window_scaled = PERFECT_WINDOW + size_bonus
+	var good_window_scaled = GOOD_WINDOW + size_bonus
+	var okay_window_scaled = OKAY_WINDOW + size_bonus
 
 	# Calculate overlap threshold: notes overlap if distance < sum of half-heights
 	var note_half_height = note_height / 2.0
@@ -740,13 +756,15 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 	if distance >= overlap_threshold:
 		return "MISS"  # Completely outside, no overlap
 
-	# Note is overlapping - determine quality based on distance from center
-	if distance <= PERFECT_WINDOW:
+	# Note is overlapping - determine quality based on scaled windows
+	if distance <= perfect_window_scaled:
 		return "PERFECT"
-	elif distance <= GOOD_WINDOW:
+	elif distance <= good_window_scaled:
 		return "GOOD"
+	elif distance <= okay_window_scaled:
+		return "OKAY"
 	else:
-		return "OKAY"  # Still overlapping but >50px from center
+		return "MISS"  # Too far from center even though overlapping
 
 func process_hit(quality: String, note: Node, effect_pos: Vector2):
 	# Register hit with BattleManager (handles combo, groove, strength)
