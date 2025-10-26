@@ -34,7 +34,7 @@ var settings = {
 	"rhythm_timing_offset": 0,  # For audio latency compensation (milliseconds, positive = notes spawn later/arrive later)
 	"fullscreen": false,
 	"show_fps": false,
-	"difficulty": "normal"  # easy, normal, hard
+	"difficulty": "gymbro"  # wimpy, casual, gymbro, meathead, gigachad
 }
 
 # File paths
@@ -262,7 +262,6 @@ func is_tutorial_completed() -> bool:
 func get_timing_offset() -> float:
 	# Convert milliseconds to seconds
 	var offset_ms = get_setting("rhythm_timing_offset", 0)
-	print("TIMING OFFSET: ", offset_ms, "ms = ", offset_ms / 1000.0, "s")
 	return offset_ms / 1000.0
 
 func get_hit_window_multiplier() -> float:

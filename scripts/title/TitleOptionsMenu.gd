@@ -57,21 +57,28 @@ func _on_rhythm_timing_changed(value):
 	GameManager.set_setting("rhythm_timing_offset", timing_offset)
 
 func _on_difficulty_changed(value):
-	# Convert slider value (0, 1, 2) to difficulty string
+	# Convert slider value (0-4) to difficulty string
 	var difficulty_str = ""
 	var display_text = ""
 	match int(value):
 		0:
-			difficulty_str = "easy"
-			display_text = "Easy"
+			difficulty_str = "wimpy"
+			display_text = "Wimpy"
 		1:
-			difficulty_str = "normal"
-			display_text = "Normal"
+			difficulty_str = "casual"
+			display_text = "Casual"
 		2:
-			difficulty_str = "hard"
-			display_text = "Hard"
+			difficulty_str = "gymbro"
+			display_text = "Gymbro"
+		3:
+			difficulty_str = "meathead"
+			display_text = "Meathead"
+		4:
+			difficulty_str = "gigachad"
+			display_text = "Gigachad"
 
 	GameManager.set_setting("difficulty", difficulty_str)
+	BattleManager.set_difficulty(difficulty_str)
 	if difficulty_value_label:
 		difficulty_value_label.text = display_text
 
@@ -99,23 +106,31 @@ func load_settings():
 		var timing_offset = GameManager.get_setting("rhythm_timing_offset", 0)
 		rhythm_timing_slider.value = timing_offset + 1000
 	if difficulty_slider:
-		# Convert difficulty string to slider value (0, 1, 2)
-		var difficulty = GameManager.get_setting("difficulty", "normal")
-		var slider_value = 1
-		var display_text = "Normal"
+		# Convert difficulty string to slider value (0-4)
+		var difficulty = GameManager.get_setting("difficulty", "gymbro")
+		var slider_value = 2
+		var display_text = "Gymbro"
 		match difficulty:
-			"easy":
+			"wimpy":
 				slider_value = 0
-				display_text = "Easy"
-			"normal":
+				display_text = "Wimpy"
+			"casual":
 				slider_value = 1
-				display_text = "Normal"
-			"hard":
+				display_text = "Casual"
+			"gymbro":
 				slider_value = 2
-				display_text = "Hard"
+				display_text = "Gymbro"
+			"meathead":
+				slider_value = 3
+				display_text = "Meathead"
+			"gigachad":
+				slider_value = 4
+				display_text = "Gigachad"
 		difficulty_slider.value = slider_value
 		if difficulty_value_label:
 			difficulty_value_label.text = display_text
+		# Sync with BattleManager
+		BattleManager.set_difficulty(difficulty)
 	if fullscreen_checkbox:
 		fullscreen_checkbox.button_pressed = GameManager.get_setting("fullscreen", false)
 	if framerate_checkbox:
