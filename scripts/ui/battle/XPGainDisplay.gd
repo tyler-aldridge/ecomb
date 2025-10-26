@@ -15,7 +15,8 @@ var xp_amount: int = 0
 var active_tween: Tween = null
 
 # FIXED offset position - matches what BattleManager sets (scripts/autoload/BattleManager.gd:724)
-const BASE_OFFSET = Vector2(0, -150)
+# Position (-150, -170): -150 centers the 300px wide label, -170 places it above sprite
+const BASE_OFFSET = Vector2(-150, -170)
 
 # Rainbow colors
 var rainbow_colors = [

@@ -719,9 +719,9 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 		# Attach as child so it follows player (including jumps)
 		player_sprite.add_child(xp_display)
 
-		# For Control nodes parented to Node2D, ignore anchors and use position directly
-		# Position above sprite center (0,0 is sprite center)
-		xp_display.position = Vector2(0, -150)
+		# For Control nodes parented to Node2D, we use custom_minimum_size and set position
+		# Position is relative to parent (player sprite center at 0,0)
+		xp_display.position = Vector2(-150, -170)  # Adjusted: -half width for centering, -170 for height above sprite
 
 		# Reset anchors to 0 (not used when parented to Node2D)
 		xp_display.anchor_left = 0.0
@@ -729,14 +729,12 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 		xp_display.anchor_right = 0.0
 		xp_display.anchor_bottom = 0.0
 
-		# Set size and offsets for 200x40 label centered on position
-		xp_display.offset_left = -100.0
-		xp_display.offset_right = 100.0
-		xp_display.offset_top = -20.0
-		xp_display.offset_bottom = 20.0
+		# Set explicit size (300x40 for centered 100pt font XP text)
+		xp_display.custom_minimum_size = Vector2(300, 40)
+		xp_display.size = Vector2(300, 40)
 
-		# Ensure pivot is at center for proper scaling
-		xp_display.pivot_offset = Vector2(100, 20)
+		# Pivot at center of the 300x40 box for scaling
+		xp_display.pivot_offset = Vector2(150, 20)
 
 		displays["xp_display"] = xp_display
 
