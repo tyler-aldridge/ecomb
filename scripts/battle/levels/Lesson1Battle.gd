@@ -205,9 +205,8 @@ func create_battle_ui():
 	# Make it a child of player so it follows them (including jumps)
 	if player_sprite:
 		player_sprite.add_child(combo_display)
-		# Position above player's head (player sprite is 256px tall, scaled by 1.26 = 322px)
-		# Top edge at -161px, + 50px above + 25px (half combo height) = -236px
-		combo_display.position = Vector2(0, -236)
+		# Position dynamically based on sprite size and scale (always 50px above sprite)
+		combo_display.position = calculate_label_position_above_sprite(player_sprite, 50.0, 50.0)
 		combo_display.anchor_left = 0.0
 		combo_display.anchor_top = 0.0
 		combo_display.anchor_right = 0.0
@@ -841,4 +840,42 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 		if is_instance_valid(lbl):
 			lbl.queue_free()
 	).set_delay(1.0)
+
+func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_above: float, label_height: float) -> Vector2:
+	"""
+	Calculate dynamic label position above an AnimatedSprite2D.
+
+	This ensures labels always appear at the correct distance above sprites,
+	regardless of sprite size or scale changes.
+
+	Args:
+		sprite: The AnimatedSprite2D to position above
+		offset_above: How many pixels above the sprite top edge (e.g., 50.0)
+		label_height: Height of the label in pixels (e.g., 50.0 for combo display)
+
+	Returns:
+		Vector2 position for the label relative to sprite center
+	"""
+	if not sprite or not sprite.sprite_frames:
+		return Vector2(0, -200)  # Fallback
+
+	# Get current frame texture to determine sprite size
+	var current_animation = sprite.animation
+	var current_frame = sprite.frame
+	var texture = sprite.sprite_frames.get_frame_texture(current_animation, current_frame)
+
+	if not texture:
+		return Vector2(0, -200)  # Fallback
+
+	# Calculate actual rendered height: texture height * sprite scale
+	var texture_height = texture.get_height()
+	var scaled_height = texture_height * sprite.scale.y
+
+	# Sprite center is at (0, 0), so top edge is at -half_height
+	var top_edge = -scaled_height / 2.0
+
+	# Position label: top edge - offset above - half label height
+	var label_y = top_edge - offset_above - (label_height / 2.0)
+
+	return Vector2(0, label_y)
 
