@@ -803,66 +803,6 @@ func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
 		var invert_material = ShaderMaterial.new()
 		invert_material.shader = invert_shader
 		opponent_sprite.material = invert_material
-
-func clamp_sprite_to_screen(sprite: AnimatedSprite2D):
-	"""
-	Ensure sprite stays within screen bounds.
-
-	Adjusts sprite position so it doesn't go off the edges of the screen,
-	accounting for sprite size and scale.
-
-	Args:
-		sprite: The AnimatedSprite2D to clamp
-	"""
-	if not sprite or not sprite.sprite_frames:
-		return
-
-	# Get viewport size
-	var viewport_size = Vector2(1920, 1080)  # Standard resolution
-
-	# Get sprite texture to calculate actual size
-	var current_animation = sprite.animation
-	var current_frame = sprite.frame
-	var texture = sprite.sprite_frames.get_frame_texture(current_animation, current_frame)
-
-	if not texture:
-		return
-
-	# Calculate actual rendered size: texture size * sprite scale
-	var texture_size = texture.get_size()
-	var scaled_size = texture_size * sprite.scale
-
-	# Calculate sprite bounds (sprite position is at center)
-	var half_width = scaled_size.x / 2.0
-	var half_height = scaled_size.y / 2.0
-
-	# Get sprite's world position (accounting for parent offset)
-	var world_pos = sprite.get_global_position()
-
-	# Calculate bounds
-	var left_edge = world_pos.x - half_width
-	var right_edge = world_pos.x + half_width
-	var top_edge = world_pos.y - half_height
-	var bottom_edge = world_pos.y + half_height
-
-	# Clamp to screen bounds with margin
-	var margin = 0.0
-	var new_pos = sprite.position
-
-	# Clamp horizontal
-	if left_edge < margin:
-		new_pos.x += (margin - left_edge)
-	elif right_edge > viewport_size.x - margin:
-		new_pos.x -= (right_edge - (viewport_size.x - margin))
-
-	# Clamp vertical (bottom edge should touch bottom of screen)
-	if bottom_edge > viewport_size.y:
-		new_pos.y -= (bottom_edge - viewport_size.y)
-	elif top_edge < margin:
-		new_pos.y += (margin - top_edge)
-
-	sprite.position = new_pos
-
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
