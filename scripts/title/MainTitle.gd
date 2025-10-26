@@ -337,7 +337,7 @@ func _fade_to_black() -> void:
 # --- Game Flow Functions ---
 func _start_opening_cutscene() -> void:
 	print("→ Starting opening cutscene")
-	get_tree().change_scene_to_file("res://scenes/battle/BattleTutorial.tscn")
+	get_tree().change_scene_to_file("res://scenes/battle/Lesson1Battle.tscn")
 
 func _fade_to_loaded_game(save_id: String) -> void:
 	print("→ Loading save:", save_id)
