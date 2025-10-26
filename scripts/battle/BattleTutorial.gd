@@ -49,7 +49,8 @@ const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 
 # Hit detection difficulty - managed globally by BattleManager autoload
 # Access via: BattleManager.get_difficulty_thresholds()
-# Set via: BattleManager.set_difficulty("easy|normal|hard|expert")
+# Set via: BattleManager.set_difficulty("wimpy|casual|gymbro|meathead|gigachad")
+# Default: "gymbro" (respect the grind!)
 
 # Miss threshold for notes that passed HitZone completely
 const MISS_WINDOW = 150.0

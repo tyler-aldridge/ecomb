@@ -50,31 +50,37 @@ const MAX_COMBO_MULTIPLIER = 3.0
 
 # Hit detection difficulty presets (percentages of HitZone height exposed)
 # Used by battle scenes to determine Perfect/Good/Okay thresholds
+# Themed around gym/fitness culture - respecting the grind!
 const DIFFICULTY_PRESETS = {
-	"easy": {
-		"perfect": 0.20,   # 20% - very forgiving (40px for 200px HitZone)
-		"good": 0.40,      # 40% - lenient (80px for 200px)
-		"okay": 0.85       # 85% - generous (170px for 200px)
+	"wimpy": {
+		"perfect": 0.25,   # 25% - for those who skip leg day (50px for 200px HitZone)
+		"good": 0.50,      # 50% - warming up (100px for 200px)
+		"okay": 0.90       # 90% - light stretch (180px for 200px)
 	},
-	"normal": {
-		"perfect": 0.125,  # 12.5% - balanced (25px for 200px HitZone)
-		"good": 0.25,      # 25% - fair (50px for 200px)
-		"okay": 0.75       # 75% - reasonable (150px for 200px)
+	"casual": {
+		"perfect": 0.20,   # 20% - warming up (40px for 200px HitZone)
+		"good": 0.40,      # 40% - getting started (80px for 200px)
+		"okay": 0.85       # 85% - easy gains (170px for 200px)
 	},
-	"hard": {
-		"perfect": 0.075,  # 7.5% - strict (15px for 200px HitZone)
-		"good": 0.15,      # 15% - tight (30px for 200px)
-		"okay": 0.50       # 50% - challenging (100px for 200px)
+	"gymbro": {
+		"perfect": 0.125,  # 12.5% - respect the grind (25px for 200px HitZone)
+		"good": 0.25,      # 25% - balanced workout (50px for 200px)
+		"okay": 0.75       # 75% - solid form (150px for 200px)
 	},
-	"expert": {
-		"perfect": 0.05,   # 5% - very strict (10px for 200px HitZone)
-		"good": 0.10,      # 10% - very tight (20px for 200px)
-		"okay": 0.30       # 30% - brutal (60px for 200px)
+	"meathead": {
+		"perfect": 0.075,  # 7.5% - no pain no gain (15px for 200px HitZone)
+		"good": 0.15,      # 15% - strict form (30px for 200px)
+		"okay": 0.50       # 50% - heavy lifting (100px for 200px)
+	},
+	"gigachad": {
+		"perfect": 0.05,   # 5% - LIGHT WEIGHT BABY! (10px for 200px HitZone)
+		"good": 0.10,      # 10% - absolute beast mode (20px for 200px)
+		"okay": 0.30       # 30% - ain't nothin' but a peanut (60px for 200px)
 	}
 }
 
 # Current difficulty setting (persists across battles)
-var current_difficulty: String = "normal"
+var current_difficulty: String = "gymbro"
 
 # ============================================================================
 # BATTLE STATE
@@ -116,7 +122,7 @@ func set_difficulty(difficulty: String):
 	"""
 	Set the hit detection difficulty globally.
 
-	Valid difficulties: "easy", "normal", "hard", "expert"
+	Valid difficulties: "wimpy", "casual", "gymbro", "meathead", "gigachad"
 	Called from settings menu or game initialization.
 	Persists across all battles until changed.
 	"""
