@@ -1,12 +1,14 @@
-[gd_scene load_steps=4 format=3 uid="uid://bv8qm5n7kypse"]
+[gd_scene load_steps=6 format=3 uid="uid://bv8qm5n7kypse"]
 
-[ext_resource type="Script" path="res://scripts/ui/battle/BattleFailure.gd" id="1_failure"]
+[ext_resource type="Script" uid="uid://ct0vudb2lfjky" path="res://scripts/ui/battle/BattleFailure.gd" id="1_failure"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="3_hover"]
-[ext_resource type="AudioStream" uid="uid://cqwprn0gvxhma" path="res://assets/audio/sfx/ohno.ogg" id="6_failure"]
+[ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="3_owl2p"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="4_rgfia"]
+[ext_resource type="AudioStream" uid="uid://bia60cj7of2o4" path="res://assets/audio/sfx/recordscratch.ogg" id="5_4l4ou"]
 
 [node name="BattleFailure" type="Control"]
-visible = false
 process_mode = 3
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,28 +28,29 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
 [node name="FailureDialog" type="ConfirmationDialog" parent="."]
+oversampling_override = 1.0
 title = "BATTLE FAILED"
 initial_position = 2
-size = Vector2i(600, 375)
+size = Vector2i(750, 389)
+visible = true
 max_size = Vector2i(1920, 1080)
+ok_button_text = "Exit to Title"
 dialog_text = "You gassed out! Respect for the effort, though."
 dialog_autowrap = true
-ok_button_text = "Exit to Title"
 cancel_button_text = "Restart"
-theme_override_constants/buttons_separation = 50
 
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_hover")
 bus = &"SFX"
 
 [node name="RestartSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("3_hover")
+stream = ExtResource("3_owl2p")
 bus = &"SFX"
 
 [node name="QuitSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("3_hover")
+stream = ExtResource("4_rgfia")
 bus = &"SFX"
 
 [node name="BattleFailureSound" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("6_failure")
+stream = ExtResource("5_4l4ou")
 bus = &"SFX"

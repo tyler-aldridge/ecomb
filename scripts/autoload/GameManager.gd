@@ -31,7 +31,7 @@ var settings = {
 	"master_volume": 100,
 	"music_volume": 100,
 	"sound_volume": 100,
-	"rhythm_timing_offset": -200,  # For audio latency compensation (milliseconds, negative = notes spawn earlier)
+	"rhythm_timing_offset": 0,  # For audio latency compensation (milliseconds, negative = notes spawn earlier)
 	"fullscreen": false,
 	"show_fps": false,
 	"difficulty": "normal"  # easy, normal, hard
