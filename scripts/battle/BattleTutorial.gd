@@ -715,20 +715,18 @@ func check_hit(track_key: String):
 
 func get_hit_quality_for_note(distance: float, note: Node, _hit_zone_y: float) -> String:
 	"""
-	Scalable hit detection that works for all note sizes.
+	Hit detection with FIXED timing windows for all note sizes.
 
-	Larger notes (WholeNote, HalfNote) get larger perfect/good windows because
-	they cover more of the HitZone. The windows scale based on how much bigger
-	the note is than the HitZone.
+	Bigger notes are already easier to hit because they overlap the HitZone
+	for a longer time. No need to make the timing windows bigger too!
 
-	Formula: window = base_window + size_bonus
-	where size_bonus = max(0, (note_height - hitzone_height) / 2)
+	Hit windows (same for all notes):
+	- Perfect: within 25px of center alignment
+	- Good: 26-50px from center
+	- Okay: 51-100px from center
+	- Miss: no overlap OR >100px from center
 
-	Examples:
-	- WholeNote (800px): Perfect ≤325px, Good ≤350px, Okay ≤400px (base + 300px bonus)
-	- HalfNote (400px): Perfect ≤125px, Good ≤150px, Okay ≤200px (base + 100px bonus)
-	- QuarterNote (200px): Perfect ≤25px, Good ≤50px, Okay ≤100px (no bonus)
-	- SixteenthNote (100px): Perfect ≤25px, Good ≤50px, Okay ≤100px (no bonus, can't exceed HitZone)
+	The timing requirement is identical regardless of note size.
 	"""
 	# Get note's actual height dynamically
 	var note_height = 200.0  # Default
@@ -737,15 +735,6 @@ func get_hit_quality_for_note(distance: float, note: Node, _hit_zone_y: float) -
 
 	# HitZone is always 200px tall
 	const HITZONE_HEIGHT = 200.0
-
-	# Calculate size bonus: larger notes get more lenient windows
-	# This represents how much "extra coverage" a larger note provides
-	var size_bonus = max(0.0, (note_height - HITZONE_HEIGHT) / 2.0)
-
-	# Scale ALL hit windows based on note size (Perfect, Good, AND Okay)
-	var perfect_window_scaled = PERFECT_WINDOW + size_bonus
-	var good_window_scaled = GOOD_WINDOW + size_bonus
-	var okay_window_scaled = OKAY_WINDOW + size_bonus
 
 	# Calculate overlap threshold: notes overlap if distance < sum of half-heights
 	var note_half_height = note_height / 2.0
@@ -756,12 +745,12 @@ func get_hit_quality_for_note(distance: float, note: Node, _hit_zone_y: float) -
 	if distance >= overlap_threshold:
 		return "MISS"  # Completely outside, no overlap
 
-	# Note is overlapping - determine quality based on scaled windows
-	if distance <= perfect_window_scaled:
+	# Note is overlapping - use FIXED windows (same for all note sizes)
+	if distance <= PERFECT_WINDOW:
 		return "PERFECT"
-	elif distance <= good_window_scaled:
+	elif distance <= GOOD_WINDOW:
 		return "GOOD"
-	elif distance <= okay_window_scaled:
+	elif distance <= OKAY_WINDOW:
 		return "OKAY"
 	else:
 		return "MISS"  # Too far from center even though overlapping
