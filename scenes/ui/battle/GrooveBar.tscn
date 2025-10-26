@@ -35,7 +35,7 @@ layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
 offset_top = 0.0
-offset_bottom = 120.0
+offset_bottom = 78.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("1_groove")
@@ -53,17 +53,18 @@ max_value = 100.0
 value = 50.0
 show_percentage = false
 
-[node name="GrooveLabel" type="Label" parent="."]
+[node name="TutorialMessage" type="Label" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 145.0
-offset_bottom = 183.0
+offset_top = 93.0
+offset_bottom = 131.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(1, 1, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 38
-text = "Groove 50%"
+theme_override_font_sizes/font_size = 24
+text = "This is your groove meter. Don't let it get to zero or you will lose the battle!"
 horizontal_alignment = 1
 vertical_alignment = 1

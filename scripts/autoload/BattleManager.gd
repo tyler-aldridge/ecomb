@@ -21,6 +21,8 @@ signal strength_gained(amount: int, total: int)
 signal hit_registered(quality: String, strength: int, groove_change: float)
 signal battle_failed()  # Groove reached 0%
 signal battle_completed(results: Dictionary)  # End of battle results
+signal show_groove_tutorial()  # Show groove bar tutorial message
+signal hide_groove_tutorial()  # Hide groove bar tutorial message
 
 # ============================================================================
 # CONSTANTS - Hit Quality Base Values

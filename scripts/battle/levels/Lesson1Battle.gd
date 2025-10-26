@@ -388,6 +388,9 @@ func create_hit_zone_indicators():
 	# Clear any existing indicators first
 	stop_hit_zone_indicators()
 
+	# Show groove bar tutorial message via BattleManager signal
+	BattleManager.show_groove_tutorial.emit()
+
 	for i in range(3):
 		var zone_key = str(i + 1)
 		var pos = BattleManager.HIT_ZONE_POSITIONS[zone_key]
@@ -436,6 +439,9 @@ func create_hit_zone_indicators():
 
 func stop_hit_zone_indicators():
 	"""Fade out and remove all hit zone indicator nodes (yellow borders and numbers)."""
+	# Hide groove bar tutorial message via BattleManager signal
+	BattleManager.hide_groove_tutorial.emit()
+
 	for indicator in hit_zone_indicator_nodes:
 		if is_instance_valid(indicator):
 			# Capture the indicator in a local variable to avoid loop variable issues

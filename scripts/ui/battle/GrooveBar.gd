@@ -5,18 +5,18 @@ extends Control
 # ============================================================================
 # Displays groove with yellow (≤49%) to green (≥50%) gradient
 # - Rainbow pulsing when full
-# - Flag waving animation on text when full
 # - Smooth color transitions
 # - Rounded right side
 # - Z-indexed to top
+# - Tutorial message that pulses from center
 
 @onready var progress_bar: ProgressBar = $ProgressBar
-@onready var groove_label: Label = $GrooveLabel
+@onready var tutorial_message: Label = $TutorialMessage
 
 var current_percentage: float = 50.0
 var rainbow_time: float = 0.0
 var is_full: bool = false
-var flag_wave_time: float = 0.0
+var pulse_time: float = 0.0
 
 # Rainbow colors for full groove pulse
 var rainbow_colors = [
@@ -37,6 +37,8 @@ func _ready():
 	# Connect to BattleManager signals
 	if BattleManager:
 		BattleManager.groove_changed.connect(_on_groove_changed)
+		BattleManager.show_groove_tutorial.connect(show_tutorial_message)
+		BattleManager.hide_groove_tutorial.connect(hide_tutorial_message)
 
 	# Initialize progress bar
 	if progress_bar:
@@ -61,29 +63,11 @@ func _process(delta):
 				var t = rainbow_time - floor(rainbow_time)
 				fill_style.bg_color = rainbow_colors[color_index].lerp(rainbow_colors[next_index], t)
 
-		# Flag waving animation on text when full
-		if groove_label:
-			flag_wave_time += delta * 5.0
-			# Create wave effect with rotation and position offset
-			var wave_offset = sin(flag_wave_time) * 8.0
-			var wave_rotation = sin(flag_wave_time * 0.7) * 0.08
-			groove_label.rotation = wave_rotation
-			groove_label.position.y = 145.0 + wave_offset
-
-			# Rainbow text color cycling
-			rainbow_time += delta * 3.0
-			if rainbow_time >= rainbow_colors.size():
-				rainbow_time = 0.0
-			var color_index = int(rainbow_time)
-			var next_index = (color_index + 1) % rainbow_colors.size()
-			var t = rainbow_time - floor(rainbow_time)
-			groove_label.modulate = rainbow_colors[color_index].lerp(rainbow_colors[next_index], t)
-	else:
-		# Reset label position and rotation when not full
-		if groove_label:
-			groove_label.rotation = 0.0
-			groove_label.position.y = 145.0
-			groove_label.modulate = Color.WHITE
+	# Pulsing animation for tutorial message when visible
+	if tutorial_message and tutorial_message.visible:
+		pulse_time += delta * 2.0
+		var scale_value = 1.0 + sin(pulse_time) * 0.15  # Pulse between 0.85 and 1.15
+		tutorial_message.scale = Vector2(scale_value, scale_value)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -93,10 +77,6 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 	var percentage = (current_groove / max_groove) * 100.0 if max_groove > 0 else 0.0
 	current_percentage = percentage
 
-	# Update label text
-	if groove_label:
-		groove_label.text = "Groove %d%%" % int(percentage)
-
 	# Check if full for rainbow pulsing
 	is_full = percentage >= 100.0
 
@@ -104,7 +84,7 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 	var tween = create_tween()
 	tween.tween_property(progress_bar, "value", percentage, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 
-	# Update color based on groove level (ROYGBIV gradient)
+	# Update color based on groove level
 	if not is_full:
 		update_bar_color(percentage)
 
@@ -137,3 +117,18 @@ func play_low_groove_warning():
 	tween.set_loops(2)
 	tween.tween_property(self, "modulate:a", 0.7, 0.2)
 	tween.tween_property(self, "modulate:a", 1.0, 0.2)
+
+func show_tutorial_message():
+	"""Show the tutorial message with fade in animation."""
+	if tutorial_message:
+		tutorial_message.visible = true
+		tutorial_message.modulate.a = 0.0
+		var tween = create_tween()
+		tween.tween_property(tutorial_message, "modulate:a", 1.0, 0.5)
+
+func hide_tutorial_message():
+	"""Hide the tutorial message with fade out animation."""
+	if tutorial_message:
+		var tween = create_tween()
+		tween.tween_property(tutorial_message, "modulate:a", 0.0, 0.5)
+		tween.tween_callback(func(): tutorial_message.visible = false)
