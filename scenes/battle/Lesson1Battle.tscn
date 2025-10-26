@@ -130,7 +130,7 @@ sprite_frames = SubResource("SpriteFrames_te63p")
 animation = &"pecs"
 
 [node name="OptionsLayer" type="CanvasLayer" parent="."]
-layer = 100
+layer = 200
 
 [node name="BattleOptionsMenu" parent="OptionsLayer" instance=ExtResource("4_options")]
 anchors_preset = 15
