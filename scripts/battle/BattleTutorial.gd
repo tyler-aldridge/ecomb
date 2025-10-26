@@ -47,33 +47,9 @@ var hit_zone_positions = {
 # Spawn settings
 const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 
-# Hit detection difficulty presets (percentages of HitZone height exposed)
-# Each difficulty has thresholds for Perfect/Good/Okay as % of HitZone
-const DIFFICULTY_PRESETS = {
-	"easy": {
-		"perfect": 0.20,   # 20% - very forgiving (40px for 200px HitZone)
-		"good": 0.40,      # 40% - lenient (80px for 200px)
-		"okay": 0.85       # 85% - generous (170px for 200px)
-	},
-	"normal": {
-		"perfect": 0.125,  # 12.5% - balanced (25px for 200px HitZone)
-		"good": 0.25,      # 25% - fair (50px for 200px)
-		"okay": 0.75       # 75% - reasonable (150px for 200px)
-	},
-	"hard": {
-		"perfect": 0.075,  # 7.5% - strict (15px for 200px HitZone)
-		"good": 0.15,      # 15% - tight (30px for 200px)
-		"okay": 0.50       # 50% - challenging (100px for 200px)
-	},
-	"expert": {
-		"perfect": 0.05,   # 5% - very strict (10px for 200px HitZone)
-		"good": 0.10,      # 10% - very tight (20px for 200px)
-		"okay": 0.30       # 30% - brutal (60px for 200px)
-	}
-}
-
-# Current difficulty (can be changed via settings menu in future)
-var current_difficulty: String = "normal"
+# Hit detection difficulty - managed globally by BattleManager autoload
+# Access via: BattleManager.get_difficulty_thresholds()
+# Set via: BattleManager.set_difficulty("easy|normal|hard|expert")
 
 # Miss threshold for notes that passed HitZone completely
 const MISS_WINDOW = 150.0
@@ -737,19 +713,6 @@ func check_hit(track_key: String):
 		fade_out_note(closest_note)
 		active_notes.erase(closest_note)
 
-func set_difficulty(difficulty: String):
-	"""
-	Set the hit detection difficulty.
-
-	Valid difficulties: "easy", "normal", "hard", "expert"
-	Can be called from settings menu or before starting battle.
-	"""
-	if DIFFICULTY_PRESETS.has(difficulty):
-		current_difficulty = difficulty
-		print("Hit detection difficulty set to: ", difficulty)
-	else:
-		push_error("Invalid difficulty: " + difficulty)
-
 func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) -> String:
 	"""
 	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
@@ -797,8 +760,8 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 	# The WORST exposure (largest gap) determines hit quality
 	var max_exposure = max(top_exposure, bottom_exposure)
 
-	# Get difficulty preset percentages
-	var difficulty = DIFFICULTY_PRESETS[current_difficulty]
+	# Get difficulty thresholds from BattleManager (global settings)
+	var difficulty = BattleManager.get_difficulty_thresholds()
 
 	# Calculate thresholds as percentages of HitZone height based on current difficulty
 	var perfect_threshold = HITZONE_HEIGHT * difficulty["perfect"]  # e.g., 12.5% of 200px = 25px

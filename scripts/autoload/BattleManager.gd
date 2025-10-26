@@ -45,6 +45,38 @@ const COMBO_THRESHOLDS = {
 const MAX_COMBO_MULTIPLIER = 3.0
 
 # ============================================================================
+# DIFFICULTY SYSTEM - Hit Detection Thresholds
+# ============================================================================
+
+# Hit detection difficulty presets (percentages of HitZone height exposed)
+# Used by battle scenes to determine Perfect/Good/Okay thresholds
+const DIFFICULTY_PRESETS = {
+	"easy": {
+		"perfect": 0.20,   # 20% - very forgiving (40px for 200px HitZone)
+		"good": 0.40,      # 40% - lenient (80px for 200px)
+		"okay": 0.85       # 85% - generous (170px for 200px)
+	},
+	"normal": {
+		"perfect": 0.125,  # 12.5% - balanced (25px for 200px HitZone)
+		"good": 0.25,      # 25% - fair (50px for 200px)
+		"okay": 0.75       # 75% - reasonable (150px for 200px)
+	},
+	"hard": {
+		"perfect": 0.075,  # 7.5% - strict (15px for 200px HitZone)
+		"good": 0.15,      # 15% - tight (30px for 200px)
+		"okay": 0.50       # 50% - challenging (100px for 200px)
+	},
+	"expert": {
+		"perfect": 0.05,   # 5% - very strict (10px for 200px HitZone)
+		"good": 0.10,      # 10% - very tight (20px for 200px)
+		"okay": 0.30       # 30% - brutal (60px for 200px)
+	}
+}
+
+# Current difficulty setting (persists across battles)
+var current_difficulty: String = "normal"
+
+# ============================================================================
 # BATTLE STATE
 # ============================================================================
 
@@ -75,6 +107,32 @@ var hit_counts = {
 # Strength (XP) tracking
 var strength_total: int = 0
 var strength_max_possible: int = 0  # Maximum strength if all notes hit PERFECT
+
+# ============================================================================
+# DIFFICULTY MANAGEMENT
+# ============================================================================
+
+func set_difficulty(difficulty: String):
+	"""
+	Set the hit detection difficulty globally.
+
+	Valid difficulties: "easy", "normal", "hard", "expert"
+	Called from settings menu or game initialization.
+	Persists across all battles until changed.
+	"""
+	if DIFFICULTY_PRESETS.has(difficulty):
+		current_difficulty = difficulty
+		print("Hit detection difficulty set to: ", difficulty)
+	else:
+		push_error("Invalid difficulty: " + difficulty)
+
+func get_difficulty() -> String:
+	"""Get the current difficulty setting."""
+	return current_difficulty
+
+func get_difficulty_thresholds() -> Dictionary:
+	"""Get the current difficulty's hit thresholds (percentages)."""
+	return DIFFICULTY_PRESETS[current_difficulty]
 
 # ============================================================================
 # BATTLE LIFECYCLE
