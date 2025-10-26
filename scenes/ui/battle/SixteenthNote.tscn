@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://c7p2x9n4vwm5k"]
+
+[ext_resource type="Script" uid="uid://brue8os5ofsw2" path="res://scripts/game/battle/Note.gd" id="1_note"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sixteenth"]
+size = Vector2(201, 100)
+
+[node name="SixteenthNote" type="Area2D"]
+script = ExtResource("1_note")
+
+[node name="NoteTemplate" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(200, 100)
+offset_right = 200.0
+offset_bottom = 100.0
+metadata/_edit_use_anchors_ = true
+
+[node name="NoteCollision" type="CollisionShape2D" parent="."]
+position = Vector2(100, 50)
+shape = SubResource("RectangleShape2D_sixteenth")
+debug_color = Color(1, 1, 1, 0)

@@ -17,19 +17,24 @@ var level_data: Dictionary = {}
 #   4. All hit detection, spawn positioning, and timing automatically scale!
 const NOTE_TYPE_CONFIG = {
 	"whole": {
-		"scene": preload("res://scenes/ui/battle/LongNote.tscn"),  # 200x800
+		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
 		"travel_time": 3.0,
 		"spawn_offset": 17  # 3.0s at 152 BPM = 15.2, but empirically needs 17
 	},
 	"half": {
-		"scene": preload("res://scenes/ui/battle/Note.tscn"),  # Will use 200x400 scene when created
+		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
 		"travel_time": 1.55,
 		"spawn_offset": 8
 	},
 	"quarter": {
-		"scene": preload("res://scenes/ui/battle/Note.tscn"),  # 200x200
+		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
 		"travel_time": 1.55,
 		"spawn_offset": 8  # 1.55s at 152 BPM = 7.85 ≈ 8 half-beats
+	},
+	"sixteenth": {
+		"scene": preload("res://scenes/ui/battle/SixteenthNote.tscn"),  # 200x100
+		"travel_time": 1.55,
+		"spawn_offset": 8  # Same as quarter for now
 	}
 }
 
