@@ -261,7 +261,9 @@ func is_tutorial_completed() -> bool:
 # ===== RHYTHM GAME HELPERS =====
 func get_timing_offset() -> float:
 	# Convert milliseconds to seconds
-	return get_setting("rhythm_timing_offset", 0) / 1000.0
+	var offset_ms = get_setting("rhythm_timing_offset", 0)
+	print("TIMING OFFSET: ", offset_ms, "ms = ", offset_ms / 1000.0, "s")
+	return offset_ms / 1000.0
 
 func get_hit_window_multiplier() -> float:
 	# Based on difficulty setting and groove stat
