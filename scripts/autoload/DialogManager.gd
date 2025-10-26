@@ -130,7 +130,11 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
 		var delay := float(i) * per_number_seconds
-		_spawn_number_later(str(numbers[i]), delay, font_size, Color.WHITE if str(numbers[i]) != "GO!" else Color.RED, 0.2)
+		var number_text = str(numbers[i])
+		var is_go = number_text == "GO!"
+		# 3,2,1 have half the linger time (0.1), GO! has normal (0.2)
+		var linger_time = 0.2 if is_go else 0.1
+		_spawn_number_later(number_text, delay, font_size, Color.WHITE if not is_go else Color.RED, linger_time, is_go)
 
 func show_countdown_number(text: String, seconds: float, font_size: int, color: Color) -> void:
 	_spawn_number_later(text, 0.0, font_size, color, seconds)
@@ -146,14 +150,18 @@ func _type_text(node: Node, full_text: String) -> void:
 		_set_text(node, full_text.substr(0, i))
 		await get_tree().create_timer(0.02).timeout
 
-func _spawn_number_later(text: String, delay: float, font_size: int, color: Color, linger: float) -> void:
+func _spawn_number_later(text: String, delay: float, font_size: int, color: Color, linger: float, is_go: bool = false) -> void:
 	var timer := get_tree().create_timer(delay)
-	timer.timeout.connect(Callable(self, "_spawn_number_now").bind(text, font_size, color, linger))
+	timer.timeout.connect(Callable(self, "_spawn_number_now").bind(text, font_size, color, linger, is_go))
 
-func _spawn_number_now(text: String, font_size: int, color: Color, linger: float) -> void:
+func _spawn_number_now(text: String, font_size: int, color: Color, linger: float, is_go: bool = false) -> void:
 	var label := Label.new()
 	label.text = text
-	label.modulate = color
+	# Force GO! to start at 100% alpha
+	if is_go:
+		label.modulate = Color(color.r, color.g, color.b, 1.0)
+	else:
+		label.modulate = color
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -163,8 +171,9 @@ func _spawn_number_now(text: String, font_size: int, color: Color, linger: float
 	var label_width = font_size * 2  # Wide enough for any countdown text
 	var label_height = font_size * 1.5  # Tall enough for the font
 	label.size = Vector2(label_width, label_height)
-	label.position = Vector2(viewport_size.x * 0.5 - label_width * 0.5, viewport_size.y * 0.5 - label_height * 0.5)
-	
+	var center_pos = Vector2(viewport_size.x * 0.5 - label_width * 0.5, viewport_size.y * 0.5 - label_height * 0.5)
+	label.position = center_pos
+
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	if get_tree().current_scene:
@@ -172,10 +181,18 @@ func _spawn_number_now(text: String, font_size: int, color: Color, linger: float
 	else:
 		get_tree().root.add_child(layer)
 	layer.add_child(label)
-	
+
 	var tw := create_tween()
 	tw.set_parallel(true)
 	var fade_duration = 0.4 + linger
 	tw.tween_property(label, "position:y", label.position.y - 80.0, fade_duration)
 	tw.tween_property(label, "modulate:a", 0.0, fade_duration)
+
+	# Add shake animation for GO!
+	if is_go:
+		var shake_tw := create_tween()
+		shake_tw.set_loops(int(fade_duration / 0.1))  # Shake every 0.1 seconds
+		shake_tw.tween_property(label, "rotation", deg_to_rad(3), 0.05)
+		shake_tw.tween_property(label, "rotation", deg_to_rad(-3), 0.05)
+
 	tw.tween_callback(layer.queue_free).set_delay(fade_duration)

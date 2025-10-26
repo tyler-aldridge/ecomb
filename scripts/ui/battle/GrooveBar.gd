@@ -10,6 +10,7 @@ extends Control
 # - Z-indexed to top
 
 @onready var progress_bar: ProgressBar = $ProgressBar
+@onready var groove_label: Label = $GrooveLabel
 
 var current_percentage: float = 50.0
 var rainbow_time: float = 0.0
@@ -36,6 +37,8 @@ func _ready():
 		progress_bar.min_value = 0
 		progress_bar.max_value = 100
 		progress_bar.value = 50
+		# Set initial color to green (50%)
+		update_bar_color(50.0)
 
 func _process(delta):
 	# Rainbow pulse animation when groove is full
@@ -58,6 +61,10 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 
 	var percentage = (current_groove / max_groove) * 100.0 if max_groove > 0 else 0.0
 	current_percentage = percentage
+
+	# Update label text
+	if groove_label:
+		groove_label.text = "Groove %d%%" % int(percentage)
 
 	# Check if full for rainbow pulsing
 	is_full = percentage >= 100.0

@@ -447,493 +447,493 @@
     {
       "bar": 50,
       "beat": 1,
-      "beat_position": 381,
+      "beat_position": 380,
       "note": "quarter"
     },
     {
       "bar": 53,
       "beat": 1,
-      "beat_position": 405,
+      "beat_position": 404,
       "note": "quarter"
     },
     {
       "bar": 53,
       "beat": "2a",
+      "beat_position": 407,
+      "note": "quarter"
+    },
+    {
+      "bar": 53,
+      "beat": 3,
       "beat_position": 408,
       "note": "quarter"
     },
     {
-      "bar": 53,
-      "beat": 3,
-      "beat_position": 409,
-      "note": "quarter"
-    },
-    {
       "bar": 54,
       "beat": 1,
-      "beat_position": 413,
+      "beat_position": 412,
       "note": "quarter"
     },
     {
       "bar": 54,
       "beat": 3,
-      "beat_position": 417,
+      "beat_position": 416,
       "note": "quarter"
     },
     {
       "bar": 54,
       "beat": "4a",
-      "beat_position": 420,
+      "beat_position": 419,
       "note": "quarter"
     },
     {
       "bar": 55,
       "beat": "1a",
-      "beat_position": 422,
+      "beat_position": 421,
       "note": "quarter"
     },
     {
       "bar": 55,
       "beat": "2a",
-      "beat_position": 424,
+      "beat_position": 423,
       "note": "quarter"
     },
     {
       "bar": 58,
       "beat": 1,
-      "beat_position": 445,
+      "beat_position": 444,
       "note": "quarter"
     },
     {
       "bar": 58,
       "beat": "2a",
+      "beat_position": 447,
+      "note": "quarter"
+    },
+    {
+      "bar": 58,
+      "beat": 3,
       "beat_position": 448,
       "note": "quarter"
     },
     {
-      "bar": 58,
-      "beat": 3,
-      "beat_position": 449,
-      "note": "quarter"
-    },
-    {
       "bar": 59,
       "beat": 1,
-      "beat_position": 453,
+      "beat_position": 452,
       "note": "quarter"
     },
     {
       "bar": 59,
       "beat": 3,
-      "beat_position": 457,
+      "beat_position": 456,
       "note": "quarter"
     },
     {
       "bar": 59,
       "beat": "4a",
-      "beat_position": 460,
+      "beat_position": 459,
       "note": "quarter"
     },
     {
       "bar": 60,
       "beat": "1a",
-      "beat_position": 462,
+      "beat_position": 461,
       "note": "quarter"
     },
     {
       "bar": 60,
       "beat": "2a",
-      "beat_position": 464,
+      "beat_position": 463,
       "note": "quarter"
     },
     {
       "bar": 63,
       "beat": 3,
-      "beat_position": 489,
+      "beat_position": 488,
       "note": "quarter"
     },
     {
       "bar": 64,
       "beat": 1,
-      "beat_position": 493,
+      "beat_position": 492,
       "note": "quarter"
     },
     {
       "bar": 64,
       "beat": 3,
-      "beat_position": 497,
+      "beat_position": 496,
       "note": "quarter"
     },
     {
       "bar": 65,
       "beat": 1,
-      "beat_position": 501,
+      "beat_position": 500,
       "note": "quarter"
     },
     {
       "bar": 65,
       "beat": 3,
-      "beat_position": 505,
+      "beat_position": 504,
       "note": "quarter"
     },
     {
       "bar": 66,
       "beat": 1,
-      "beat_position": 509,
+      "beat_position": 508,
       "note": "quarter"
     },
     {
       "bar": 66,
       "beat": 3,
-      "beat_position": 513,
+      "beat_position": 512,
       "note": "quarter"
     },
     {
       "bar": 67,
       "beat": 1,
-      "beat_position": 517,
+      "beat_position": 516,
       "note": "quarter"
     },
     {
       "bar": 67,
       "beat": 3,
-      "beat_position": 521,
+      "beat_position": 520,
       "note": "quarter"
     },
     {
       "bar": 68,
       "beat": 1,
-      "beat_position": 525,
+      "beat_position": 524,
       "note": "quarter"
     },
     {
       "bar": 68,
       "beat": 3,
-      "beat_position": 529,
+      "beat_position": 528,
       "note": "quarter"
     },
     {
       "bar": 69,
       "beat": 1,
-      "beat_position": 533,
+      "beat_position": 532,
       "note": "quarter"
     },
     {
       "bar": 69,
       "beat": 3,
-      "beat_position": 537,
+      "beat_position": 536,
       "note": "quarter"
     },
     {
       "bar": 70,
       "beat": 1,
-      "beat_position": 541,
+      "beat_position": 540,
       "note": "quarter"
     },
     {
       "bar": 70,
       "beat": 3,
-      "beat_position": 545,
+      "beat_position": 544,
       "note": "quarter"
     },
     {
       "bar": 71,
       "beat": 1,
-      "beat_position": 549,
+      "beat_position": 548,
       "note": "quarter"
     },
     {
       "bar": 71,
       "beat": 3,
-      "beat_position": 553,
+      "beat_position": 552,
       "note": "quarter"
     },
     {
       "bar": 72,
       "beat": 1,
-      "beat_position": 557,
+      "beat_position": 556,
       "note": "quarter"
     },
     {
       "bar": 72,
       "beat": 3,
-      "beat_position": 561,
+      "beat_position": 560,
       "note": "quarter"
     },
     {
       "bar": 73,
       "beat": 1,
-      "beat_position": 565,
+      "beat_position": 564,
       "note": "quarter"
     },
     {
       "bar": 73,
       "beat": 3,
-      "beat_position": 569,
+      "beat_position": 568,
       "note": "quarter"
     },
     {
       "bar": 74,
       "beat": 1,
-      "beat_position": 573,
+      "beat_position": 572,
       "note": "quarter"
     },
     {
       "bar": 74,
       "beat": 3,
-      "beat_position": 577,
+      "beat_position": 576,
       "note": "quarter"
     },
     {
       "bar": 75,
       "beat": 1,
-      "beat_position": 581,
+      "beat_position": 580,
       "note": "quarter"
     },
     {
       "bar": 75,
       "beat": 3,
-      "beat_position": 585,
+      "beat_position": 584,
       "note": "quarter"
     },
     {
       "bar": 76,
       "beat": 1,
-      "beat_position": 589,
+      "beat_position": 588,
       "note": "quarter"
     },
     {
       "bar": 76,
       "beat": 3,
-      "beat_position": 593,
+      "beat_position": 592,
       "note": "quarter"
     },
     {
       "bar": 77,
       "beat": 1,
-      "beat_position": 597,
+      "beat_position": 596,
       "note": "quarter"
     },
     {
       "bar": 77,
       "beat": 3,
-      "beat_position": 601,
+      "beat_position": 600,
       "note": "quarter"
     },
     {
       "bar": 78,
       "beat": 1,
-      "beat_position": 605,
+      "beat_position": 604,
       "note": "quarter"
     },
     {
       "bar": 78,
       "beat": 3,
-      "beat_position": 609,
+      "beat_position": 608,
       "note": "quarter"
     },
     {
       "bar": 79,
       "beat": 1,
-      "beat_position": 613,
+      "beat_position": 612,
       "note": "quarter"
     },
     {
       "bar": 79,
       "beat": 3,
-      "beat_position": 617,
+      "beat_position": 616,
       "note": "quarter"
     },
     {
       "bar": 80,
       "beat": 1,
-      "beat_position": 621,
+      "beat_position": 620,
       "note": "quarter"
     },
     {
       "bar": 80,
       "beat": 3,
-      "beat_position": 625,
+      "beat_position": 624,
       "note": "quarter"
     },
     {
       "bar": 81,
       "beat": 1,
-      "beat_position": 629,
+      "beat_position": 628,
       "note": "quarter"
     },
     {
       "bar": 81,
       "beat": 3,
-      "beat_position": 633,
+      "beat_position": 632,
       "note": "quarter"
     },
     {
       "bar": 82,
       "beat": 1,
-      "beat_position": 637,
+      "beat_position": 636,
       "note": "quarter"
     },
     {
       "bar": 82,
       "beat": 3,
-      "beat_position": 641,
+      "beat_position": 640,
       "note": "quarter"
     },
     {
       "bar": 83,
       "beat": 1,
-      "beat_position": 645,
+      "beat_position": 644,
       "note": "quarter"
     },
     {
       "bar": 83,
       "beat": 3,
-      "beat_position": 649,
+      "beat_position": 648,
       "note": "quarter"
     },
     {
       "bar": 84,
       "beat": 1,
-      "beat_position": 653,
+      "beat_position": 652,
       "note": "quarter"
     },
     {
       "bar": 84,
       "beat": 3,
-      "beat_position": 657,
+      "beat_position": 656,
       "note": "quarter"
     },
     {
       "bar": 85,
       "beat": 1,
-      "beat_position": 661,
+      "beat_position": 660,
       "note": "quarter"
     },
     {
       "bar": 85,
       "beat": 3,
-      "beat_position": 665,
+      "beat_position": 664,
       "note": "quarter"
     },
     {
       "bar": 86,
       "beat": 1,
-      "beat_position": 669,
+      "beat_position": 668,
       "note": "quarter"
     },
     {
       "bar": 86,
       "beat": 3,
-      "beat_position": 673,
+      "beat_position": 672,
       "note": "quarter"
     },
     {
       "bar": 87,
       "beat": 1,
-      "beat_position": 677,
+      "beat_position": 676,
       "note": "quarter"
     },
     {
       "bar": 87,
       "beat": 3,
-      "beat_position": 681,
+      "beat_position": 680,
       "note": "quarter"
     },
     {
       "bar": 88,
       "beat": 1,
-      "beat_position": 685,
+      "beat_position": 684,
       "note": "quarter"
     },
     {
       "bar": 88,
       "beat": 3,
-      "beat_position": 689,
+      "beat_position": 688,
       "note": "quarter"
     },
     {
       "bar": 89,
       "beat": 1,
-      "beat_position": 693,
+      "beat_position": 692,
       "note": "quarter"
     },
     {
       "bar": 89,
       "beat": 3,
-      "beat_position": 697,
+      "beat_position": 696,
       "note": "quarter"
     },
     {
       "bar": 90,
       "beat": 1,
-      "beat_position": 701,
+      "beat_position": 700,
       "note": "quarter"
     },
     {
       "bar": 90,
       "beat": 3,
-      "beat_position": 705,
+      "beat_position": 704,
       "note": "quarter"
     },
     {
       "bar": 91,
       "beat": 1,
-      "beat_position": 709,
+      "beat_position": 708,
       "note": "quarter"
     },
     {
       "bar": 91,
       "beat": 3,
-      "beat_position": 713,
+      "beat_position": 712,
       "note": "quarter"
     },
     {
       "bar": 92,
       "beat": 1,
-      "beat_position": 717,
+      "beat_position": 716,
       "note": "quarter"
     },
     {
       "bar": 92,
       "beat": 3,
-      "beat_position": 721,
+      "beat_position": 720,
       "note": "quarter"
     },
     {
       "bar": 93,
       "beat": 1,
-      "beat_position": 725,
+      "beat_position": 724,
       "note": "quarter"
     },
     {
       "bar": 93,
       "beat": 3,
-      "beat_position": 729,
+      "beat_position": 728,
       "note": "quarter"
     },
     {
       "bar": 94,
       "beat": 1,
-      "beat_position": 733,
+      "beat_position": 732,
       "note": "quarter"
     },
     {
       "bar": 94,
       "beat": 3,
-      "beat_position": 737,
+      "beat_position": 736,
       "note": "quarter"
     },
     {
       "bar": 95,
       "beat": 1,
-      "beat_position": 741,
+      "beat_position": 740,
       "note": "quarter"
     },
     {
       "bar": 95,
       "beat": 3,
-      "beat_position": 745,
+      "beat_position": 744,
       "note": "quarter"
     }
   ]
