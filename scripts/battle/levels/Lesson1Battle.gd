@@ -1,9 +1,11 @@
 extends Node2D
 
 @onready var conductor = $Conductor
-@onready var hit_zones = $HitZones
 @onready var player_sprite = $TutorialUI/Player
 @onready var opponent_sprite = $TutorialUI/Opponent
+
+# Hitzones are now created universally by BattleManager
+var hit_zones = []
 
 # Level data
 @export var level_data_path: String = "res://scripts/battle/data/Lesson1Data.json"
@@ -185,6 +187,7 @@ func create_battle_ui():
 	var displays = BattleManager.setup_battle_character_displays(player_sprite, opponent_sprite, ui_layer)
 	combo_display = displays.get("combo_display")
 	xp_gain_display = displays.get("xp_display")
+	hit_zones = displays.get("hitzones", [])
 
 	# Battle results menu (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/battle/BattleResults.tscn")
@@ -261,19 +264,20 @@ func fade_from_black():
 	fade_tween.tween_property(fade_overlay, "modulate:a", 0.0, 1.5)
 
 func setup_hit_zone_borders():
-	for i in range(3):
-		var hit_zone = hit_zones.get_child(i)
-		hit_zone.color = Color(1, 1, 1, 0)
-		
-		var border = Line2D.new()
-		border.width = 3.0
-		border.default_color = Color.WHITE
-		border.add_point(Vector2(0, 0))
-		border.add_point(Vector2(200, 0))
-		border.add_point(Vector2(200, 200))
-		border.add_point(Vector2(0, 200))
-		border.add_point(Vector2(0, 0))
-		hit_zone.add_child(border)
+	for i in range(hit_zones.size()):
+		var hit_zone = hit_zones[i]
+		if is_instance_valid(hit_zone):
+			hit_zone.color = Color(1, 1, 1, 0)
+
+			var border = Line2D.new()
+			border.width = 3.0
+			border.default_color = Color.WHITE
+			border.add_point(Vector2(0, 0))
+			border.add_point(Vector2(200, 0))
+			border.add_point(Vector2(200, 200))
+			border.add_point(Vector2(0, 200))
+			border.add_point(Vector2(0, 0))
+			hit_zone.add_child(border)
 
 func start_character_animations():
 	if player_sprite:
@@ -552,16 +556,13 @@ func handle_input(track_key: String):
 	check_hit(track_key)
 
 func flash_hit_zone(track_key: String):
-	var hit_zone_node = null
-	match track_key:
-		"1": hit_zone_node = $HitZones/HitZone1
-		"2": hit_zone_node = $HitZones/HitZone2
-		"3": hit_zone_node = $HitZones/HitZone3
-	
-	if hit_zone_node:
-		hit_zone_node.modulate = Color.WHITE
-		var flash_tween = create_tween()
-		flash_tween.tween_property(hit_zone_node, "modulate", Color(1, 1, 1, 1), 0.1)
+	var zone_index = int(track_key) - 1  # Convert "1", "2", "3" to 0, 1, 2
+	if zone_index >= 0 and zone_index < hit_zones.size():
+		var hit_zone_node = hit_zones[zone_index]
+		if is_instance_valid(hit_zone_node):
+			hit_zone_node.modulate = Color.WHITE
+			var flash_tween = create_tween()
+			flash_tween.tween_property(hit_zone_node, "modulate", Color(1, 1, 1, 1), 0.1)
 
 func check_hit(track_key: String):
 	var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[track_key].y
