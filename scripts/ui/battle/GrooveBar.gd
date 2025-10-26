@@ -9,7 +9,7 @@ extends Control
 # - Smooth animations on value change
 # - Z-indexed to top
 
-@onready var progress_bar: ProgressBar = $MarginContainer/VBoxContainer/ProgressBar
+@onready var progress_bar: ProgressBar = $ProgressBar
 
 var current_percentage: float = 50.0
 

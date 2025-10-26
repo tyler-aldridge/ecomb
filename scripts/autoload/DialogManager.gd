@@ -58,20 +58,20 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 	# Wait for the dialog to process its new size
 	await get_tree().process_frame
 
-	# Position based on character speaking
+	# Position based on character speaking - closer to sprites
 	var viewport_size = get_viewport().get_visible_rect().size
 	var dialog_pos: Vector2
 
 	if _character == "opponent":
-		# Position on right side near opponent sprite
-		# Place dialog to the right and above HitZones (which are at Y=650-850)
-		var right_x = viewport_size.x - current_dialog.size.x - 100  # 100px margin from right
-		var top_y = 200.0  # Above HitZones, below GrooveBar (which ends at ~150px)
+		# Position on right side near opponent sprite (sprite at X=~1734, Y=~903)
+		# Place dialog close to sprite, above HitZones (Y=650-850)
+		var right_x = viewport_size.x - current_dialog.size.x - 50  # 50px margin from right edge
+		var top_y = 450.0  # Lower, closer to sprite
 		dialog_pos = Vector2(right_x, top_y)
 	elif _character == "player":
-		# Position on left side near player sprite
-		var left_x = 100.0  # 100px margin from left
-		var top_y = 200.0  # Above HitZones
+		# Position on left side near player sprite (sprite at X=~202, Y=~923)
+		var left_x = 50.0  # 50px margin from left edge
+		var top_y = 450.0  # Lower, closer to sprite
 		dialog_pos = Vector2(left_x, top_y)
 	else:
 		# Default: center at top

@@ -68,7 +68,7 @@ const NOTE_TYPE_CONFIG = {
 	"quarter": {
 		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
 		"travel_time": 1.55,
-		"spawn_offset": 7  # Adjusted for better alignment with HitZones
+		"spawn_offset": 5  # Reduced to fix early arrival (was 7, too early)
 	},
 	"sixteenth": {
 		"scene": preload("res://scenes/ui/battle/SixteenthNote.tscn"),  # 200x100

@@ -59,10 +59,14 @@ func _process(_delta):
 	pass
 
 func play_popup_animation():
-	"""Animate the popup: scale in, fade out - IN PLACE (no movement)."""
+	"""Animate the popup: scale in, float up, fade out - WITH position reset."""
 	# Kill any existing tween to prevent overlap
 	if active_tween and active_tween.is_valid():
 		active_tween.kill()
+
+	# Store starting position to reset to after animation
+	var start_pos = position
+	var float_up_distance = 80.0  # Float up 80px
 
 	# Ensure we're at starting scale and alpha
 	scale = Vector2(0.5, 0.5)
@@ -77,15 +81,17 @@ func play_popup_animation():
 
 	# Hold at full size and visibility
 	active_tween.chain()
-	active_tween.tween_interval(0.4)
+	active_tween.tween_interval(0.3)
 
-	# Fade out
+	# Float up and fade out
 	active_tween.set_parallel(true)
-	active_tween.tween_property(self, "modulate:a", 0.0, 0.5)
+	active_tween.tween_property(self, "position:y", start_pos.y - float_up_distance, 0.8).set_ease(Tween.EASE_OUT)
+	active_tween.tween_property(self, "modulate:a", 0.0, 0.5).set_delay(0.3)
 
-	# Reset to starting state
+	# Reset to starting state INCLUDING position
 	active_tween.chain()
 	active_tween.tween_callback(func():
+		position = start_pos  # CRITICAL: Reset to exact starting position
 		scale = Vector2(0.5, 0.5)
 		modulate.a = 0.0
 		active_tween = null

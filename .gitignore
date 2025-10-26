@@ -29,9 +29,7 @@ desktop.ini
 Icon?
 Icon
 
-# Team assets managed via Google Drive - DO NOT SYNC
-assets/
-!assets/shaders/
+# Team docs managed via Google Drive - DO NOT SYNC
 docs/
 
 # Build outputs
