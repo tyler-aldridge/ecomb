@@ -236,8 +236,8 @@ func create_battle_ui():
 	if player_sprite:
 		player_sprite.add_child(combo_display)
 		# Position above player's head (player sprite is ~256px tall, scaled by 1.26)
-		# Roughly 320px tall, so position at -230 to appear 50px above sprite
-		combo_display.position = Vector2(0, -230)
+		# Roughly 320px tall, so position at -370 to appear 50px above sprite
+		combo_display.position = Vector2(0, -370)
 		combo_display.anchor_left = 0.0
 		combo_display.anchor_top = 0.0
 		combo_display.anchor_right = 0.0
@@ -971,12 +971,41 @@ func fade_out_note(note: Node):
 		if note.has_method("stop_movement"):
 			note.stop_movement()
 
+		# Get note type from metadata to determine fade duration
+		var note_type = note.get_meta("note_type", "quarter")
+
+		# Map note type to beats
+		var beats_to_fade = 1.0  # Default: quarter note = 1 beat
+		match note_type:
+			"whole":
+				beats_to_fade = 4.0
+			"half":
+				beats_to_fade = 2.0
+			"quarter":
+				beats_to_fade = 1.0
+			"sixteenth":
+				beats_to_fade = 0.5
+
+		# Calculate fade duration in seconds based on BPM
+		var seconds_per_beat = 60.0 / conductor.bpm if conductor else 0.395  # Default 152 BPM
+		var fade_duration = beats_to_fade * seconds_per_beat
+
+		# Get note height to calculate fall distance (half of note height)
+		var note_height = 200.0
+		if note.has_node("NoteTemplate"):
+			note_height = note.get_node("NoteTemplate").size.y
+		var fall_distance = note_height / 2.0
+
 		# Capture note in local variable for lambda
 		var n = note
-		# Fade out quickly
+		var current_y = note.position.y
+
+		# Fade out and continue falling
 		var fade_tween = create_tween()
-		fade_tween.tween_property(n, "modulate:a", 0.0, 0.3)
-		fade_tween.tween_callback(func():
+		fade_tween.set_parallel(true)
+		fade_tween.tween_property(n, "modulate:a", 0.0, fade_duration)
+		fade_tween.tween_property(n, "position:y", current_y + fall_distance, fade_duration)
+		fade_tween.chain().tween_callback(func():
 			if is_instance_valid(n):
 				n.queue_free()
 		)
