@@ -105,10 +105,14 @@ func _connect_dialog_button_sounds():
 	if cancel_btn and button_hover_sound:
 		cancel_btn.mouse_entered.connect(func(): button_hover_sound.play())
 
-		# Adjust padding between dialog text and buttons
-	# The label and buttons are in a VBoxContainer - find it and adjust separation
+	# Remove padding between dialog text and buttons
 	if ok_btn:
 		var button_hbox = ok_btn.get_parent()
 		if button_hbox and button_hbox.get_parent() is VBoxContainer:
 			var vbox = button_hbox.get_parent() as VBoxContainer
-			vbox.add_theme_constant_override("separation", 20)  # Adjust this value as needed
+			vbox.add_theme_constant_override("separation", 0)
+
+	# Keep separation between the two buttons
+	if ok_btn and ok_btn.get_parent() is HBoxContainer:
+		var button_container = ok_btn.get_parent() as HBoxContainer
+		button_container.add_theme_constant_override("separation", 30)
