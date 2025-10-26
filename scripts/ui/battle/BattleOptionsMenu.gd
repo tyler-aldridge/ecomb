@@ -12,30 +12,61 @@ signal closed
 @onready var save_btn: Button = $GameOptionsContainer/ButtonsContainer/SaveButton
 @onready var exit_btn: Button = $GameOptionsContainer/ButtonsContainer/ExitButton
 
+# Dialog and overlay
+@onready var exit_dialog: ConfirmationDialog = $ExitDialog
+@onready var dialog_overlay: ColorRect = $DialogOverlay
+
+# Audio players
+@onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
+@onready var success_sound: AudioStreamPlayer = $SuccessSound
+@onready var cancel_sound: AudioStreamPlayer = $CancelSound
+@onready var exit_confirm_sound: AudioStreamPlayer = $GameOptionsContainer/ButtonsContainer/ExitConfirmSound
+
 func _ready():
 	# Connect volume sliders
 	if master_volume_slider:
 		master_volume_slider.value_changed.connect(_on_master_volume_changed)
+		master_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
 	if music_volume_slider:
 		music_volume_slider.value_changed.connect(_on_music_volume_changed)
+		music_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
 	if sound_volume_slider:
 		sound_volume_slider.value_changed.connect(_on_sound_volume_changed)
+		sound_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect rhythm timing slider
 	if rhythm_timing_slider:
 		rhythm_timing_slider.value_changed.connect(_on_rhythm_timing_changed)
+		rhythm_timing_slider.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect difficulty slider
 	if difficulty_slider:
 		difficulty_slider.value_changed.connect(_on_difficulty_changed)
+		difficulty_slider.mouse_entered.connect(func(): button_hover_sound.play())
 
-	# Checkboxes are already connected in the editor, so we don't connect them here
+	# Connect checkboxes
+	if fullscreen_checkbox:
+		fullscreen_checkbox.mouse_entered.connect(func(): button_hover_sound.play())
+	if framerate_checkbox:
+		framerate_checkbox.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect buttons
 	if save_btn:
 		save_btn.pressed.connect(_on_save_pressed)
+		save_btn.mouse_entered.connect(func(): button_hover_sound.play())
 	if exit_btn:
 		exit_btn.pressed.connect(_on_exit_pressed)
+		exit_btn.mouse_entered.connect(func(): button_hover_sound.play())
+
+	# Connect dialog
+	if exit_dialog:
+		exit_dialog.confirmed.connect(_on_exit_confirmed)
+		exit_dialog.canceled.connect(_on_exit_canceled)
+		exit_dialog.hide()
+
+	# Initialize overlay
+	if dialog_overlay:
+		dialog_overlay.hide()
 
 	# Start hidden and make sure tree is not paused
 	hide()
@@ -45,6 +76,9 @@ func _ready():
 
 func _input(event):
 	if event.is_action_pressed("ui_cancel"):
+		# Don't toggle menu if dialog is open
+		if exit_dialog and exit_dialog.visible:
+			return
 		toggle_menu()
 		get_viewport().set_input_as_handled()
 
@@ -114,13 +148,38 @@ func hide_menu():
 
 func _on_save_pressed():
 	# Save and close the menu
+	success_sound.play()
 	GameManager.save_settings()
 	hide_menu()
 
 func _on_exit_pressed():
-	# Return to title screen
+	# Show confirmation dialog
+	exit_confirm_sound.play()
+	_show_dialog_with_overlay()
+
+func _on_exit_confirmed():
+	# Return to title screen after confirmation
+	_hide_dialog_overlay()
+	success_sound.play()
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/title/TitleScreen.tscn")
+
+func _on_exit_canceled():
+	# Just hide the dialog
+	_hide_dialog_overlay()
+	cancel_sound.play()
+
+func _show_dialog_with_overlay():
+	if dialog_overlay:
+		dialog_overlay.show()
+	if exit_dialog:
+		exit_dialog.popup_centered()
+
+func _hide_dialog_overlay():
+	if dialog_overlay:
+		dialog_overlay.hide()
+	if exit_dialog:
+		exit_dialog.hide()
 
 func load_settings():
 	if master_volume_slider:

@@ -1,9 +1,13 @@
-[gd_scene load_steps=14 format=3 uid="uid://clqd6cw1r46y8"]
+[gd_scene load_steps=18 format=3 uid="uid://clqd6cw1r46y8"]
 
 [ext_resource type="Script" uid="uid://4lphy1d54d88" path="res://scripts/ui/battle/BattleOptionsMenu.gd" id="1_vm04o"]
 [ext_resource type="Texture2D" uid="uid://ddpukf3u74xr0" path="res://assets/interface/ui/panel-gradient-4.png" id="2_f8yp2"]
 [ext_resource type="Texture2D" uid="uid://dlteajxyiio2x" path="res://assets/interface/ui/grabber.png" id="3_cptyg"]
 [ext_resource type="AudioStream" uid="uid://bia60cj7of2o4" path="res://assets/audio/sfx/recordscratch.ogg" id="4_trj4p"]
+[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="5_hover"]
+[ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="6_success"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="7_cancel"]
+[ext_resource type="Theme" uid="uid://bqdn1hl5c7fvl" path="res://assets/interface/themes/space-worm-theme/space_worm_theme.tres" id="8_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glr2s"]
 bg_color = Color(1, 1, 1, 1)
@@ -306,6 +310,35 @@ icon_alignment = 1
 [node name="ExitConfirmSound" type="AudioStreamPlayer" parent="GameOptionsContainer/ButtonsContainer"]
 stream = ExtResource("4_trj4p")
 bus = &"SFX"
+
+[node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_hover")
+bus = &"SFX"
+
+[node name="SuccessSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6_success")
+bus = &"SFX"
+
+[node name="CancelSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("7_cancel")
+bus = &"SFX"
+
+[node name="ExitDialog" type="ConfirmationDialog" parent="."]
+initial_position = 1
+size = Vector2i(600, 375)
+always_on_top = true
+theme = ExtResource("8_theme")
+dialog_text = "Are you sure you want to throw in the towel?"
+dialog_autowrap = true
+
+[node name="DialogOverlay" type="ColorRect" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
 
 [connection signal="toggled" from="GameOptionsContainer/FullScreenContainer/FullScreenCheckbox" to="." method="_on_fullscreen_toggled"]
 [connection signal="toggled" from="GameOptionsContainer/FramerateContainer/FramerateCheckbox" to="." method="_on_framerate_toggled"]
