@@ -110,7 +110,12 @@ func _connect_dialog_button_sounds():
 		var button_hbox = ok_btn.get_parent()
 		if button_hbox and button_hbox.get_parent() is VBoxContainer:
 			var vbox = button_hbox.get_parent() as VBoxContainer
-			vbox.add_theme_constant_override("separation", 0)
+			vbox.add_theme_constant_override("separation", -10)
+
+			# Also try to find and adjust the label's bottom margin
+			for child in vbox.get_children():
+				if child is Label:
+					child.add_theme_constant_override("margin_bottom", 0)
 
 	# Keep separation between the two buttons
 	if ok_btn and ok_btn.get_parent() is HBoxContainer:

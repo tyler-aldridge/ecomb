@@ -84,11 +84,13 @@ const NOTE_TYPE_CONFIG = {
 # Hit zone height (universal for now, may become dynamic for SixteenthNote songs)
 const HITZONE_HEIGHT = 200.0
 
-# Hit zone lane positions (3 lanes at y=650)
+# Hit zone lane positions (3 lanes at y=650, centered on screen)
+# Screen width: 1920, Total hitzone width with gaps: 700px (200+50+200+50+200)
+# Centered: starts at 610
 const HIT_ZONE_POSITIONS = {
-	"1": Vector2(660.0, 650.0),
-	"2": Vector2(910.0, 650.0),
-	"3": Vector2(1160.0, 650.0)
+	"1": Vector2(610.0, 650.0),
+	"2": Vector2(860.0, 650.0),
+	"3": Vector2(1110.0, 650.0)
 }
 
 # Spawn settings
