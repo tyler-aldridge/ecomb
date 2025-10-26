@@ -6,7 +6,7 @@ extends Node2D
 @onready var trainer_sprite = $TutorialUI/Trainer
 
 # Level data
-@export var level_data_path: String = "res://data/battles/BattleTutorial.json"
+@export var level_data_path: String = "res://scripts/battle/data/Lesson1Data.json"
 var level_data: Dictionary = {}
 
 # ============================================================================
