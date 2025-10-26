@@ -95,7 +95,7 @@ func _fade_to_black():
 	tween.tween_property(fade_rect, "modulate:a", 1.0, 1.5)
 
 func _connect_dialog_button_sounds():
-	"""Connect hover sounds to dialog buttons and adjust spacing."""
+	"""Connect hover sounds to dialog buttons and adjust button spacing."""
 	var ok_btn = dialog.get_ok_button()
 	var cancel_btn = dialog.get_cancel_button()
 
@@ -106,14 +106,7 @@ func _connect_dialog_button_sounds():
 		cancel_btn.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Adjust spacing between buttons
+	# The buttons are in an HBoxContainer, find it and adjust separation
 	if ok_btn and ok_btn.get_parent() is HBoxContainer:
 		var button_container = ok_btn.get_parent() as HBoxContainer
 		button_container.add_theme_constant_override("separation", 30)
-
-	# Adjust padding between dialog text and buttons
-	# The label and buttons are in a VBoxContainer - find it and adjust separation
-	if ok_btn:
-		var button_hbox = ok_btn.get_parent()
-		if button_hbox and button_hbox.get_parent() is VBoxContainer:
-			var vbox = button_hbox.get_parent() as VBoxContainer
-			vbox.add_theme_constant_override("separation", 20)  # Adjust this value as needed
