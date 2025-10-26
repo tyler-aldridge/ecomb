@@ -202,7 +202,7 @@ layout_mode = 2
 size_flags_horizontal = 8
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 37
-text = "If rhythm feels off: too slow - move left, too fast - move right"
+text = "If rhythm feels off: too slow - move right, too fast - move left"
 horizontal_alignment = 2
 vertical_alignment = 1
 
