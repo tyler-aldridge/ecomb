@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://cpmn6rri7suv1"]
+[gd_scene load_steps=5 format=3 uid="uid://cpmn6rri7suv1"]
 
 [ext_resource type="Script" path="res://scripts/ui/universal/DialogContainer.gd" id="1_container"]
 [ext_resource type="Texture2D" uid="uid://bfqyixuu77pk6" path="res://assets/interface/ui/dialog-texture.png" id="1_eue2c"]
+[ext_resource type="Theme" uid="uid://bqdn1hl5c7fvl" path="res://assets/interface/themes/space-worm-theme/space_worm_theme.tres" id="1_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bubble"]
 content_margin_left = 25.0
@@ -28,6 +29,7 @@ layout_mode = 3
 anchors_preset = 0
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme = ExtResource("1_theme")
 theme_override_styles/panel = SubResource("StyleBoxFlat_bubble")
 script = ExtResource("1_container")
 

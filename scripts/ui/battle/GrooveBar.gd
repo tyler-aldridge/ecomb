@@ -3,9 +3,10 @@ extends Control
 # ============================================================================
 # GROOVE BAR - Universal Battle Health System
 # ============================================================================
-# Displays groove as ROYGBIV gradient progress bar
+# Displays groove with yellow (≤49%) to green (≥50%) gradient
 # - Rainbow pulsing when full
-# - ROYGBIV static gradient based on percentage
+# - Flag waving animation on text when full
+# - Smooth color transitions
 # - Rounded right side
 # - Z-indexed to top
 
@@ -15,17 +16,22 @@ extends Control
 var current_percentage: float = 50.0
 var rainbow_time: float = 0.0
 var is_full: bool = false
+var flag_wave_time: float = 0.0
 
-# ROYGBIV colors
-var roygbiv_colors = [
+# Rainbow colors for full groove pulse
+var rainbow_colors = [
 	Color(1, 0, 0, 1),      # Red
 	Color(1, 0.5, 0, 1),    # Orange
 	Color(1, 1, 0, 1),      # Yellow
 	Color(0, 1, 0, 1),      # Green
+	Color(0, 1, 1, 1),      # Cyan
 	Color(0, 0, 1, 1),      # Blue
-	Color(0.29, 0, 0.51, 1), # Indigo
 	Color(0.56, 0, 1, 1)    # Violet
 ]
+
+# Yellow to green gradient colors
+var yellow_color = Color(1, 1, 0, 1)  # Yellow for ≤49%
+var green_color = Color(0, 1, 0, 1)    # Green for ≥50%
 
 func _ready():
 	# Connect to BattleManager signals
@@ -41,18 +47,43 @@ func _ready():
 		update_bar_color(50.0)
 
 func _process(delta):
-	# Rainbow pulse animation when groove is full
-	if is_full and progress_bar:
-		rainbow_time += delta * 3.0
-		if rainbow_time >= roygbiv_colors.size():
-			rainbow_time = 0.0
+	if is_full:
+		# Rainbow pulse animation on bar when full
+		if progress_bar:
+			rainbow_time += delta * 4.0
+			if rainbow_time >= rainbow_colors.size():
+				rainbow_time = 0.0
 
-		var fill_style = progress_bar.get_theme_stylebox("fill")
-		if fill_style and fill_style is StyleBoxFlat:
+			var fill_style = progress_bar.get_theme_stylebox("fill")
+			if fill_style and fill_style is StyleBoxFlat:
+				var color_index = int(rainbow_time)
+				var next_index = (color_index + 1) % rainbow_colors.size()
+				var t = rainbow_time - floor(rainbow_time)
+				fill_style.bg_color = rainbow_colors[color_index].lerp(rainbow_colors[next_index], t)
+
+		# Flag waving animation on text when full
+		if groove_label:
+			flag_wave_time += delta * 5.0
+			# Create wave effect with rotation and position offset
+			var wave_offset = sin(flag_wave_time) * 8.0
+			var wave_rotation = sin(flag_wave_time * 0.7) * 0.08
+			groove_label.rotation = wave_rotation
+			groove_label.position.y = 170.0 + wave_offset
+
+			# Rainbow text color cycling
+			rainbow_time += delta * 3.0
+			if rainbow_time >= rainbow_colors.size():
+				rainbow_time = 0.0
 			var color_index = int(rainbow_time)
-			var next_index = (color_index + 1) % roygbiv_colors.size()
+			var next_index = (color_index + 1) % rainbow_colors.size()
 			var t = rainbow_time - floor(rainbow_time)
-			fill_style.bg_color = roygbiv_colors[color_index].lerp(roygbiv_colors[next_index], t)
+			groove_label.modulate = rainbow_colors[color_index].lerp(rainbow_colors[next_index], t)
+	else:
+		# Reset label position and rotation when not full
+		if groove_label:
+			groove_label.rotation = 0.0
+			groove_label.position.y = 170.0
+			groove_label.modulate = Color.WHITE
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -82,19 +113,22 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 		play_low_groove_warning()
 
 func update_bar_color(percentage: float):
-	"""Update bar fill color based on groove level using ROYGBIV gradient."""
+	"""Update bar fill color: yellow for ≤49%, green for ≥50%, smooth transition."""
 	if not progress_bar:
 		return
 
 	var fill_style = progress_bar.get_theme_stylebox("fill")
 	if fill_style and fill_style is StyleBoxFlat:
-		# Map percentage (0-100) to ROYGBIV colors (0-6 indices)
-		var color_position = (percentage / 100.0) * (roygbiv_colors.size() - 1)
-		var color_index = int(color_position)
-		var next_index = min(color_index + 1, roygbiv_colors.size() - 1)
-		var t = color_position - floor(color_position)
-
-		fill_style.bg_color = roygbiv_colors[color_index].lerp(roygbiv_colors[next_index], t)
+		if percentage <= 49.0:
+			# Yellow for 49% and below
+			fill_style.bg_color = yellow_color
+		elif percentage >= 50.0 and percentage < 100.0:
+			# Smooth transition from yellow to green between 49-51%
+			if percentage < 51.0:
+				var t = (percentage - 49.0) / 2.0  # 0.0 at 49%, 1.0 at 51%
+				fill_style.bg_color = yellow_color.lerp(green_color, t)
+			else:
+				fill_style.bg_color = green_color
 
 func play_low_groove_warning():
 	"""Play warning animation when groove is low."""
