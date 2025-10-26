@@ -86,7 +86,7 @@
     {"bar": 48, "beat": 3, "beat_position": 372, "note": "half"},
     {"bar": 49, "beat": 1, "beat_position": 376, "note": "half"},
     {"bar": 49, "beat": 3, "beat_position": 380, "note": "half"},
-    {"bar": 50, "beat": 1, "beat_position": 380, "note": "half"},
+    {"bar": 50, "beat": 1, "beat_position": 384, "note": "half"},
     {"bar": 53, "beat": 1, "beat_position": 404, "note": "quarter"},
     {"bar": 53, "beat": "2a", "beat_position": 407, "note": "quarter"},
     {"bar": 53, "beat": 3, "beat_position": 408, "note": "quarter"},

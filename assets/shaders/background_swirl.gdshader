@@ -2,9 +2,9 @@ shader_type canvas_item;
 
 // Vaporwave-style swirling background shader
 // Bright shifting colors: pinks, purples, cyans, magentas
-// Enhanced with moving shapes and distortion
+// Enhanced with STRONG visible moving distortions
 
-uniform float speed = 0.5;  // Faster movement
+uniform float speed = 1.5;  // Animation speed
 
 // Noise function for organic movement
 float noise(vec2 p) {
@@ -40,20 +40,18 @@ float fbm(vec2 p) {
     return value;
 }
 
-// Circle SDF for shape distortion
+// Circle SDF for visible distortion blobs
 float circle_sdf(vec2 p, vec2 center, float radius) {
     return length(p - center) - radius;
 }
 
-// Vaporwave color palette - bright pinks, purples, cyans
+// Vaporwave color palette
 vec3 get_vaporwave_color(float t) {
-    // Vaporwave colors cycling through the spectrum
     vec3 color1 = vec3(0.3, 0.15, 0.5);   // Deep purple
     vec3 color2 = vec3(0.5, 0.1, 0.4);    // Magenta
     vec3 color3 = vec3(0.1, 0.3, 0.6);    // Cyan-blue
     vec3 color4 = vec3(0.4, 0.15, 0.5);   // Purple-pink
 
-    // Cycle through colors (faster for trippy effect)
     float pos = fract(t + TIME * 0.15) * 4.0;
 
     if (pos < 1.0) {
@@ -71,65 +69,88 @@ void fragment() {
     vec2 uv = UV;
     float time = TIME * speed;
 
-    // Moving circles that distort the background
-    vec2 circle1_pos = vec2(0.3 + sin(time * 0.4) * 0.3, 0.4 + cos(time * 0.3) * 0.3);
-    vec2 circle2_pos = vec2(0.7 + cos(time * 0.35) * 0.25, 0.6 + sin(time * 0.45) * 0.25);
-    vec2 circle3_pos = vec2(0.5 + sin(time * 0.5) * 0.2, 0.3 + cos(time * 0.4) * 0.2);
+    // LARGE visible distortion blobs moving around
+    vec2 blob1_pos = vec2(0.25 + sin(time * 0.5) * 0.4, 0.5 + cos(time * 0.4) * 0.4);
+    vec2 blob2_pos = vec2(0.75 + cos(time * 0.6) * 0.35, 0.5 + sin(time * 0.5) * 0.35);
+    vec2 blob3_pos = vec2(0.5 + sin(time * 0.45) * 0.3, 0.7 + cos(time * 0.55) * 0.3);
 
-    float circle1 = circle_sdf(uv, circle1_pos, 0.15);
-    float circle2 = circle_sdf(uv, circle2_pos, 0.12);
-    float circle3 = circle_sdf(uv, circle3_pos, 0.18);
+    // Calculate distances to blobs
+    float blob1_dist = circle_sdf(uv, blob1_pos, 0.25);
+    float blob2_dist = circle_sdf(uv, blob2_pos, 0.2);
+    float blob3_dist = circle_sdf(uv, blob3_pos, 0.28);
 
-    // Smooth distortion fields from circles
-    float dist1 = smoothstep(0.3, 0.0, abs(circle1)) * 0.15;
-    float dist2 = smoothstep(0.25, 0.0, abs(circle2)) * 0.12;
-    float dist3 = smoothstep(0.35, 0.0, abs(circle3)) * 0.18;
+    // Create STRONG visible distortion fields
+    float blob1_strength = smoothstep(0.5, 0.0, abs(blob1_dist)) * 0.5;
+    float blob2_strength = smoothstep(0.45, 0.0, abs(blob2_dist)) * 0.4;
+    float blob3_strength = smoothstep(0.55, 0.0, abs(blob3_dist)) * 0.6;
 
-    // Apply circular distortions to UV
+    // Apply strong UV warping
     vec2 distorted_uv = uv;
-    distorted_uv += normalize(uv - circle1_pos) * dist1;
-    distorted_uv += normalize(uv - circle2_pos) * dist2;
-    distorted_uv += normalize(uv - circle3_pos) * dist3;
 
-    // Add wave distortion
-    float wave1 = sin(distorted_uv.y * 8.0 + time * 2.0) * 0.02;
-    float wave2 = cos(distorted_uv.x * 6.0 + time * 1.5) * 0.02;
+    // Radial distortion from blobs - much stronger
+    vec2 dir1 = normalize(uv - blob1_pos);
+    vec2 dir2 = normalize(uv - blob2_pos);
+    vec2 dir3 = normalize(uv - blob3_pos);
+
+    distorted_uv += dir1 * blob1_strength;
+    distorted_uv += dir2 * blob2_strength;
+    distorted_uv += dir3 * blob3_strength;
+
+    // Add strong wave distortions
+    float wave1 = sin(distorted_uv.y * 10.0 + time * 3.0) * 0.08;
+    float wave2 = cos(distorted_uv.x * 8.0 + time * 2.5) * 0.08;
     distorted_uv.x += wave1;
     distorted_uv.y += wave2;
 
-    // Create multiple layers of smooth flowing patterns
+    // Swirling motion around blobs
+    float angle1 = atan(uv.y - blob1_pos.y, uv.x - blob1_pos.x);
+    float angle2 = atan(uv.y - blob2_pos.y, uv.x - blob2_pos.x);
+    distorted_uv += vec2(cos(angle1), sin(angle1)) * blob1_strength * 0.3;
+    distorted_uv += vec2(cos(angle2), sin(angle2)) * blob2_strength * 0.3;
+
+    // Base gradient with distortion
     vec2 offset1 = vec2(cos(time * 0.3) * 0.5, sin(time * 0.2) * 0.5);
     vec2 offset2 = vec2(sin(time * 0.4) * 0.3, cos(time * 0.3) * 0.3);
-    vec2 offset3 = vec2(cos(time * 0.25) * 0.4, sin(time * 0.35) * 0.4);
 
-    // Combine noise layers with distorted UV
     float n1 = fbm(distorted_uv * 1.5 + offset1);
     float n2 = fbm(distorted_uv * 2.0 + offset2);
-    float n3 = fbm(distorted_uv * 2.5 + offset3);
 
-    // Blend noise layers with smooth weights
-    float noise_val = (n1 * 0.4 + n2 * 0.4 + n3 * 0.2);
+    float noise_val = (n1 * 0.5 + n2 * 0.5);
 
-    // Add smooth diagonal gradient for consistent flow
+    // Add diagonal flow
     float diagonal = (distorted_uv.x + distorted_uv.y) * 0.5;
     noise_val = mix(noise_val, diagonal + time * 0.15, 0.3);
 
-    // Add circular color influences
-    noise_val += dist1 * 0.3;
-    noise_val += dist2 * 0.25;
-    noise_val += dist3 * 0.2;
+    // VISIBLE color rings around blobs
+    float ring1 = smoothstep(0.3, 0.25, abs(blob1_dist)) - smoothstep(0.25, 0.2, abs(blob1_dist));
+    float ring2 = smoothstep(0.25, 0.2, abs(blob2_dist)) - smoothstep(0.2, 0.15, abs(blob2_dist));
+    float ring3 = smoothstep(0.35, 0.3, abs(blob3_dist)) - smoothstep(0.3, 0.25, abs(blob3_dist));
 
-    // Smooth out the value to eliminate any remaining harsh transitions
+    // Add ring effects to color value
+    noise_val += ring1 * 0.5;
+    noise_val += ring2 * 0.4;
+    noise_val += ring3 * 0.6;
+
+    // Strong color shifts in blob areas
+    noise_val += blob1_strength * 0.6;
+    noise_val += blob2_strength * 0.5;
+    noise_val += blob3_strength * 0.7;
+
     noise_val = smoothstep(0.0, 1.0, noise_val);
 
     // Get vaporwave colors
     vec3 color = get_vaporwave_color(noise_val);
 
-    // Add subtle brightness variation for depth
-    float brightness = 1.0 + (noise_val - 0.5) * 0.2;
+    // Brightness variation
+    float brightness = 1.0 + (noise_val - 0.5) * 0.3;
 
-    // Add highlights where circles are
-    brightness += (dist1 + dist2 + dist3) * 0.4;
+    // Strong highlights on blob areas
+    brightness += blob1_strength * 1.2;
+    brightness += blob2_strength * 1.0;
+    brightness += blob3_strength * 1.5;
+
+    // Ring highlights
+    brightness += (ring1 + ring2 + ring3) * 2.0;
 
     color *= brightness;
 
