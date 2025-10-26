@@ -20,6 +20,7 @@ extends Control
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
 @onready var restart_sound: AudioStreamPlayer = $RestartSound
 @onready var quit_sound: AudioStreamPlayer = $QuitSound
+@onready var battle_failure_sound: AudioStreamPlayer = $BattleFailureSound
 
 func _ready():
 	visible = false
@@ -53,8 +54,9 @@ func _on_battle_failed():
 	get_tree().paused = true
 	dialog.popup_centered()
 
-	# Play warning sound
-	# warning_sound.play()
+	# Play failure sound when dialog appears
+	if battle_failure_sound:
+		battle_failure_sound.play()
 
 func _on_restart_confirmed():
 	"""Restart the battle."""

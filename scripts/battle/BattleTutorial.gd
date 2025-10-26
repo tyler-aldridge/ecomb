@@ -47,11 +47,12 @@ var hit_zone_positions = {
 # Spawn settings
 const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 
-# Timing windows
-const PERFECT_WINDOW_BASE = 20.0  # ±20px for quarter notes
-const GOOD_WINDOW = 300.0         # ±300px - generous for all notes
-const OKAY_WINDOW = 500.0         # ±500px - any overlap
-const MISS_WINDOW = 150.0         # Auto-miss threshold for notes that passed
+# Hit detection windows (scalable for difficulty settings)
+const PERFECT_WINDOW = 25.0   # Perfect: within 25px of HitZone center
+const GOOD_WINDOW = 50.0      # Good: 26-50px from HitZone center
+# Okay: 50px+ but still overlapping (calculated dynamically based on note size)
+# Miss: completely outside HitZone (no overlap)
+const MISS_WINDOW = 150.0     # Auto-miss threshold for notes that passed HitZone
 
 # Hit detection
 var active_notes = []
@@ -696,37 +697,39 @@ func check_hit(track_key: String):
 		active_notes.erase(closest_note)
 
 func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) -> String:
+	"""
+	Scalable hit detection that works for all note sizes.
+
+	Hit quality based on distance from HitZone center:
+	- Perfect: within 25px
+	- Good: 26-50px
+	- Okay: 50px+ but still overlapping
+	- Miss: completely outside (no overlap)
+	"""
 	# Get note's actual height dynamically
 	var note_height = 200.0  # Default
 	if note.has_node("NoteTemplate"):
 		note_height = note.get_node("NoteTemplate").size.y
 
-	# Calculate no-overlap threshold - use OKAY_WINDOW to allow OKAY hits
-	# (previous calculation was too strict: note_half_height + hitzone_half_height = 200px,
-	#  which made OKAY window unreachable since OKAY is 300-500px)
-	var no_overlap_threshold = OKAY_WINDOW
+	# HitZone is always 200px tall
+	const HITZONE_HEIGHT = 200.0
 
-	# First check if completely outside HitZone (no overlap) = MISS
-	if distance >= no_overlap_threshold:
-		return "MISS"
+	# Calculate overlap threshold: notes overlap if distance < sum of half-heights
+	var note_half_height = note_height / 2.0
+	var hitzone_half_height = HITZONE_HEIGHT / 2.0
+	var overlap_threshold = note_half_height + hitzone_half_height
 
-	# For large notes (whole notes, half notes): Check if HitZone is COMPLETELY inside the note
-	# by checking actual edge positions
-	if note_height > 200:  # Larger than HitZone
-		var note_top = note.position.y
-		var note_bottom = note.position.y + note_height
-		var hitzone_top = hit_zone_y
-		var hitzone_bottom = hit_zone_y + 200.0
+	# Check if note overlaps HitZone at all
+	if distance >= overlap_threshold:
+		return "MISS"  # Completely outside, no overlap
 
-		# HitZone completely covered = PERFECT
-		if note_top <= hitzone_top and note_bottom >= hitzone_bottom:
-			return "PERFECT"
-
-	# For quarter notes or partial coverage: use standard timing windows
-	if distance <= PERFECT_WINDOW_BASE: return "PERFECT"
-	elif distance <= GOOD_WINDOW: return "GOOD"
-	elif distance <= OKAY_WINDOW: return "OKAY"
-	else: return "OKAY"
+	# Note is overlapping - determine quality based on distance from center
+	if distance <= PERFECT_WINDOW:
+		return "PERFECT"
+	elif distance <= GOOD_WINDOW:
+		return "GOOD"
+	else:
+		return "OKAY"  # Still overlapping but >50px from center
 
 func process_hit(quality: String, note: Node, effect_pos: Vector2):
 	# Register hit with BattleManager (handles combo, groove, strength)
