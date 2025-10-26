@@ -47,12 +47,12 @@ var hit_zone_positions = {
 # Spawn settings
 const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 
-# Hit detection windows (edge-based: how much HitZone is exposed/not covered)
-const PERFECT_WINDOW = 25.0   # Perfect: HitZone edges exposed by ≤25px
-const GOOD_WINDOW = 50.0      # Good: HitZone edges exposed by 26-50px
-const OKAY_WINDOW = 150.0     # Okay: HitZone edges exposed by 51-150px
-# Miss: HitZone edges exposed by ≥151px OR note completely outside
-const MISS_WINDOW = 150.0     # Auto-miss threshold for notes that passed HitZone
+# Hit detection windows (percentages of HitZone height - scales with HitZone size)
+const PERFECT_THRESHOLD_PERCENT = 0.125  # Perfect: ≤12.5% of HitZone edge exposed
+const GOOD_THRESHOLD_PERCENT = 0.25      # Good: 12.6-25% exposed
+const OKAY_THRESHOLD_PERCENT = 0.75      # Okay: 25.1-75% exposed
+# Miss: ≥75.1% exposed OR completely outside
+const MISS_WINDOW = 150.0                # Auto-miss threshold for notes that passed HitZone
 
 # Hit detection
 var active_notes = []
@@ -718,25 +718,27 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
 
 	The HitZone is the source of truth. We measure how much of each HitZone edge
-	is exposed (not covered by the note). The WORST exposure determines quality.
+	is exposed (not covered by the note) as a PERCENTAGE of HitZone height.
+	The WORST exposure determines quality.
 
-	Examples (WholeNote 800px over HitZone 200px):
-	- Perfectly aligned: extends 300px beyond each edge = 0px exposed = PERFECT
-	- 30px off: one edge has 270px coverage, other has 330px = 0px exposed = PERFECT
-	- 350px off: one edge has 50px EXPOSED = GOOD
+	Hit windows (percentage of HitZone height exposed):
+	- Perfect: ≤12.5% exposed (e.g., ≤25px for 200px HitZone, ≤12.5px for 100px HitZone)
+	- Good: 12.6-25% exposed (e.g., 26-50px for 200px, 13-25px for 100px)
+	- Okay: 25.1-75% exposed (e.g., 51-150px for 200px, 26-75px for 100px)
+	- Miss: ≥75.1% exposed OR completely outside
 
-	Hit windows (based on maximum edge exposure):
-	- Perfect: ≤25px of HitZone edge exposed
-	- Good: 26-50px exposed
-	- Okay: 51-150px exposed
-	- Miss: ≥151px exposed OR completely outside
+	Examples (HitZone 200px):
+	- QuarterNote 20px off: 20px/200px = 10% exposed = PERFECT
+	- QuarterNote 40px off: 40px/200px = 20% exposed = GOOD
+	- WholeNote 40px off: 0px exposed (still fully covered) = PERFECT
+	- WholeNote 360px off: 60px/200px = 30% exposed = OKAY
 	"""
 	# Get note's actual height dynamically
 	var note_height = 200.0  # Default
 	if note.has_node("NoteTemplate"):
 		note_height = note.get_node("NoteTemplate").size.y
 
-	# HitZone is always 200px tall
+	# HitZone is always 200px tall (will be dynamic in future for SixteenthNote songs)
 	const HITZONE_HEIGHT = 200.0
 
 	# Calculate edge positions
@@ -758,12 +760,17 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 	# The WORST exposure (largest gap) determines hit quality
 	var max_exposure = max(top_exposure, bottom_exposure)
 
+	# Calculate thresholds as percentages of HitZone height
+	var perfect_threshold = HITZONE_HEIGHT * PERFECT_THRESHOLD_PERCENT  # 12.5% of 200px = 25px
+	var good_threshold = HITZONE_HEIGHT * GOOD_THRESHOLD_PERCENT        # 25% of 200px = 50px
+	var okay_threshold = HITZONE_HEIGHT * OKAY_THRESHOLD_PERCENT        # 75% of 200px = 150px
+
 	# Determine quality based on maximum edge exposure
-	if max_exposure <= PERFECT_WINDOW:
+	if max_exposure <= perfect_threshold:
 		return "PERFECT"
-	elif max_exposure <= GOOD_WINDOW:
+	elif max_exposure <= good_threshold:
 		return "GOOD"
-	elif max_exposure <= OKAY_WINDOW:
+	elif max_exposure <= okay_threshold:
 		return "OKAY"
 	else:
 		return "MISS"  # Too much of HitZone exposed
