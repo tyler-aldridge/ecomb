@@ -1,5 +1,5 @@
 e910c82af1378a97450e26817c58487e
-::res://::1761434797
+::res://::1761438740
 default_bus_layout.tres::AudioBusLayout::8184098035899748928::1761285051::0::1::::<><><>0<>0<><>::
 export_presets.cfg::TextFile::-1::1761285051::0::1::::<><><>0<>0<><>::
 icon.svg::CompressedTexture2D::5043215496737880353::1761285051::1761285051::1::::<><><>0<>0<>364eea09a31ab75372bb8e749b199748<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
@@ -125,10 +125,10 @@ unselected.png::CompressedTexture2D::4144611188590577917::1761285051::1761285051
 index.apple-touch-icon.png::CompressedTexture2D::6479968944962271139::1761285051::1761285051::1::::<><><>0<>0<>ff56d55d5f653d6fd778e19f545ffaf7<>res://.godot/imported/index.apple-touch-icon.png-829bd6566b1ab329ce6e0fe101c50e36.ctex::
 index.icon.png::CompressedTexture2D::1480269394889250348::1761285051::1761285051::1::::<><><>0<>0<>4c20b99f0f7c8b32c332a9671ed61deb<>res://.godot/imported/index.icon.png-1d537cdb021c40f184d1277d96fd0f0f.ctex::
 index.png::CompressedTexture2D::4747719743632854786::1761285051::1761285051::1::::<><><>0<>0<>d2a64d1f80d325d856f2e4e660c16f5f<>res://.godot/imported/index.png-2770f543c84e6b55d99f3bb624b49866.ctex::
-::res://data/::1761297271
-::res://data/levels/::1761433039
-::res://data/levels/battle/::1761433052
+::res://data/::1761438549
+::res://data/battles/::1761438577
 BattleTutorial.json::JSON::-1::1761433039::0::1::::<><><>0<>0<><>::
+::res://data/overworld/::1761438577
 ::res://docs/::1761411079
 ::res://docs/references/::1761292599
 ::res://docs/references/animation technique/::1761292599
@@ -180,11 +180,11 @@ MenuButton.tscn::PackedScene::3596675193016299751::1761417405::0::1::::<><><>0<>
 OptionsMenu.tscn::PackedScene::6964887089099462135::1761417405::0::1::::<><><>0<>0<><>::uid://cubyc6d2rwa8f::::res://scripts/title/OptionsMenu.gd<>uid://ddpukf3u74xr0::::res://assets/interface/ui/panel-gradient-4.png<>uid://dlteajxyiio2x::::res://assets/interface/ui/grabber.png
 SplashScreen.tscn::PackedScene::4164995399468705952::1761417405::0::1::::<><><>0<>0<><>::uid://cd1c0aa057108::::res://assets/cutscenes/splash/splash-blue-gradient.png<>uid://dw6ymjiosekxh::::res://scripts/title/Splash.gd<>uid://sbit2h6xxq7v::::res://assets/cutscenes/splash/splash-cs-logo.png<>uid://cu3hp1fgpntku::::res://assets/audio/sfx/intro-splash.ogg
 ::res://scenes/ui/::1761417405
-::res://scenes/ui/battle/::1761434202
-BattleFailure.tscn::PackedScene::3929505364638095812::1761433667::0::1::::<><><>0<>0<><>::res://scripts/ui/battle/BattleFailure.gd
+::res://scenes/ui/battle/::1761437884
+BattleFailure.tscn::PackedScene::3929505364638095812::1761437884::0::1::::<><><>0<>0<><>::res://scripts/ui/battle/BattleFailure.gd<>uid://d1gauqxolvwmu::::res://assets/audio/sfx/warning.ogg<>uid://crdbghfx0kv4j::::res://assets/audio/sfx/blip.ogg<>uid://crdbghfx0kv4j::::res://assets/audio/sfx/blip.ogg<>uid://dhlp5d5he2cwc::::res://assets/audio/sfx/hurt.ogg
 BattleOptionsMenu.tscn::PackedScene::5578186342296478597::1761417405::0::1::::<><><>0<>0<><>::uid://4lphy1d54d88::::res://scripts/ui/battle/BattleOptionsMenu.gd<>uid://ddpukf3u74xr0::::res://assets/interface/ui/panel-gradient-4.png<>uid://dlteajxyiio2x::::res://assets/interface/ui/grabber.png<>uid://bia60cj7of2o4::::res://assets/audio/sfx/recordscratch.ogg
-BattleResults.tscn::PackedScene::6022561340502897702::1761434202::0::1::::<><><>0<>0<><>::res://scripts/ui/battle/BattleResults.gd
-ComboDisplay.tscn::PackedScene::6840894197083995690::1761411868::0::1::::<><><>0<>0<><>::res://scripts/ui/battle/ComboDisplay.gd
+BattleResults.tscn::PackedScene::6022561340502897702::1761437884::0::1::::<><><>0<>0<><>::res://scripts/ui/battle/BattleResults.gd<>uid://crdbghfx0kv4j::::res://assets/audio/sfx/blip.ogg<>uid://blyy4qd322wkd::::res://assets/audio/sfx/lifeup.ogg<>uid://crdbghfx0kv4j::::res://assets/audio/sfx/blip.ogg<>uid://dhlp5d5he2cwc::::res://assets/audio/sfx/hurt.ogg
+ComboDisplay.tscn::PackedScene::6840894197083995690::1761437742::0::1::::<><><>0<>0<><>::res://scripts/ui/battle/ComboDisplay.gd
 GrooveBar.tscn::PackedScene::3901642485050462033::1761411868::0::1::::<><><>0<>0<><>::res://scripts/ui/battle/GrooveBar.gd
 LongNote.tscn::PackedScene::4194821393529497747::1761417405::0::1::::<><><>0<>0<><>::uid://brue8os5ofsw2::::res://scripts/game/battle/Note.gd
 Note.tscn::PackedScene::660749544533439992::1761417405::0::1::::<><><>0<>0<><>::uid://brue8os5ofsw2::::res://scripts/game/battle/Note.gd
@@ -203,8 +203,8 @@ Crab.gd::GDScript::6845084685879823929::1761285051::0::1::::<>AnimatedSprite2D<>
 MuscleMan.gd::GDScript::8870062728466430988::1761285051::0::1::::<>AnimatedSprite2D<><>0<>0<><>::
 ::res://scripts/data/::1761292637
 ::res://scripts/game/::1761417440
-::res://scripts/game/battle/::1761434202
-BattleTutorial.gd::GDScript::8585821174576039850::1761434202::0::1::::<>Node2D<><>0<>0<><>::
+::res://scripts/game/battle/::1761438549
+BattleTutorial.gd::GDScript::8585821174576039850::1761438549::0::1::::<>Node2D<><>0<>0<><>::
 Conductor.gd::GDScript::6001914392730101512::1761417405::0::1::::Conductor<>AudioStreamPlayer<><>0<>0<><>::
 Note.gd::GDScript::3621221144306145559::1761417405::0::1::::<>Area2D<><>0<>0<><>::
 ::res://scripts/systems/::1761292637
@@ -216,10 +216,10 @@ MenuButton.gd::GDScript::5822065317478802610::1761417405::0::1::::<>Control<><>0
 OptionsMenu.gd::GDScript::6180145031423722183::1761417405::0::1::::<>Control<><>0<>0<><>::
 Splash.gd::GDScript::8768891444574028733::1761417405::0::1::::<>Node<><>0<>0<><>::
 ::res://scripts/ui/::1761417405
-::res://scripts/ui/battle/::1761434202
-BattleFailure.gd::GDScript::6159349773443023752::1761417405::0::1::::<>Control<><>0<>0<><>::
+::res://scripts/ui/battle/::1761438000
+BattleFailure.gd::GDScript::6159349773443023752::1761438000::0::1::::<>Control<><>0<>0<><>::
 BattleOptionsMenu.gd::GDScript::4429227446762424249::1761417406::0::1::::<>Control<><>0<>0<><>::
-BattleResults.gd::GDScript::4791186558296403366::1761434202::0::1::::<>Control<><>0<>0<><>::
+BattleResults.gd::GDScript::4791186558296403366::1761438000::0::1::::<>Control<><>0<>0<><>::
 ComboDisplay.gd::GDScript::4756885974615988144::1761433039::0::1::::<>Label<><>0<>0<><>::
 GrooveBar.gd::GDScript::1444790967171076899::1761412378::0::1::::<>Control<><>0<>0<><>::
 StrengthCounter.gd::GDScript::267015041975148411::1761410771::0::1::::<>Control<><>0<>0<><>::

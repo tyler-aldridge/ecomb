@@ -1,6 +1,6 @@
 [gd_scene load_steps=21 format=3 uid="uid://b4g0yxphlhsby"]
 
-[ext_resource type="Script" uid="uid://ctre86fxoju72" path="res://scripts/game/battle/BattleTutorial.gd" id="1_116nv"]
+[ext_resource type="Script" uid="uid://dulbhqyj0com1" path="res://scripts/game/battle/BattleTutorial.gd" id="1_116nv"]
 [ext_resource type="AudioStream" uid="uid://dt1xxbp6gwgmt" path="res://assets/audio/music/DivineFoxPlay-152BPM.ogg" id="1_em4w1"]
 [ext_resource type="Texture2D" uid="uid://cfvlcvrc6ylsq" path="res://assets/characters/muscle_man/RipJackson_idel2size.png" id="2_es7p1"]
 [ext_resource type="Script" uid="uid://crrmwhbyanjnc" path="res://scripts/game/battle/Conductor.gd" id="3_es7p1"]

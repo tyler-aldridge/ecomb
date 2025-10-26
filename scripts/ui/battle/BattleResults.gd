@@ -83,8 +83,7 @@ func show_results():
 		title_label.text = "YOU DID IT!"
 		title_label.modulate = Color.GREEN
 
-	# Update stats
-	if strength_earned_label:
+	# Update stats - show "Earned X of Total" format to avoid redundancy
 	var strength_total = battle_results.get("strength_total", 0)
 	var strength_awarded = battle_results.get("strength_awarded", 0)
 
@@ -92,6 +91,8 @@ func show_results():
 		strength_earned_label.text = "Earned %d of %d Strength" % [strength_awarded, strength_total]
 
 	# Hide the redundant second label
+	if strength_awarded_label:
+		strength_awarded_label.visible = false
 
 	if max_combo_label:
 		max_combo_label.text = "Max Combo: %d" % battle_results.get("combo_max", 0)
@@ -121,7 +122,6 @@ func show_results():
 func _on_continue_pressed():
 	if success_sound:
 		success_sound.play()
-	"""Continue to next scene or return to title."""
 	get_tree().paused = false
 	# For now, go to title. Later: navigate to overworld or next battle
 	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
