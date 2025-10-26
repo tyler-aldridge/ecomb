@@ -484,6 +484,9 @@ func stop_hit_zone_indicators():
 	hit_zone_indicator_nodes.clear()
 
 func fade_to_title():
+	# Hide battle UI elements (combo display and groove bar) before showing results
+	hide_battle_ui()
+
 	# End battle and get results (only if battle is still active)
 	var results = {}
 	if BattleManager.is_battle_active():
@@ -532,12 +535,22 @@ func fade_to_title():
 	)
 
 func _on_battle_failed():
+	# Hide battle UI elements (combo display and groove bar)
+	hide_battle_ui()
+
 	"""Called when groove reaches 0% - battle failure."""
 	# Stop the music
 	if conductor:
 		conductor.stop()
 
 	# BattleFailure dialog automatically shows via BattleManager.battle_failed signal
+
+func hide_battle_ui():
+	"""Hide combo display and groove bar when battle ends."""
+	if combo_display:
+		combo_display.visible = false
+	if groove_bar:
+		groove_bar.visible = false
 
 func change_to_title():
 	if is_instance_valid(GameManager):

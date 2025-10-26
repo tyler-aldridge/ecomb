@@ -1,6 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://cr2mx8n5qbv7k"]
+[gd_scene load_steps=7 format=3 uid="uid://cr2mx8n5qbv7k"]
 
 [ext_resource type="Script" path="res://scripts/ui/battle/BattleResults.gd" id="1_results"]
+[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="2_hover"]
+[ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="3_success"]
+[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="4_restart"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="5_cancel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0, 0, 0, 0.85)
@@ -61,8 +65,8 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 1, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 80
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 120
 text = "BATTLE COMPLETE!"
 horizontal_alignment = 1
 
@@ -73,21 +77,21 @@ theme_override_constants/separation = 10
 [node name="StrengthEarnedLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/StatsContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 54
 text = "Strength Earned: 3990"
 horizontal_alignment = 1
 
 [node name="StrengthAwardedLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/StatsContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 1, 0.3, 1)
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 54
 text = "Strength Awarded: 3990"
 horizontal_alignment = 1
 
 [node name="MaxComboLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/StatsContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 54
 text = "Max Combo: 149"
 horizontal_alignment = 1
 
@@ -98,35 +102,35 @@ theme_override_constants/separation = 5
 [node name="BreakdownTitle" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 42
 text = "HIT BREAKDOWN"
 horizontal_alignment = 1
 
 [node name="PerfectLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 1, 0.3, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "PERFECT: 149"
 horizontal_alignment = 1
 
 [node name="GoodLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0.3, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "GOOD: 0"
 horizontal_alignment = 1
 
 [node name="OkayLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "OKAY: 0"
 horizontal_alignment = 1
 
 [node name="MissLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "MISS: 0"
 horizontal_alignment = 1
 
@@ -135,8 +139,8 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 48
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 72
 text = "LEVEL UP! Now Level 2!"
 horizontal_alignment = 1
 
@@ -148,17 +152,33 @@ alignment = 1
 [node name="RestartButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(150, 60)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "Restart"
 
 [node name="ContinueButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(150, 60)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "Continue"
 
 [node name="QuitButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(150, 60)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "Quit to Title"
+
+[node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_hover")
+bus = &"SFX"
+
+[node name="SuccessSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_success")
+bus = &"SFX"
+
+[node name="RestartSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_restart")
+bus = &"SFX"
+
+[node name="CancelSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_cancel")
+bus = &"SFX"

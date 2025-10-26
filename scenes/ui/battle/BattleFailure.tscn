@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://bv8qm5n7kypse"]
+[gd_scene load_steps=6 format=3 uid="uid://bv8qm5n7kypse"]
 
 [ext_resource type="Script" path="res://scripts/ui/battle/BattleFailure.gd" id="1_failure"]
+[ext_resource type="AudioStream" uid="uid://d1gauqxolvwmu" path="res://assets/audio/sfx/warning.ogg" id="2_warning"]
+[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="3_hover"]
+[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="4_restart"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="5_quit"]
 
 [node name="BattleFailure" type="Control"]
 visible = false
@@ -31,3 +35,19 @@ dialog_text = "Battle Failed!
 Groove reached 0%"
 ok_button_text = "Restart"
 cancel_button_text = "Exit to Title"
+
+[node name="WarningSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_warning")
+bus = &"SFX"
+
+[node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_hover")
+bus = &"SFX"
+
+[node name="RestartSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_restart")
+bus = &"SFX"
+
+[node name="QuitSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_quit")
+bus = &"SFX"

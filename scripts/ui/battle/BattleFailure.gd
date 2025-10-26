@@ -15,11 +15,11 @@ extends Control
 @onready var dialog: ConfirmationDialog = $FailureDialog
 @onready var dialog_overlay: ColorRect = $DialogOverlay
 
-# TODO: Add sound effect nodes like MainTitle
-# @onready var warning_sound: AudioStreamPlayer = $WarningSound
-# @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
-# @onready var restart_sound: AudioStreamPlayer = $RestartSound
-# @onready var quit_sound: AudioStreamPlayer = $QuitSound
+# Sound effects
+@onready var warning_sound: AudioStreamPlayer = $WarningSound
+@onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
+@onready var restart_sound: AudioStreamPlayer = $RestartSound
+@onready var quit_sound: AudioStreamPlayer = $QuitSound
 
 func _ready():
 	visible = false
@@ -43,6 +43,9 @@ func _ready():
 	dialog.confirmed.connect(_on_restart_confirmed)
 	dialog.canceled.connect(_on_exit_confirmed)
 
+	# Connect hover sounds to dialog buttons (deferred to allow dialog to initialize)
+	call_deferred("_connect_dialog_button_sounds")
+
 func _on_battle_failed():
 	"""Show failure dialog when battle fails."""
 	visible = true
@@ -50,12 +53,12 @@ func _on_battle_failed():
 	get_tree().paused = true
 	dialog.popup_centered()
 
-	# TODO: Play warning sound
+	# Play warning sound
 	# warning_sound.play()
 
 func _on_restart_confirmed():
 	"""Restart the battle."""
-	# TODO: Play restart sound
+	
 	# restart_sound.play()
 
 	get_tree().paused = false
@@ -63,8 +66,18 @@ func _on_restart_confirmed():
 
 func _on_exit_confirmed():
 	"""Exit to title screen."""
-	# TODO: Play quit sound
+	
 	# quit_sound.play()
 
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
+
+func _connect_dialog_button_sounds():
+	"""Connect hover sounds to dialog buttons after dialog is initialized."""
+	var ok_btn = dialog.get_ok_button()
+	var cancel_btn = dialog.get_cancel_button()
+
+	if ok_btn and button_hover_sound:
+		ok_btn.mouse_entered.connect(func(): button_hover_sound.play())
+	if cancel_btn and button_hover_sound:
+		cancel_btn.mouse_entered.connect(func(): button_hover_sound.play())

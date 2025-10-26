@@ -35,8 +35,6 @@ extends Control
 @onready var level_up_label: Label = $CanvasLayer/Panel/VBoxContainer/LevelUpLabel
 @onready var continue_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/ContinueButton
 @onready var restart_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/RestartButton
-@onready var quit_button: Button = $CanvasLayer/Panel/VBoxContainer/ButtonContainer/QuitButton
-
 var battle_results: Dictionary = {}
 
 func _ready():
@@ -51,10 +49,13 @@ func _ready():
 	# Connect buttons
 	if continue_button:
 		continue_button.pressed.connect(_on_continue_pressed)
+		continue_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 	if restart_button:
 		restart_button.pressed.connect(_on_restart_pressed)
+		restart_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
+		quit_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 
 func _exit_tree():
 	"""Clean up when scene is freed."""
@@ -84,11 +85,13 @@ func show_results():
 
 	# Update stats
 	if strength_earned_label:
-		strength_earned_label.text = "Strength Earned: %d" % battle_results.get("strength_total", 0)
+	var strength_total = battle_results.get("strength_total", 0)
+	var strength_awarded = battle_results.get("strength_awarded", 0)
 
-	if strength_awarded_label:
-		var awarded = battle_results.get("strength_awarded", 0)
-		strength_awarded_label.text = "Strength Awarded: %d" % awarded
+	if strength_earned_label:
+		strength_earned_label.text = "Earned %d of %d Strength" % [strength_awarded, strength_total]
+
+	# Hide the redundant second label
 
 	if max_combo_label:
 		max_combo_label.text = "Max Combo: %d" % battle_results.get("combo_max", 0)
@@ -113,20 +116,26 @@ func show_results():
 
 	# Hide restart button (only for success - failure has its own dialog)
 	if restart_button:
-		restart_button.visible = false
+		restart_button.visible = true
 
 func _on_continue_pressed():
+	if success_sound:
+		success_sound.play()
 	"""Continue to next scene or return to title."""
 	get_tree().paused = false
 	# For now, go to title. Later: navigate to overworld or next battle
 	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
 
 func _on_restart_pressed():
+	if restart_sound:
+		restart_sound.play()
 	"""Restart the battle."""
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
 func _on_quit_pressed():
+	if cancel_sound:
+		cancel_sound.play()
 	"""Quit to title screen."""
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
