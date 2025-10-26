@@ -21,7 +21,9 @@ signal strength_gained(amount: int, total: int)
 signal hit_registered(quality: String, strength: int, groove_change: float)
 signal battle_failed()  # Groove reached 0%
 signal battle_completed(results: Dictionary)  # End of battle results
+@warning_ignore("unused_signal")  # Emitted by battle scenes, not BattleManager itself
 signal show_groove_tutorial()  # Show groove bar tutorial message
+@warning_ignore("unused_signal")  # Emitted by battle scenes, not BattleManager itself
 signal hide_groove_tutorial()  # Hide groove bar tutorial message
 
 # ============================================================================
