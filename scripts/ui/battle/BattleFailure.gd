@@ -31,12 +31,6 @@ func _ready():
 	if BattleManager:
 		BattleManager.battle_failed.connect(_on_battle_failed)
 
-	# Set up dialog
-	dialog.dialog_text = "Battle Failed!\nGroove reached 0%"
-	dialog.title = "BATTLE FAILED"
-	dialog.ok_button_text = "Restart"
-	dialog.cancel_button_text = "Exit to Title"
-
 	# Disable close button (can't dismiss, must choose)
 	dialog.unresizable = true
 
