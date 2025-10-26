@@ -696,10 +696,10 @@ func get_hit_quality_for_note(distance: float, note: Node, hit_zone_y: float) ->
 	if note.has_node("NoteTemplate"):
 		note_height = note.get_node("NoteTemplate").size.y
 
-	# Calculate no-overlap threshold based on actual note size
-	var note_half_height = note_height / 2.0
-	var hitzone_half_height = 100.0  # HitZone is always 200px tall
-	var no_overlap_threshold = note_half_height + hitzone_half_height
+	# Calculate no-overlap threshold - use OKAY_WINDOW to allow OKAY hits
+	# (previous calculation was too strict: note_half_height + hitzone_half_height = 200px,
+	#  which made OKAY window unreachable since OKAY is 300-500px)
+	var no_overlap_threshold = OKAY_WINDOW
 
 	# First check if completely outside HitZone (no overlap) = MISS
 	if distance >= no_overlap_threshold:
