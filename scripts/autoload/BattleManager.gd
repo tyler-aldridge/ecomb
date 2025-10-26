@@ -994,7 +994,7 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 					if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
 						if player_sprite.sprite_frames.has_animation("idle"):
 							player_sprite.play("idle")
-				, CONNECT_ONE_SHOT
+			, CONNECT_ONE_SHOT
 			)
 
 func _on_player_pecs_finished():
