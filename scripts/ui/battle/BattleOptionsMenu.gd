@@ -162,7 +162,12 @@ func _on_exit_confirmed():
 	_hide_dialog_overlay()
 	success_sound.play()
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/title/TitleScreen.tscn")
+
+	# Signal battle to end gracefully (not as a fail)
+	if BattleManager:
+		BattleManager.player_quit_to_title = true
+
+	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
 
 func _on_exit_canceled():
 	# Just hide the dialog

@@ -150,6 +150,7 @@ var battle_active: bool = false
 var battle_id: String = ""
 var battle_level: int = 1
 var battle_type: String = "story"  # "story", "lesson", or "random"
+var player_quit_to_title: bool = false  # Set to true when player manually quits to title
 
 # Groove bar (health system)
 var groove_current: float = 0.0

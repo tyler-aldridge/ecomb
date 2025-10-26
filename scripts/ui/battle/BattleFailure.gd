@@ -55,6 +55,11 @@ func _ready():
 
 func _on_battle_failed():
 	"""Show failure dialog when battle fails."""
+	# Don't show failure dialog if player manually quit to title
+	if BattleManager.player_quit_to_title:
+		BattleManager.player_quit_to_title = false  # Reset flag
+		return
+
 	visible = true
 	dialog_overlay.show()
 	get_tree().paused = true
