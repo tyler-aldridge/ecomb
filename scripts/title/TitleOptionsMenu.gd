@@ -108,6 +108,18 @@ func load_settings():
 	if difficulty_slider:
 		# Convert difficulty string to slider value (0-4)
 		var difficulty = GameManager.get_setting("difficulty", "gymbro")
+
+		# Handle legacy difficulty names (old 3-level system)
+		if difficulty == "easy":
+			difficulty = "wimpy"
+			GameManager.set_setting("difficulty", difficulty)
+		elif difficulty == "normal":
+			difficulty = "gymbro"
+			GameManager.set_setting("difficulty", difficulty)
+		elif difficulty == "hard":
+			difficulty = "meathead"
+			GameManager.set_setting("difficulty", difficulty)
+
 		var slider_value = 2
 		var display_text = "Gymbro"
 		match difficulty:

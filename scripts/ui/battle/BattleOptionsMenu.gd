@@ -43,9 +43,10 @@ func _ready():
 	# Load saved settings
 	load_settings()
 
-func _unhandled_input(event):
+func _input(event):
 	if event.is_action_pressed("ui_cancel"):
 		toggle_menu()
+		get_viewport().set_input_as_handled()
 
 # Volume control functions
 func _on_master_volume_changed(value):
@@ -135,6 +136,18 @@ func load_settings():
 	if difficulty_slider:
 		# Convert difficulty string to slider value (0-4)
 		var difficulty = GameManager.get_setting("difficulty", "gymbro")
+
+		# Handle legacy difficulty names (old 3-level system)
+		if difficulty == "easy":
+			difficulty = "wimpy"
+			GameManager.set_setting("difficulty", difficulty)
+		elif difficulty == "normal":
+			difficulty = "gymbro"
+			GameManager.set_setting("difficulty", difficulty)
+		elif difficulty == "hard":
+			difficulty = "meathead"
+			GameManager.set_setting("difficulty", difficulty)
+
 		var slider_value = 2
 		var display_text = "Gymbro"
 		match difficulty:

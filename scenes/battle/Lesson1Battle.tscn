@@ -129,14 +129,16 @@ scale = Vector2(1.65, 1.65)
 sprite_frames = SubResource("SpriteFrames_te63p")
 animation = &"pecs"
 
-[node name="BattleOptionsMenu" parent="TutorialUI" instance=ExtResource("4_options")]
-layout_mode = 1
+[node name="OptionsLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="BattleOptionsMenu" parent="OptionsLayer" instance=ExtResource("4_options")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -963.0
-offset_top = -540.0
-offset_right = -963.0
-offset_bottom = -540.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
