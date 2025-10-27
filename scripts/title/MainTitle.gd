@@ -324,10 +324,10 @@ func _fade_to_black() -> void:
 func _start_opening_cutscene() -> void:
 	get_tree().change_scene_to_file("res://scenes/battle/Lesson1Battle.tscn")
 
-func _fade_to_loaded_game(save_id: String) -> void:
+func _fade_to_loaded_game(_save_id: String) -> void:
 	pass
 
-func _save_option(opt_name: String, value: Variant) -> void:
+func _save_option(_opt_name: String, _value: Variant) -> void:
 	pass
 
 func _delete_save_file(save_id: String) -> void:
