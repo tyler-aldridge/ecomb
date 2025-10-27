@@ -117,8 +117,10 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 	# Use the original timer system but with better timing
 	if auto_close_time > 0.0:
 		var timer := get_tree().create_timer(auto_close_time)
-		var dialog_ref = current_dialog  # Store reference to avoid null issues
-		timer.timeout.connect(_close_dialog_after_timer.bind(dialog_ref))
+		# Don't use .bind() with timeout signal - it doesn't accept parameters!
+		# Instead, capture the dialog reference in a lambda (safe here - not in a loop)
+		var dialog_ref = current_dialog
+		timer.timeout.connect(func(): _close_dialog_after_timer(dialog_ref))
 
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
