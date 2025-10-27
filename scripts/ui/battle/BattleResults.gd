@@ -195,9 +195,9 @@ func _spawn_firework():
 	if not is_showing_fireworks:
 		return
 
-	# Randomize next firework spawn time - spawn more frequently
+	# Randomize next firework spawn time - 1 every 4-7 seconds
 	if fireworks_timer:
-		fireworks_timer.wait_time = randf_range(0.2, 0.5)
+		fireworks_timer.wait_time = randf_range(4.0, 7.0)
 
 	# Random launch position at bottom of screen
 	var viewport_size = get_viewport().get_visible_rect().size
@@ -209,11 +209,18 @@ func _spawn_firework():
 	var target_y = randf_range(viewport_size.y * 0.15, viewport_size.y * 0.65)
 	var target_pos = Vector2(target_x, target_y)
 
-	# Choose explosion type and color palette FIRST so trail can match
-	var explosion_type = randi() % 4
-	var use_rainbow = randf() > 0.5
-	var color_palette = rainbow_colors if use_rainbow else note_colors
-	var trail_color = color_palette[randi() % color_palette.size()]
+	# Choose explosion type (3 types) and color FIRST so trail can match
+	var explosion_type = randi() % 3  # 0=sunburst, 1=weeping willow, 2=chaos
+	var use_rainbow = randf() > 0.93  # Rainbow is rare - about 1 in 14 fireworks
+
+	# Pick ONE solid color for the firework (cyan, yellow, or magenta) OR rainbow
+	var firework_color: Color
+	if use_rainbow:
+		firework_color = rainbow_colors[randi() % rainbow_colors.size()]  # Trail color for rainbow
+	else:
+		firework_color = note_colors[randi() % note_colors.size()]  # Single solid color
+
+	var trail_color = firework_color
 
 	# Create thicker, colored trail particle for the ascending firework
 	var trail = ColorRect.new()
@@ -227,122 +234,162 @@ func _spawn_firework():
 	var tween = create_tween()
 	tween.tween_property(trail, "position", target_pos, ascent_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 
-	# Explode at peak using bind to avoid lambda capture
-	tween.tween_callback(_create_firework_explosion.bind(target_pos, explosion_type, color_palette))
+	# CRITICAL: Queue explosion callback AFTER trail reaches target position
+	# This ensures fireworks ALWAYS explode at the right time
+	tween.tween_callback(_create_firework_explosion.bind(target_pos, explosion_type, firework_color, use_rainbow))
+
+	# Fade out trail after explosion triggered
 	tween.tween_property(trail, "modulate:a", 0.0, 0.1)
 	tween.tween_callback(trail.queue_free)
 
-func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, color_palette: Array):
-	"""Create an explosion of particles at the given position."""
+func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, firework_color: Color, is_rainbow: bool):
+	"""Create an explosion of particles at the given position with gravity."""
 	# Vary size - some explosions are bigger than others
 	var size_multiplier = randf_range(0.8, 1.5)
 
-	# Number of particles varies by explosion type (increased for bigger explosions)
+	# Number of particles varies by explosion type
 	var particle_count = 0
 	match explosion_type:
-		0:  # Burst (circular)
+		0:  # Sunburst (perfectly even circular explosion)
 			particle_count = int(60 * size_multiplier)
-			_create_burst_explosion(explosion_pos, particle_count, color_palette, size_multiplier)
-		1:  # Ring
-			particle_count = int(80 * size_multiplier)
-			_create_ring_explosion(explosion_pos, particle_count, color_palette, size_multiplier)
-		2:  # Fountain (downward cascade)
+			_create_sunburst_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
+		1:  # Weeping Willow (drooping arms like the tree)
 			particle_count = int(50 * size_multiplier)
-			_create_fountain_explosion(explosion_pos, particle_count, color_palette, size_multiplier)
-		3:  # Willow (drooping)
+			_create_weeping_willow_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
+		2:  # Chaos (varied length arms, mostly circular but irregular)
 			particle_count = int(70 * size_multiplier)
-			_create_willow_explosion(explosion_pos, particle_count, color_palette, size_multiplier)
+			_create_chaos_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
 
-func _create_burst_explosion(explosion_pos: Vector2, count: int, colors: Array, size_mult: float):
-	"""Create a circular burst explosion."""
+func _create_sunburst_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
+	"""Create sunburst with 3 concentric circles - large, medium, small."""
+	# Divide particles into 3 rings: large (50%), medium (30%), small (20%)
+	var large_count = int(count * 0.5)
+	var medium_count = int(count * 0.3)
+	var small_count = count - large_count - medium_count
+
+	# Create large outer ring
+	_create_sunburst_ring(explosion_pos, large_count, firework_color, is_rainbow, size_mult, 1.0, 0.0)
+	# Create medium middle ring
+	_create_sunburst_ring(explosion_pos, medium_count, firework_color, is_rainbow, size_mult, 0.65, 0.15)
+	# Create small inner ring
+	_create_sunburst_ring(explosion_pos, small_count, firework_color, is_rainbow, size_mult, 0.35, 0.3)
+
+func _create_sunburst_ring(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float, speed_mult: float, delay: float):
+	"""Create a single ring of the sunburst explosion."""
 	for i in range(count):
 		var particle = ColorRect.new()
-		particle.size = Vector2(8, 8) * size_mult  # Bigger particles
+		particle.size = Vector2(8, 8) * size_mult
 		particle.position = explosion_pos
-		particle.color = colors[randi() % colors.size()]
+		# All particles same color (or random rainbow colors if rainbow firework)
+		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
 		fireworks_layer.add_child(particle)
 
-		# Explode outward in all directions with varying speeds
-		var angle = (i / float(count)) * TAU
-		var speed = randf_range(250, 450) * size_mult  # Faster, further
-		var direction = Vector2(cos(angle), sin(angle))
-		var distance = speed
-
-		var tween = create_tween()
-		tween.set_parallel(true)
-		tween.tween_property(particle, "position", explosion_pos + direction * distance, 1.2).set_ease(Tween.EASE_OUT)
-		tween.tween_property(particle, "modulate:a", 0.0, 1.2)
-		tween.tween_callback(particle.queue_free)
-
-func _create_ring_explosion(explosion_pos: Vector2, count: int, colors: Array, size_mult: float):
-	"""Create a ring-shaped explosion."""
-	for i in range(count):
-		var particle = ColorRect.new()
-		particle.size = Vector2(7, 7) * size_mult  # Bigger particles
-		particle.position = explosion_pos
-		particle.color = colors[randi() % colors.size()]
-		fireworks_layer.add_child(particle)
-
-		# Create ring by having particles move outward at same speed
-		var angle = (i / float(count)) * TAU
-		var direction = Vector2(cos(angle), sin(angle))
-		var distance = 350 * size_mult  # Larger ring
-
-		var tween = create_tween()
-		tween.set_parallel(true)
-		tween.tween_property(particle, "position", explosion_pos + direction * distance, 1.0)
-		tween.tween_property(particle, "modulate:a", 0.0, 1.0)
-		tween.tween_callback(particle.queue_free)
-
-func _create_fountain_explosion(explosion_pos: Vector2, count: int, colors: Array, size_mult: float):
-	"""Create a fountain that cascades downward."""
-	for i in range(count):
-		var particle = ColorRect.new()
-		particle.size = Vector2(9, 9) * size_mult  # Bigger particles
-		particle.position = explosion_pos
-		particle.color = colors[randi() % colors.size()]
-		fireworks_layer.add_child(particle)
-
-		# Arc upward then fall down
-		var angle_offset = randf_range(-0.6, 0.6)
-		var angle = -PI/2 + angle_offset  # Mostly upward
-		var speed = randf_range(200, 350) * size_mult  # Higher arc
+		# Evenly distributed around circle with slight variation
+		var angle = (i / float(count)) * TAU + randf_range(-0.05, 0.05)
+		var speed = 300 * size_mult * speed_mult + randf_range(-30, 30)
 		var direction = Vector2(cos(angle), sin(angle))
 
-		var tween = create_tween()
-		tween.set_parallel(true)
-		# Move up and out
-		tween.tween_property(particle, "position", explosion_pos + direction * speed, 0.7).set_ease(Tween.EASE_OUT)
-		# Then fall down with gravity effect
-		tween.tween_property(particle, "position:y", explosion_pos.y + 600 * size_mult, 1.2).set_delay(0.7).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-		tween.tween_property(particle, "modulate:a", 0.0, 0.6).set_delay(1.2)
-		tween.tween_callback(particle.queue_free).set_delay(1.9)
-
-func _create_willow_explosion(explosion_pos: Vector2, count: int, colors: Array, size_mult: float):
-	"""Create a willow/drooping explosion."""
-	for i in range(count):
-		var particle = ColorRect.new()
-		particle.size = Vector2(5, 15) * size_mult  # Elongated particles for trails
-		particle.position = explosion_pos
-		particle.color = colors[randi() % colors.size()]
-		fireworks_layer.add_child(particle)
-
-		# Explode outward then droop down gracefully
-		var angle = (i / float(count)) * TAU
-		var speed = randf_range(200, 400) * size_mult  # Further outward
-		var direction = Vector2(cos(angle), sin(angle))
+		# Calculate trajectory with gravity
+		var initial_velocity = direction * speed
+		var explosion_time = 1.0
+		var gravity = 400.0
+		var mid_point = explosion_pos + initial_velocity * explosion_time
+		var fall_distance = gravity * explosion_time * 0.5
+		var end_point = Vector2(mid_point.x, mid_point.y + fall_distance)
 
 		var tween = create_tween()
-		var mid_point = explosion_pos + direction * speed
-		var end_point = Vector2(mid_point.x, mid_point.y + 500 * size_mult)  # Longer droop
+		# Delay for ring timing
+		if delay > 0:
+			tween.tween_interval(delay)
+		# Explode outward
+		tween.tween_property(particle, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
+		# Fall with gravity
+		tween.tween_property(particle, "position", end_point, 1.0).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
-		# Move outward
-		tween.tween_property(particle, "position", mid_point, 0.6).set_ease(Tween.EASE_OUT)
-		# Droop down
-		tween.tween_property(particle, "position", end_point, 1.0).set_ease(Tween.EASE_IN)
-		# Fade out
+		# Fade while falling
 		var fade_tween = create_tween()
-		fade_tween.tween_property(particle, "modulate:a", 0.0, 1.6)
+		fade_tween.tween_property(particle, "modulate:a", 0.0, 0.8).set_delay(explosion_time + delay + 0.2)
+		fade_tween.tween_callback(particle.queue_free)
+
+func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
+	"""Create umbrella/jellyfish shaped explosion - dome at top with drooping tendrils."""
+	for i in range(count):
+		var particle = ColorRect.new()
+		particle.size = Vector2(6, 14) * size_mult  # Elongated for willow effect
+		particle.position = explosion_pos
+		# All particles same color (or random rainbow colors if rainbow firework)
+		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
+		fireworks_layer.add_child(particle)
+
+		# Create umbrella/jellyfish shape - particles form dome then droop
+		var angle = (i / float(count)) * TAU + randf_range(-0.1, 0.1)
+
+		# Dome formation - more particles at top, spreading outward and downward
+		# Use sine to create dome (upward=less spread, sides=more spread)
+		var dome_factor = abs(sin(angle))  # 0 at top/bottom, 1 at sides
+		var upward_velocity = -randf_range(250, 400) * size_mult  # Strong upward push
+		var outward_velocity = randf_range(100, 250) * size_mult * dome_factor  # Outward based on angle
+
+		var direction = Vector2(cos(angle) * dome_factor, -1.0 + dome_factor * 0.5)  # Dome shape
+		direction = direction.normalized()
+
+		# Calculate dome peak position
+		var peak_time = 0.6
+		var peak_pos = explosion_pos + Vector2(
+			cos(angle) * outward_velocity * peak_time * dome_factor,
+			upward_velocity * peak_time * 0.5  # Arc to peak
+		)
+
+		# Droop straight down from peak like jellyfish tendrils
+		var droop_time = 1.8
+		var droop_distance = randf_range(400, 700) * size_mult  # Long drooping tendrils
+		var end_pos = Vector2(peak_pos.x, peak_pos.y + droop_distance)
+
+		var tween = create_tween()
+		# Rise to dome peak
+		tween.tween_property(particle, "position", peak_pos, peak_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		# Droop down like jellyfish tendrils
+		tween.tween_property(particle, "position", end_pos, droop_time).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
+
+		# Fade while drooping
+		var fade_tween = create_tween()
+		fade_tween.tween_property(particle, "modulate:a", 0.0, 1.3).set_delay(peak_time + 0.3)
+		fade_tween.tween_callback(particle.queue_free)
+
+func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
+	"""Create realistic chaotic explosion with varied arm lengths - mostly circular but irregular."""
+	for i in range(count):
+		var particle = ColorRect.new()
+		particle.size = Vector2(7, 7) * size_mult
+		particle.position = explosion_pos
+		# All particles same color (or random rainbow colors if rainbow firework)
+		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
+		fireworks_layer.add_child(particle)
+
+		# Irregular distribution - vary speeds significantly for chaos
+		var angle = (i / float(count)) * TAU + randf_range(-0.2, 0.2)  # Add angle variation
+		var speed = randf_range(150, 500) * size_mult  # HUGE speed variation for chaos
+		var direction = Vector2(cos(angle), sin(angle))
+
+		# Random trajectory with gravity
+		var initial_velocity = direction * speed
+		var explosion_time = randf_range(0.8, 1.3)  # Varied timing adds chaos
+		var gravity = 450.0
+		var mid_point = explosion_pos + initial_velocity * explosion_time
+		var fall_distance = gravity * randf_range(0.8, 1.2)  # Varied fall adds chaos
+		var end_point = Vector2(mid_point.x, mid_point.y + fall_distance)
+
+		var tween = create_tween()
+		# Explode with chaos
+		tween.tween_property(particle, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
+		# Fall with gravity
+		tween.tween_property(particle, "position", end_point, 1.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+
+		# Fade while falling (starts during fall, varied timing for chaos)
+		var fade_tween = create_tween()
+		var fade_delay = explosion_time + randf_range(0.1, 0.4)
+		var fade_duration = randf_range(0.7, 1.0)
+		fade_tween.tween_property(particle, "modulate:a", 0.0, fade_duration).set_delay(fade_delay)
 		fade_tween.tween_callback(particle.queue_free)
 
 func _fade_to_black():

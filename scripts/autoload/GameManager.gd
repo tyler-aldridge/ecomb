@@ -290,9 +290,9 @@ func calculate_health_loss(base_damage: int) -> int:
 func create_fps_display():
 	# Create a CanvasLayer to overlay on top of everything
 	var canvas_layer = CanvasLayer.new()
-	canvas_layer.layer = 100  # High layer so it's always on top
+	canvas_layer.layer = 200  # Higher layer than battle UI (which is 100)
 	add_child(canvas_layer)
-	
+
 	# Create a container for the background and border
 	var panel = PanelContainer.new()
 	panel.position = Vector2(10, 10)  # Top-left corner
