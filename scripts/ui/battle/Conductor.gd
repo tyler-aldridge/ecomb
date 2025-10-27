@@ -27,7 +27,12 @@ func _ready() -> void:
 	seconds_per_beat = 60.0 / bpm
 
 	# Cache output latency once at start
+	# NOTE: Web browsers often report incorrect/low latency values
+	# Use user timing offset setting for accurate web compensation
 	cached_output_latency = AudioServer.get_output_latency()
+	if OS.has_feature("web") and cached_output_latency < 0.05:
+		# Web latency detection often fails, rely on user timing offset instead
+		cached_output_latency = 0.0
 
 func _physics_process(delta: float) -> void:
 	if playing:
@@ -35,6 +40,9 @@ func _physics_process(delta: float) -> void:
 		latency_cache_timer += delta
 		if latency_cache_timer >= 1.0:
 			cached_output_latency = AudioServer.get_output_latency()
+			# Web browsers often report incorrect latency, disable if unrealistic
+			if OS.has_feature("web") and cached_output_latency < 0.05:
+				cached_output_latency = 0.0
 			latency_cache_timer = 0.0
 
 		song_position = get_playback_position() + AudioServer.get_time_since_last_mix()
