@@ -1171,12 +1171,12 @@ func _execute_jump_animation(sprite: AnimatedSprite2D, original_pos: Vector2, sc
 	tween.tween_property(sprite, "position:y", original_pos.y, 0.25).set_delay(0.25)
 
 	# Return to idle after jump completes
+	# Note: Sprite persists throughout battle, but we check animation exists before creating callback
+	# to avoid any potential issues
 	tween.chain()
-	tween.tween_callback(func():
-		if is_instance_valid(sprite) and sprite.sprite_frames:
-			if sprite.sprite_frames.has_animation("idle"):
-				sprite.play("idle")
-	)
+	if sprite.sprite_frames and sprite.sprite_frames.has_animation("idle"):
+		# Use bind to pass argument without lambda capture
+		tween.tween_callback(sprite.play.bind("idle"))
 
 func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_pos: Vector2, scene_root: Node):
 	"""Animate opponent character on player MISS.
