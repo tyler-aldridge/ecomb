@@ -84,7 +84,6 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 	current_percentage = percentage
 
 	# Check if full for rainbow pulsing
-	var was_full = is_full
 	is_full = percentage >= 100.0
 
 	# Animate the value change with smooth easing
