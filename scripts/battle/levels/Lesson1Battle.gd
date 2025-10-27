@@ -604,9 +604,11 @@ func flash_hit_zone(track_key: String):
 	if zone_index >= 0 and zone_index < hit_zones.size():
 		var hit_zone_node = hit_zones[zone_index]
 		if is_instance_valid(hit_zone_node):
-			hit_zone_node.modulate = Color.WHITE
+			# Capture hit_zone_node to avoid lambda issues when tween fires
+			var zone = hit_zone_node
+			zone.modulate = Color.WHITE
 			var flash_tween = create_tween()
-			flash_tween.tween_property(hit_zone_node, "modulate", Color(1, 1, 1, 1), 0.1)
+			flash_tween.tween_property(zone, "modulate", Color(1, 1, 1, 1), 0.1)
 
 func check_hit(track_key: String):
 	var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[track_key].y
