@@ -61,35 +61,51 @@ func create_scanline_overlay():
 	scanline_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	scanline_overlay.visible = false
 
-	# Create shader for dramatic VHS effect with RGB split and distortion
+	# Create shader for dramatic VHS effect with RGB split and random distortion
 	var shader_code = """
 shader_type canvas_item;
 
 uniform float offset : hint_range(0.0, 1.0) = 0.0;
 uniform float distortion_offset : hint_range(0.0, 10.0) = 0.0;
 
+// Simple pseudo-random noise function
+float random(vec2 uv) {
+	return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
 void fragment() {
-	// Horizontal wave distortion that travels vertically
-	float wave = sin((UV.y * 30.0) + distortion_offset * 2.0) * 0.008;
+	// Multiple wave frequencies for organic distortion
+	float wave1 = sin((UV.y * 30.0) + distortion_offset * 2.0) * 0.008;
+	float wave2 = sin((UV.y * 15.0) + distortion_offset * 1.5 + 1.3) * 0.004;
+	float wave3 = sin((UV.y * 60.0) + distortion_offset * 3.0 + 2.7) * 0.003;
+	float combined_wave = wave1 + wave2 + wave3;
 
 	// Chromatic aberration (RGB split) - classic VHS effect
 	float aberration = 0.003;
-	vec2 uv_r = vec2(UV.x + wave + aberration, UV.y);
-	vec2 uv_g = vec2(UV.x + wave, UV.y);
-	vec2 uv_b = vec2(UV.x + wave - aberration, UV.y);
+	vec2 uv_r = vec2(UV.x + combined_wave + aberration, UV.y);
+	vec2 uv_g = vec2(UV.x + combined_wave, UV.y);
+	vec2 uv_b = vec2(UV.x + combined_wave - aberration, UV.y);
 
 	// Horizontal scanlines (more visible)
 	float scanline = step(0.6, fract((UV.y * 25.0) + offset)) * 0.4;
 
-	// Vertical noise bands that scroll
-	float noise_band = step(0.85, fract((UV.x * 40.0) + distortion_offset * 0.5)) * 0.2;
+	// Randomized vertical glitches (not uniform like a ruler)
+	float glitch_pos = UV.x * 50.0 + distortion_offset * 0.3;
+	float glitch_noise = random(vec2(floor(glitch_pos), floor(distortion_offset * 2.0)));
+	float glitch = step(0.92, glitch_noise) * 0.3;  // Random glitch lines
+
+	// Add more distortion at glitch positions
+	if (glitch > 0.0) {
+		float glitch_distort = random(vec2(floor(glitch_pos), floor(distortion_offset * 3.0))) * 0.02 - 0.01;
+		combined_wave += glitch_distort;
+	}
 
 	// Combined darkening effect
-	float darkness = scanline + noise_band;
+	float darkness = scanline + glitch;
 
-	// Apply darkening and subtle color shift
+	// Apply darkening and VHS color shift
 	COLOR.rgb *= (1.0 - darkness);
-	COLOR.rgb += vec3(noise_band * 0.1, 0.0, scanline * 0.05);  // Slight color tinting
+	COLOR.rgb += vec3(glitch * 0.15, 0.0, scanline * 0.05);  // Color tinting
 	COLOR.a = darkness * 0.7;  // More visible overlay
 }
 """
