@@ -242,8 +242,10 @@ func convert_bar_beat_to_spawn_positions():
 				var beat = note_data.get("beat", 1)
 				hit_position = bar_beat_to_position(bar, beat)
 
-			# Calculate spawn time by subtracting travel offset
-			var spawn_offset = BattleManager.NOTE_TYPE_CONFIG[note_type]["spawn_offset"] if BattleManager.NOTE_TYPE_CONFIG.has(note_type) else 8
+			# Calculate spawn_offset dynamically based on travel_time and BPM
+			# Formula: spawn_offset (beats) = ceil(travel_time × BPM ÷ 60)
+			var travel_time = BattleManager.NOTE_TYPE_CONFIG[note_type]["travel_time"] if BattleManager.NOTE_TYPE_CONFIG.has(note_type) else 1.55
+			var spawn_offset = ceil(travel_time * conductor.bpm / 60.0)
 			var spawn_position = hit_position - spawn_offset
 
 			# Store spawn position for use in _on_beat
