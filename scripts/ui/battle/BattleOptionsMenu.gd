@@ -135,16 +135,13 @@ func show_menu():
 		conductor.stream_paused = true
 
 func hide_menu():
-	# CRITICAL: Unpause tree BEFORE unpausing audio to prevent drift
-	# If audio resumes while tree is paused, Conductor advances but notes stay frozen
-	hide()
-	get_tree().paused = false
-
-	# Now unpause the music/Conductor
+	# Unpause audio FIRST, then tree, so both resume on same physics tick
 	var conductor = get_tree().get_first_node_in_group("conductor")
 	if conductor and conductor is AudioStreamPlayer:
 		conductor.stream_paused = false
 
+	hide()
+	get_tree().paused = false
 	emit_signal("closed")
 
 func _on_close_pressed():

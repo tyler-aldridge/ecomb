@@ -22,10 +22,6 @@ func _ready() -> void:
 	# Add to group so BattleOptionsMenu can find and pause us
 	add_to_group("conductor")
 
-	# Set process mode so we can manually control pause via stream_paused
-	# This prevents the tree pause from interfering with our manual pause logic
-	process_mode = Node.PROCESS_MODE_ALWAYS
-
 	# Validate BPM to prevent division by zero
 	if bpm <= 0:
 		push_error("Invalid BPM: " + str(bpm) + ". Defaulting to 120.")
@@ -42,12 +38,6 @@ func _ready() -> void:
 		cached_output_latency = 0.0
 
 func _physics_process(delta: float) -> void:
-	# Skip processing if stream is paused (options menu open)
-	# This keeps timing in sync: audio paused = no beat signals = no song_position updates
-	# Notes also freeze (tree paused), so everything stays synchronized
-	if stream_paused:
-		return
-
 	if playing:
 		# Refresh latency cache every second (not every frame)
 		latency_cache_timer += delta
@@ -59,17 +49,19 @@ func _physics_process(delta: float) -> void:
 			latency_cache_timer = 0.0
 
 		# Get audio playback position
-		# NOTE: On web, get_playback_position() can drift significantly
-		# get_time_since_last_mix() adds additional offset that may accumulate errors
+		# NOTE: On web, browser audio buffering causes get_playback_position() to report
+		# the stream decode position, which is ~0.5-1.0s BEHIND actual speaker output
+		# This causes notes to spawn too late (user hears audio before notes arrive)
 		var playback_pos = get_playback_position()
 		var time_since_mix = AudioServer.get_time_since_last_mix()
 
-		# CRITICAL WEB FIX: On web, audio buffering causes massive position drift
-		# The browser buffers audio ahead, so playback_pos reports buffer position, not output
-		# Using time_since_mix on web causes notes to spawn ~1 second too early
-		# Solution: Only use playback_pos on web, ignore time_since_mix
+		# Web timing strategy: Use both playback_pos AND time_since_mix, plus buffer compensation
 		if OS.has_feature("web"):
-			song_position = playback_pos  # Use ONLY playback position on web
+			# Clamp time_since_mix to prevent wild jumps
+			time_since_mix = min(time_since_mix, 0.1)
+			# On web, add ~800ms to compensate for browser audio buffer delay
+			# Browser buffers audio ahead, so actual audio output is ahead of reported position
+			song_position = playback_pos + time_since_mix + 0.8  # +800ms web buffer compensation
 		else:
 			# Desktop: use accurate timing with mix offset
 			song_position = playback_pos + time_since_mix
