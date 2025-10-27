@@ -6,10 +6,21 @@ var current_dialog: Control = null
 func show_dialog(text: String, _character: String, auto_close_time: float, _dialog_id: String = "") -> void:
 	# Add a small delay to prevent immediate replacement
 	await get_tree().create_timer(0.1).timeout
-	
-	if current_dialog:
-		current_dialog.queue_free()
-	
+
+	# CRITICAL: If there's an existing dialog, fade it out properly before freeing
+	# Don't just call queue_free() - there might be tweens running on it!
+	if current_dialog and is_instance_valid(current_dialog):
+		var old_dialog = current_dialog
+		current_dialog = null  # Clear reference immediately
+
+		# Fade out old dialog before freeing
+		var fade_tween = create_tween()
+		fade_tween.tween_property(old_dialog, "modulate:a", 0.0, 0.2)
+		fade_tween.tween_callback(func():
+			if is_instance_valid(old_dialog):
+				old_dialog.queue_free()
+		)
+
 	current_dialog = dialog_box_scene.instantiate()
 
 	# Set high z-index to appear above everything else
