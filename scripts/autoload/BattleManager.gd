@@ -630,7 +630,7 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 	var grid_size = 4
 	var piece_size = Vector2(note_size.x / grid_size, note_size.y / grid_size)
 	var note_top_left = note.global_position  # Note position is already at top-left
-	var explosion_duration = 0.7  # Shatter duration (reduced by 0.2s)
+	var explosion_duration = 0.8  # Shatter duration
 
 	for row in range(grid_size):
 		for col in range(grid_size):
@@ -1142,7 +1142,7 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 		# Original explosion behavior: larger radius, good duration
 		var explosion_radius = 600 if color_type == "rainbow" else 450
 		var random_direction = Vector2(randf_range(-explosion_radius, explosion_radius), randf_range(-explosion_radius, explosion_radius))
-		var duration = randf_range(0.6, 1.0)  # Reduced by 0.2s for faster pacing
+		var duration = randf_range(0.7, 1.1)  # Particle explosion duration
 
 		tween.tween_property(p, "position", p.position + random_direction, duration)
 		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)

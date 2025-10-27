@@ -56,29 +56,29 @@ func _ready():
 	create_scanline_overlay()
 
 func create_scanline_overlay():
-	"""Create VHS-style scanline overlay effect for when groove is full."""
+	"""Create VHS-style scanline overlay with vertical distortion waves."""
 	scanline_overlay = ColorRect.new()
 	scanline_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	scanline_overlay.visible = false
 
-	# Create shader for horizontal scanlines
+	# Create shader for VHS effect with vertical distortion
 	var shader_code = """
 shader_type canvas_item;
 
 uniform float offset : hint_range(0.0, 1.0) = 0.0;
-uniform float line_density : hint_range(1.0, 50.0) = 15.0;
-uniform float line_intensity : hint_range(0.0, 1.0) = 0.3;
+uniform float distortion_offset : hint_range(0.0, 10.0) = 0.0;
 
 void fragment() {
-	// Calculate scanline position with scrolling offset
-	float line = fract((UV.y * line_density) + offset);
+	// Vertical distortion wave that travels along the bar
+	float wave = sin((UV.x * 20.0) + distortion_offset) * 0.002;
+	vec2 distorted_uv = vec2(UV.x, UV.y + wave);
 
-	// Create sharp scanline bands (VHS effect)
-	float scanline = step(0.5, line) * line_intensity;
+	// Horizontal scanlines
+	float scanline = step(0.5, fract((distorted_uv.y * 15.0) + offset)) * 0.2;
 
-	// Apply darkening effect where scanlines appear
+	// Apply subtle darkening where scanlines appear
 	COLOR.rgb *= (1.0 - scanline);
-	COLOR.a = scanline * 0.8;  // Semi-transparent dark bands
+	COLOR.a = scanline * 0.5;
 }
 """
 
@@ -87,8 +87,6 @@ void fragment() {
 
 	var shader_material = ShaderMaterial.new()
 	shader_material.shader = shader
-	shader_material.set_shader_parameter("line_density", 15.0)
-	shader_material.set_shader_parameter("line_intensity", 0.3)
 
 	scanline_overlay.material = shader_material
 	progress_bar.add_child(scanline_overlay)
@@ -117,12 +115,13 @@ func _process(delta):
 				# Simple lerp for clean color transitions
 				fill_style.bg_color = rainbow_colors[current_index].lerp(rainbow_colors[next_index], t)
 
-		# Animate VHS scanlines scrolling downward
+		# Animate VHS scanlines scrolling and vertical distortion wave
 		if scanline_overlay and scanline_overlay.material:
 			scanline_offset += delta * 2.0  # Scroll speed
 			if scanline_offset > 1.0:
 				scanline_offset -= 1.0
 			scanline_overlay.material.set_shader_parameter("offset", scanline_offset)
+			scanline_overlay.material.set_shader_parameter("distortion_offset", rainbow_time * 2.0)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -215,7 +214,7 @@ func stop_low_groove_warning():
 	scale = Vector2(1.0, 1.0)
 
 func play_full_groove_celebration():
-	"""Play celebration pulsing animation when groove reaches 100% - bright glow and scale pulse."""
+	"""Show VHS scanline overlay when groove reaches 100%."""
 	# Stop if already playing to restart
 	stop_full_groove_celebration()
 
@@ -223,33 +222,8 @@ func play_full_groove_celebration():
 	if scanline_overlay:
 		scanline_overlay.visible = true
 
-	# DRAMATIC bright glow pulse - cycle between normal and very bright (infinite loop)
-	full_groove_glow_tween = create_tween()
-	full_groove_glow_tween.set_loops(0)  # 0 = infinite loops
-	full_groove_glow_tween.tween_property(self, "modulate", Color(1.5, 1.5, 1.5, 1), 0.3)
-	full_groove_glow_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.3)
-
-	# DRAMATIC scale pulse - much larger than before
-	full_groove_pulse_tween = create_tween()
-	full_groove_pulse_tween.set_loops(0)  # 0 = infinite loops
-	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.15, 1.15), 0.3)
-	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.3)
-
 func stop_full_groove_celebration():
-	"""Stop the celebration animation when groove drops below 100%."""
+	"""Hide VHS scanline overlay when groove drops below 100%."""
 	# Hide VHS scanline overlay
 	if scanline_overlay:
 		scanline_overlay.visible = false
-
-	# Kill full groove tweens
-	if full_groove_glow_tween and is_instance_valid(full_groove_glow_tween):
-		full_groove_glow_tween.kill()
-		full_groove_glow_tween = null
-
-	if full_groove_pulse_tween and is_instance_valid(full_groove_pulse_tween):
-		full_groove_pulse_tween.kill()
-		full_groove_pulse_tween = null
-
-	# Reset to normal appearance
-	modulate = Color(1, 1, 1, 1)
-	scale = Vector2(1.0, 1.0)
