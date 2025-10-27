@@ -660,8 +660,9 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	# Fade out quickly
 	tween.tween_property(note, "modulate:a", 0.0, 0.4)
 
-	# Free the note after fade completes (no lambda to avoid capture errors)
-	tween.chain().tween_callback(note.queue_free)
+	# Free the note after fade completes - capture note to avoid errors
+	var n = note
+	tween.chain().tween_callback(n.queue_free)
 
 	return tween
 
