@@ -650,18 +650,20 @@ func create_miss_fade_tween(note: Node) -> Tween:
 		note.queue_free()
 		return null
 
+	# Capture note first to avoid lambda issues
+	var n = note
+
 	# Turn note black and fade out fast
 	var tween = parent.create_tween()
 	tween.set_parallel(true)
 
 	# Turn black immediately
-	tween.tween_property(note, "modulate", Color(0, 0, 0, 1), 0.0)
+	tween.tween_property(n, "modulate", Color(0, 0, 0, 1), 0.0)
 
 	# Fade out quickly
-	tween.tween_property(note, "modulate:a", 0.0, 0.4)
+	tween.tween_property(n, "modulate:a", 0.0, 0.4)
 
-	# Free the note after fade completes - capture note to avoid errors
-	var n = note
+	# Free the note after fade completes
 	tween.chain().tween_callback(n.queue_free)
 
 	return tween
@@ -1036,6 +1038,9 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 
 		effects_layer.add_child(particle)
 
+		# Capture particle BEFORE creating tweens to avoid lambda issues in loop
+		var p = particle
+
 		var tween = scene_root.create_tween()
 		tween.set_parallel(true)
 
@@ -1043,20 +1048,19 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 		var random_direction = Vector2(randf_range(-explosion_radius, explosion_radius), randf_range(-explosion_radius, explosion_radius))
 		var duration = randf_range(0.7, 1.1)
 
-		tween.tween_property(particle, "position", particle.position + random_direction, duration)
-		tween.tween_property(particle, "rotation", particle.rotation + randf_range(-TAU * 2, TAU * 2), duration)
+		tween.tween_property(p, "position", p.position + random_direction, duration)
+		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)
 
 		if color_type == "rainbow":
-			tween.tween_property(particle, "modulate:a", 0.0, duration * 0.6).set_delay(duration * 0.4)
-			tween.tween_property(particle, "color", target_color, duration * 0.6)
+			tween.tween_property(p, "modulate:a", 0.0, duration * 0.6).set_delay(duration * 0.4)
+			tween.tween_property(p, "color", target_color, duration * 0.6)
 		else:
-			tween.tween_property(particle, "modulate:a", 0.0, duration)
+			tween.tween_property(p, "modulate:a", 0.0, duration)
 
-		tween.tween_property(particle, "scale", Vector2(3.0, 3.0), duration * 0.2)
-		tween.tween_property(particle, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
+		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
+		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
 
-		# Clean up particle - capture to avoid lambda errors
-		var p = particle
+		# Clean up particle
 		tween.chain().tween_callback(p.queue_free)
 
 func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool, effects_layer: Node2D, scene_root: Node):
