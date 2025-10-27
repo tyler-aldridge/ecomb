@@ -564,10 +564,10 @@ func choose_lane_avoiding_overlap(current_beat: int) -> String:
 
 func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 	"""
-	Create a universal fade out tween for hit notes with shard explosion effect.
+	Create a universal fade out tween for hit notes with grid-based shatter effect.
 
-	Notes explode into shards that fly outward, rotate, and fade away.
-	The explosion is themed to match the note's color.
+	Notes break apart into a 4x4 grid of pieces that fly outward, creating
+	a realistic shattering effect where you can see the note falling apart.
 
 	Args:
 		note: The note node to fade
@@ -583,24 +583,16 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 	if note.has_method("stop_movement"):
 		note.stop_movement()
 
-	# Get note color from NoteTemplate
+	# Get note color and size from NoteTemplate
 	var note_color = Color.WHITE
+	var note_size = Vector2(200, 200)  # Default
 	if note.has_node("NoteTemplate"):
 		var template = note.get_node("NoteTemplate")
 		note_color = template.color
+		note_size = template.size
 
-	# Make the note implode/shrink quickly while shards fly out
-	var implode_duration = 0.15
-	var note_tween = note.create_tween()
-	note_tween.set_parallel(true)
-	note_tween.tween_property(note, "scale", Vector2(0.0, 0.0), implode_duration)
-	note_tween.tween_property(note, "modulate:a", 0.0, implode_duration)
-
-	# Create shards that explode outward
-	var num_shards = 8
-	var shard_size = Vector2(40, 40)
-	var explosion_duration = 0.6
-	var note_center = note.global_position
+	# Hide the original note immediately
+	note.modulate.a = 0.0
 
 	# Get the parent to add shards to (should be the battle scene)
 	var parent = note.get_parent()
@@ -608,40 +600,61 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 		note.queue_free()
 		return null
 
-	for i in range(num_shards):
-		var shard = ColorRect.new()
-		shard.color = note_color
-		shard.size = shard_size
-		shard.position = note_center - shard_size / 2.0  # Center the shard
-		parent.add_child(shard)
+	# Create a 4x4 grid of pieces that form the note
+	var grid_size = 4
+	var piece_size = Vector2(note_size.x / grid_size, note_size.y / grid_size)
+	var note_top_left = note.global_position  # Note position is already at top-left
+	var explosion_duration = 0.5
 
-		# Calculate random outward direction
-		var angle = (i / float(num_shards)) * TAU + randf_range(-0.3, 0.3)
-		var speed = randf_range(200, 400)
-		var direction = Vector2(cos(angle), sin(angle))
-		var target_offset = direction * speed
+	for row in range(grid_size):
+		for col in range(grid_size):
+			var piece = ColorRect.new()
+			piece.color = note_color
+			piece.size = piece_size
 
-		# Create tween for this shard
-		var shard_tween = shard.create_tween()
-		shard_tween.set_parallel(true)
+			# Position piece to form the original note shape
+			var piece_x = note_top_left.x + (col * piece_size.x)
+			var piece_y = note_top_left.y + (row * piece_size.y)
+			piece.position = Vector2(piece_x, piece_y)
 
-		# Move outward
-		shard_tween.tween_property(shard, "position", shard.position + target_offset, explosion_duration)
+			parent.add_child(piece)
 
-		# Rotate randomly
-		shard_tween.tween_property(shard, "rotation", randf_range(-PI * 2, PI * 2), explosion_duration)
+			# Calculate direction from note center
+			var note_center = note_top_left + note_size / 2.0
+			var piece_center = piece.position + piece_size / 2.0
+			var direction = (piece_center - note_center).normalized()
 
-		# Fade out
-		shard_tween.tween_property(shard, "modulate:a", 0.0, explosion_duration)
+			# Add some randomness to explosion
+			var random_offset = Vector2(randf_range(-50, 50), randf_range(-50, 50))
+			direction = (direction + random_offset.normalized() * 0.3).normalized()
 
-		# Scale down
-		shard_tween.tween_property(shard, "scale", Vector2(0.3, 0.3), explosion_duration)
+			# Pieces further from center fly faster
+			var distance_from_center = piece_center.distance_to(note_center)
+			var speed = 200 + (distance_from_center * 2.0)
+			var target_offset = direction * speed
 
-		# Clean up shard after animation
-		shard_tween.chain().tween_callback(func():
-			if is_instance_valid(shard):
-				shard.queue_free()
-		)
+			# Create tween for this piece
+			var piece_tween = piece.create_tween()
+			piece_tween.set_parallel(true)
+
+			# Move outward
+			piece_tween.tween_property(piece, "position", piece.position + target_offset, explosion_duration)
+
+			# Rotate based on position (edge pieces spin more)
+			var rotation_amount = randf_range(-PI, PI) * (1.0 + distance_from_center / 100.0)
+			piece_tween.tween_property(piece, "rotation", rotation_amount, explosion_duration)
+
+			# Fade out
+			piece_tween.tween_property(piece, "modulate:a", 0.0, explosion_duration)
+
+			# Scale down slightly
+			piece_tween.tween_property(piece, "scale", Vector2(0.5, 0.5), explosion_duration)
+
+			# Clean up piece after animation
+			piece_tween.chain().tween_callback(func():
+				if is_instance_valid(piece):
+					piece.queue_free()
+			)
 
 	# Clean up original note after a short delay
 	var cleanup_tween = note.create_tween()
@@ -990,6 +1003,11 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 
 		particle.rotation = randf() * TAU
 		particle.position = note_center + Vector2(randi_range(-40, 40), randi_range(-40, 40))
+
+		# For PERFECT hits, start particles slightly larger to show the color transition better
+		if color_type == "rainbow":
+			particle.scale = Vector2(1.5, 1.5)
+
 		effects_layer.add_child(particle)
 
 		# Capture particle in local variable for lambda
@@ -1004,13 +1022,17 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 
 		tween.tween_property(p, "position", p.position + random_direction, duration)
 		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)
-		tween.tween_property(p, "modulate:a", 0.0, duration)
+
+		# For PERFECT, delay fade so color transition is visible
+		if color_type == "rainbow":
+			tween.tween_property(p, "modulate:a", 0.0, duration * 0.6).set_delay(duration * 0.4)
+			# Transition color from note color to rainbow over 60% of duration
+			tween.tween_property(p, "color", target_color, duration * 0.6)
+		else:
+			tween.tween_property(p, "modulate:a", 0.0, duration)
+
 		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
 		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
-
-		# For rainbow (PERFECT), transition color from note color to rainbow
-		if color_type == "rainbow":
-			tween.tween_property(p, "color", target_color, duration * 0.3)
 
 		tween.tween_callback(func():
 			if is_instance_valid(p):
