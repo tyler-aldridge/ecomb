@@ -538,9 +538,12 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 	if not is_instance_valid(note):
 		return null
 
-	# Stop the note from moving
+	# CRITICAL: Stop the note from moving AND disable its physics process
+	# This prevents the note from freeing itself while tween is running!
 	if note.has_method("stop_movement"):
 		note.stop_movement()
+	if note.has_method("set_physics_process"):
+		note.set_physics_process(false)
 
 	# Get note color and size from NoteTemplate
 	var note_color = Color.WHITE
@@ -640,9 +643,12 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	if not is_instance_valid(note):
 		return null
 
-	# Stop the note from moving
+	# CRITICAL: Stop the note from moving AND disable its physics process
+	# This prevents the note from freeing itself while tween is running!
 	if note.has_method("stop_movement"):
 		note.stop_movement()
+	if note.has_method("set_physics_process"):
+		note.set_physics_process(false)
 
 	# Get parent to create tween on (avoids lambda capture errors)
 	var parent = note.get_parent()
