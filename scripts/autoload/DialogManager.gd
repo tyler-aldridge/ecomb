@@ -118,17 +118,7 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 	if auto_close_time > 0.0:
 		var timer := get_tree().create_timer(auto_close_time)
 		var dialog_ref = current_dialog  # Store reference to avoid null issues
-		timer.timeout.connect(func():
-			if is_instance_valid(dialog_ref):
-				var tw := create_tween()
-				tw.tween_property(dialog_ref, "modulate:a", 0.0, 0.4)
-				tw.tween_callback(func():
-					if is_instance_valid(dialog_ref):
-						dialog_ref.queue_free()
-					if current_dialog == dialog_ref:
-						current_dialog = null
-				)
-		)
+		timer.timeout.connect(_close_dialog_after_timer.bind(dialog_ref))
 
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
@@ -152,6 +142,20 @@ func _type_text(node: Node, full_text: String) -> void:
 			return
 		_set_text(node, full_text.substr(0, i))
 		await get_tree().create_timer(0.02).timeout
+
+func _close_dialog_after_timer(dialog_ref: Control):
+	"""Callback to close dialog after timer - avoids nested lambdas."""
+	if is_instance_valid(dialog_ref):
+		var tw := create_tween()
+		tw.tween_property(dialog_ref, "modulate:a", 0.0, 0.4)
+		tw.tween_callback(_free_dialog_ref.bind(dialog_ref))
+
+func _free_dialog_ref(dialog_ref: Control):
+	"""Callback to free dialog reference - avoids lambda capture."""
+	if is_instance_valid(dialog_ref):
+		dialog_ref.queue_free()
+	if current_dialog == dialog_ref:
+		current_dialog = null
 
 func _spawn_number_later(text: String, delay: float, font_size: int, color: Color, linger: float, is_go: bool = false) -> void:
 	var timer := get_tree().create_timer(delay)
@@ -198,4 +202,6 @@ func _spawn_number_now(text: String, font_size: int, color: Color, linger: float
 		shake_tw.tween_property(label, "rotation", deg_to_rad(3), 0.05)
 		shake_tw.tween_property(label, "rotation", deg_to_rad(-3), 0.05)
 
-	tw.tween_callback(layer.queue_free).set_delay(fade_duration)
+	# Capture layer to avoid lambda issues
+	var l = layer
+	tw.tween_callback(l.queue_free).set_delay(fade_duration)
