@@ -17,6 +17,11 @@ var current_measure: int = 1
 var start_timer: Timer
 
 func _ready() -> void:
+	# Validate BPM to prevent division by zero
+	if bpm <= 0:
+		push_error("Invalid BPM: " + str(bpm) + ". Defaulting to 120.")
+		bpm = 120.0
+
 	seconds_per_beat = 60.0 / bpm
 	if OS.has_feature("web"):
 		Engine.time_scale = 1.0

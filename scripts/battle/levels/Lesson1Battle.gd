@@ -113,7 +113,12 @@ func _ready():
 
 	# Configure conductor from level data
 	if level_data.has("bpm"):
-		conductor.bpm = float(level_data["bpm"])
+		var loaded_bpm = float(level_data["bpm"])
+		# Validate BPM to prevent division by zero
+		if loaded_bpm <= 0:
+			push_error("Invalid BPM in level data: " + str(loaded_bpm) + ". Using default 120.")
+			loaded_bpm = 120.0
+		conductor.bpm = loaded_bpm
 		conductor.seconds_per_beat = 60.0 / conductor.bpm
 		# Set BPM in BattleManager for UI animations (groove bar, background)
 		BattleManager.current_bpm = conductor.bpm
@@ -577,8 +582,8 @@ func check_hit(track_key: String):
 		# Get note's actual height dynamically using universal helper
 		var note_height = BattleManager.get_note_height(closest_note)
 
-		# Pass note position and hitzone position for edge-based checking
-		var hit_quality = BattleManager.get_hit_quality_for_note(best_distance, closest_note, hit_zone_y)
+		# Pass note and hitzone position for edge-based checking
+		var hit_quality = BattleManager.get_hit_quality_for_note(closest_note, hit_zone_y)
 
 		# Calculate effect position at note's center (dynamic for any note size)
 		var effect_pos = closest_note.position + Vector2(100, note_height / 2.0)
