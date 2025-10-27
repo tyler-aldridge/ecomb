@@ -84,7 +84,12 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 	current_percentage = percentage
 
 	# Check if full for rainbow pulsing
+	var was_full = is_full
 	is_full = percentage >= 100.0
+
+	# Start rainbow on green (index 3) for smooth UX transition from 100% green
+	if is_full and not was_full:
+		rainbow_time = 3.0  # Start at green in rainbow_colors array
 
 	# Animate the value change with smooth easing
 	var tween = create_tween()

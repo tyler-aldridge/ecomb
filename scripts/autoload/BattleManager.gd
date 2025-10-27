@@ -1208,10 +1208,13 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 			for connection in player_sprite.animation_finished.get_connections():
 				player_sprite.animation_finished.disconnect(connection["callable"])
 
-			# Connect one-shot to return to idle (use bind to avoid lambda capture)
+			# Connect one-shot to return to idle (check validity to prevent freed node errors)
 			if player_sprite.sprite_frames.has_animation("idle"):
+				var sprite_ref = player_sprite
 				player_sprite.animation_finished.connect(
-					player_sprite.play.bind("idle"),
+					func(_anim_name):
+						if is_instance_valid(sprite_ref):
+							sprite_ref.play("idle"),
 					CONNECT_ONE_SHOT
 				)
 
@@ -1279,9 +1282,12 @@ func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_
 			for connection in opponent_sprite.animation_finished.get_connections():
 				opponent_sprite.animation_finished.disconnect(connection["callable"])
 
-			# Connect one-shot to return to idle (use bind to avoid lambda capture)
+			# Connect one-shot to return to idle (check validity to prevent freed node errors)
 			if opponent_sprite.sprite_frames.has_animation("idle"):
+				var sprite_ref = opponent_sprite
 				opponent_sprite.animation_finished.connect(
-					opponent_sprite.play.bind("idle"),
+					func(_anim_name):
+						if is_instance_valid(sprite_ref):
+							sprite_ref.play("idle"),
 					CONNECT_ONE_SHOT
 				)

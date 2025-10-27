@@ -75,7 +75,7 @@ func _ready():
 
 	# Create timer for spawning fireworks
 	fireworks_timer = Timer.new()
-	fireworks_timer.wait_time = randf_range(0.3, 0.8)  # Random interval
+	fireworks_timer.wait_time = randf_range(0.15, 0.4)  # Random initial delay (doubled rate)
 	fireworks_timer.timeout.connect(_spawn_firework)
 	add_child(fireworks_timer)
 
@@ -195,9 +195,9 @@ func _spawn_firework():
 	if not is_showing_fireworks:
 		return
 
-	# Randomize next firework spawn time - 1 every 4-7 seconds
+	# Randomize next firework spawn time - 1 every 2-3.5 seconds (doubled rate)
 	if fireworks_timer:
-		fireworks_timer.wait_time = randf_range(4.0, 7.0)
+		fireworks_timer.wait_time = randf_range(2.0, 3.5)
 
 	# Random launch position at bottom of screen
 	var viewport_size = get_viewport().get_visible_rect().size
