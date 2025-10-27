@@ -69,11 +69,11 @@ const NOTE_TYPE_CONFIG = {
 	},
 	"half": {
 		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
-		"spawn_offset": 10
+		"spawn_offset": 12  # Calibrated for 152 BPM = 2.37s travel time
 	},
 	"quarter": {
 		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
-		"spawn_offset": 10
+		"spawn_offset": 12  # Calibrated for 152 BPM = 2.37s travel time
 	}
 }
 
