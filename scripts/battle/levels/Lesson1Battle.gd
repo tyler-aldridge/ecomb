@@ -303,12 +303,12 @@ func create_fade_overlay():
 	add_child(fade_overlay)
 
 func fade_from_black():
-	"""Fade from black overlay using universal BattleManager duration."""
+	"""Fade from black overlay with smooth easing."""
 	if not is_instance_valid(fade_overlay):
 		return
 	fade_overlay.modulate.a = 1.0
 	var fade_tween = create_tween()
-	fade_tween.tween_property(fade_overlay, "modulate:a", 0.0, BattleManager.FADE_FROM_BLACK_DURATION)
+	fade_tween.tween_property(fade_overlay, "modulate:a", 0.0, BattleManager.FADE_FROM_BLACK_DURATION).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 
 func setup_hit_zone_borders():
 	"""Add white borders to all hit zones using universal BattleManager constants."""

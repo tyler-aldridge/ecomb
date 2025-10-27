@@ -22,6 +22,10 @@ func _ready() -> void:
 	# Add to group so BattleOptionsMenu can find and pause us
 	add_to_group("conductor")
 
+	# Set process mode so we can manually control pause via stream_paused
+	# This prevents the tree pause from interfering with our manual pause logic
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	# Validate BPM to prevent division by zero
 	if bpm <= 0:
 		push_error("Invalid BPM: " + str(bpm) + ". Defaulting to 120.")
@@ -38,6 +42,12 @@ func _ready() -> void:
 		cached_output_latency = 0.0
 
 func _physics_process(delta: float) -> void:
+	# Skip processing if stream is paused (options menu open)
+	# This keeps timing in sync: audio paused = no beat signals = no song_position updates
+	# Notes also freeze (tree paused), so everything stays synchronized
+	if stream_paused:
+		return
+
 	if playing:
 		# Refresh latency cache every second (not every frame)
 		latency_cache_timer += delta
@@ -90,6 +100,10 @@ func _emit_fake_beat() -> void:
 		start_timer.start()
 	else:
 		start_timer.queue_free()
+		# Fade in music volume to mask any web audio skip
+		volume_db = -10.0  # Start quieter
 		play()
+		var fade_tween = create_tween()
+		fade_tween.tween_property(self, "volume_db", 0.0, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 		
 		
