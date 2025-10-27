@@ -209,11 +209,18 @@ func _spawn_firework():
 	var target_y = randf_range(viewport_size.y * 0.15, viewport_size.y * 0.65)
 	var target_pos = Vector2(target_x, target_y)
 
-	# Choose explosion type (3 types) and color palette FIRST so trail can match
+	# Choose explosion type (3 types) and color FIRST so trail can match
 	var explosion_type = randi() % 3  # 0=sunburst, 1=weeping willow, 2=chaos
 	var use_rainbow = randf() > 0.93  # Rainbow is rare - about 1 in 14 fireworks
-	var color_palette = rainbow_colors if use_rainbow else note_colors
-	var trail_color = color_palette[randi() % color_palette.size()]
+
+	# Pick ONE solid color for the firework (cyan, yellow, or magenta) OR rainbow
+	var firework_color: Color
+	if use_rainbow:
+		firework_color = rainbow_colors[randi() % rainbow_colors.size()]  # Trail color for rainbow
+	else:
+		firework_color = note_colors[randi() % note_colors.size()]  # Single solid color
+
+	var trail_color = firework_color
 
 	# Create thicker, colored trail particle for the ascending firework
 	var trail = ColorRect.new()
@@ -229,13 +236,13 @@ func _spawn_firework():
 
 	# CRITICAL: Queue explosion callback AFTER trail reaches target position
 	# This ensures fireworks ALWAYS explode at the right time
-	tween.tween_callback(_create_firework_explosion.bind(target_pos, explosion_type, color_palette))
+	tween.tween_callback(_create_firework_explosion.bind(target_pos, explosion_type, firework_color, use_rainbow))
 
 	# Fade out trail after explosion triggered
 	tween.tween_property(trail, "modulate:a", 0.0, 0.1)
 	tween.tween_callback(trail.queue_free)
 
-func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, color_palette: Array):
+func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, firework_color: Color, is_rainbow: bool):
 	"""Create an explosion of particles at the given position with gravity."""
 	# Vary size - some explosions are bigger than others
 	var size_multiplier = randf_range(0.8, 1.5)
@@ -245,21 +252,22 @@ func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, col
 	match explosion_type:
 		0:  # Sunburst (perfectly even circular explosion)
 			particle_count = int(60 * size_multiplier)
-			_create_sunburst_explosion(explosion_pos, particle_count, color_palette, size_multiplier)
+			_create_sunburst_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
 		1:  # Weeping Willow (drooping arms like the tree)
 			particle_count = int(50 * size_multiplier)
-			_create_weeping_willow_explosion(explosion_pos, particle_count, color_palette, size_multiplier)
+			_create_weeping_willow_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
 		2:  # Chaos (varied length arms, mostly circular but irregular)
 			particle_count = int(70 * size_multiplier)
-			_create_chaos_explosion(explosion_pos, particle_count, color_palette, size_multiplier)
+			_create_chaos_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
 
-func _create_sunburst_explosion(explosion_pos: Vector2, count: int, colors: Array, size_mult: float):
+func _create_sunburst_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create realistic sunburst explosion with slight variations and gravity."""
 	for i in range(count):
 		var particle = ColorRect.new()
 		particle.size = Vector2(8, 8) * size_mult
 		particle.position = explosion_pos
-		particle.color = colors[randi() % colors.size()]
+		# All particles same color (or random rainbow colors if rainbow firework)
+		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
 		fireworks_layer.add_child(particle)
 
 		# Slightly off-center concentric circles for realism
@@ -286,13 +294,14 @@ func _create_sunburst_explosion(explosion_pos: Vector2, count: int, colors: Arra
 		fade_tween.tween_property(particle, "modulate:a", 0.0, 0.8).set_delay(explosion_time + 0.2)
 		fade_tween.tween_callback(particle.queue_free)
 
-func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, colors: Array, size_mult: float):
+func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create realistic weeping willow explosion with drooping arms like the tree."""
 	for i in range(count):
 		var particle = ColorRect.new()
 		particle.size = Vector2(6, 14) * size_mult  # Elongated for willow effect
 		particle.position = explosion_pos
-		particle.color = colors[randi() % colors.size()]
+		# All particles same color (or random rainbow colors if rainbow firework)
+		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
 		fireworks_layer.add_child(particle)
 
 		# Create "arms" that droop - upward angles with slight variation for realism
@@ -320,13 +329,14 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, colors
 		fade_tween.tween_property(particle, "modulate:a", 0.0, 1.2).set_delay(arc_time + 0.3)
 		fade_tween.tween_callback(particle.queue_free)
 
-func _create_chaos_explosion(explosion_pos: Vector2, count: int, colors: Array, size_mult: float):
+func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create realistic chaotic explosion with varied arm lengths - mostly circular but irregular."""
 	for i in range(count):
 		var particle = ColorRect.new()
 		particle.size = Vector2(7, 7) * size_mult
 		particle.position = explosion_pos
-		particle.color = colors[randi() % colors.size()]
+		# All particles same color (or random rainbow colors if rainbow firework)
+		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
 		fireworks_layer.add_child(particle)
 
 		# Irregular distribution - vary speeds significantly for chaos

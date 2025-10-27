@@ -56,12 +56,12 @@ func _ready():
 	create_scanline_overlay()
 
 func create_scanline_overlay():
-	"""Create VHS-style scanline overlay with vertical distortion waves."""
+	"""Create VHS-style scanline overlay with chromatic aberration and distortion."""
 	scanline_overlay = ColorRect.new()
 	scanline_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	scanline_overlay.visible = false
 
-	# Create shader for VHS effect with vertical distortion
+	# Create shader for dramatic VHS effect with RGB split and distortion
 	var shader_code = """
 shader_type canvas_item;
 
@@ -69,16 +69,28 @@ uniform float offset : hint_range(0.0, 1.0) = 0.0;
 uniform float distortion_offset : hint_range(0.0, 10.0) = 0.0;
 
 void fragment() {
-	// Vertical distortion wave that travels along the bar
-	float wave = sin((UV.x * 20.0) + distortion_offset) * 0.002;
-	vec2 distorted_uv = vec2(UV.x, UV.y + wave);
+	// Horizontal wave distortion that travels vertically
+	float wave = sin((UV.y * 30.0) + distortion_offset * 2.0) * 0.008;
 
-	// Horizontal scanlines
-	float scanline = step(0.5, fract((distorted_uv.y * 15.0) + offset)) * 0.2;
+	// Chromatic aberration (RGB split) - classic VHS effect
+	float aberration = 0.003;
+	vec2 uv_r = vec2(UV.x + wave + aberration, UV.y);
+	vec2 uv_g = vec2(UV.x + wave, UV.y);
+	vec2 uv_b = vec2(UV.x + wave - aberration, UV.y);
 
-	// Apply subtle darkening where scanlines appear
-	COLOR.rgb *= (1.0 - scanline);
-	COLOR.a = scanline * 0.5;
+	// Horizontal scanlines (more visible)
+	float scanline = step(0.6, fract((UV.y * 25.0) + offset)) * 0.4;
+
+	// Vertical noise bands that scroll
+	float noise_band = step(0.85, fract((UV.x * 40.0) + distortion_offset * 0.5)) * 0.2;
+
+	// Combined darkening effect
+	float darkness = scanline + noise_band;
+
+	// Apply darkening and subtle color shift
+	COLOR.rgb *= (1.0 - darkness);
+	COLOR.rgb += vec3(noise_band * 0.1, 0.0, scanline * 0.05);  // Slight color tinting
+	COLOR.a = darkness * 0.7;  // More visible overlay
 }
 """
 
