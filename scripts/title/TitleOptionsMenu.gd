@@ -12,6 +12,10 @@ signal closed
 @onready var framerate_checkbox: CheckBox = $OptionsContainer/FramerateContainer/FramerateCheckbox
 @onready var close_button: Button = $OptionsContainer/CloseButton
 
+# Audio players
+@onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
+@onready var success_sound: AudioStreamPlayer = $SuccessSound
+
 func _ready():
 	# Connect volume sliders
 	if master_volume_slider:
@@ -29,11 +33,10 @@ func _ready():
 	if difficulty_slider:
 		difficulty_slider.value_changed.connect(_on_difficulty_changed)
 
-	# Checkboxes are already connected in the editor, so we don't connect them here
-
 	# Connect close button
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)
+		close_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 
 	# Load saved settings
 	load_settings()
@@ -91,6 +94,9 @@ func _on_framerate_toggled(checked):
 	GameManager.set_setting("show_fps", checked)
 
 func _on_close_pressed():
+	success_sound.play()
+	# Wait for sound to complete before closing
+	await get_tree().create_timer(0.3).timeout
 	emit_signal("closed")
 
 

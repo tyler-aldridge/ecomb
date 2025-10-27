@@ -55,29 +55,25 @@ const MAX_COMBO_MULTIPLIER = 3.0
 # Note type configuration (scalable for future note types)
 # To add a new note type:
 #   1. Create scene file with appropriate size (e.g., HalfNote.tscn at 200x400)
-#   2. Add entry here with scene path, travel_time, and spawn_offset
+#   2. Add entry here with scene path and spawn_offset (in half-beats)
 #   3. Add note type to level JSON files
 #   4. All hit detection, spawn positioning, and timing automatically scale!
+#
+# Note: travel_time is calculated dynamically based on spawn_offset and song BPM
+#       Formula: travel_time (seconds) = spawn_offset × 30 ÷ BPM
+#       This makes notes fall faster for fast songs, slower for slow songs
 const NOTE_TYPE_CONFIG = {
 	"whole": {
 		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
-		"travel_time": 4.5,
-		"spawn_offset": 25 
+		"spawn_offset": 16  # Half-beats before hit time to spawn
 	},
 	"half": {
 		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
-		"travel_time": 1.55,
-		"spawn_offset": 8
+		"spawn_offset": 12  # Calibrated for 152 BPM = 2.37s travel time
 	},
 	"quarter": {
 		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
-		"travel_time": 1.55,
-		"spawn_offset": 5  
-	},
-	"sixteenth": {
-		"scene": preload("res://scenes/ui/battle/SixteenthNote.tscn"),  # 200x100
-		"travel_time": 1.55,
-		"spawn_offset": 8  # Same as quarter for now
+		"spawn_offset": 12  # Calibrated for 152 BPM = 2.37s travel time
 	}
 }
 
@@ -103,6 +99,32 @@ const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 # Lane overlap prevention
 const OVERLAP_PREVENTION_WINDOW = 6  # Half-beats window to prevent same-lane spawns
 var recent_note_spawns = {}  # {beat_position: lane} - tracks recent spawns to avoid overlap
+
+# Miss detection threshold (how far past HitZone before automatic miss)
+const MISS_WINDOW = 150.0
+
+# ============================================================================
+# UI CONSTANTS - Universal Visual Settings
+# ============================================================================
+
+# Fade durations
+const FADE_FROM_BLACK_DURATION = 1.5
+const FADE_TO_BLACK_DURATION = 2.0
+const BATTLE_START_DELAY = 1.0
+
+# Hit zone visual properties
+const HITZONE_BORDER_WIDTH = 3.0
+const HITZONE_BORDER_COLOR = Color.WHITE
+
+# Tutorial indicator properties (yellow borders and numbers)
+const INDICATOR_BORDER_WIDTH = 5.0
+const INDICATOR_BORDER_COLOR = Color.YELLOW
+const INDICATOR_LABEL_SIZE = 100
+const INDICATOR_LABEL_COLOR = Color.YELLOW
+const INDICATOR_FADE_DURATION = 0.5
+const INDICATOR_PULSE_SCALE = Vector2(1.3, 1.3)
+const INDICATOR_PULSE_DURATION = 0.325
+const INDICATOR_PULSE_LOOPS = 200  # Loop for ~130 seconds
 
 # ============================================================================
 # DIFFICULTY SYSTEM - Hit Detection Thresholds
@@ -141,6 +163,9 @@ const DIFFICULTY_PRESETS = {
 
 # Current difficulty setting (persists across battles)
 var current_difficulty: String = "gymbro"
+
+# Current BPM (set by battle scene, used for UI animations)
+var current_bpm: float = 120.0
 
 # ============================================================================
 # BATTLE STATE
@@ -235,6 +260,7 @@ func start_battle(battle_data: Dictionary):
 	strength_total = 0
 	strength_max_possible = battle_data.get("max_strength", 0)
 	hit_counts = {"PERFECT": 0, "GOOD": 0, "OKAY": 0, "MISS": 0}
+	recent_note_spawns.clear()  # Clear lane overlap tracking from previous battle
 
 	# Emit initial state
 	groove_changed.emit(groove_current, groove_max)
@@ -272,6 +298,9 @@ func end_battle() -> Dictionary:
 		"battle_completed": battle_completed_successfully,
 		"groove_final": groove_current
 	}
+
+	# Clean up lane overlap tracking
+	recent_note_spawns.clear()
 
 	battle_active = false
 	battle_completed.emit(results)
@@ -476,7 +505,7 @@ func get_hit_counts() -> Dictionary:
 # UNIVERSAL BATTLE MECHANICS - Hit Detection & Lane Selection
 # ============================================================================
 
-func get_hit_quality_for_note(_distance: float, note: Node, hit_zone_y: float) -> String:
+func get_hit_quality_for_note(note: Node, hit_zone_y: float) -> String:
 	"""
 	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
 
@@ -566,21 +595,16 @@ func choose_lane_avoiding_overlap(current_beat: int) -> String:
 
 	return chosen_lane
 
-func create_fade_out_tween(note: Node, bpm: float) -> Tween:
+func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 	"""
-	Create a universal fade out tween for hit notes.
+	Create a universal fade out tween for hit notes with grid-based shatter effect.
 
-	Notes fade based on their beat duration:
-	- Whole notes: 4 beats
-	- Half notes: 2 beats
-	- Quarter notes: 1 beat
-	- Sixteenth notes: 0.5 beats
-
-	Notes continue falling by half their height during the fade.
+	Notes break apart into a 4x4 grid of pieces that fly outward, creating
+	a realistic shattering effect where you can see the note falling apart.
 
 	Args:
 		note: The note node to fade
-		bpm: Current song BPM for timing calculation
+		_bpm: Current song BPM (unused, kept for API compatibility)
 
 	Returns:
 		Tween configured for fade animation
@@ -592,44 +616,81 @@ func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 	if note.has_method("stop_movement"):
 		note.stop_movement()
 
-	# Get note type from metadata to determine fade duration
-	var note_type = note.get_meta("note_type", "quarter")
-
-	# Map note type to beats
-	var beats_to_fade = 1.0  # Default: quarter note = 1 beat
-	match note_type:
-		"whole":
-			beats_to_fade = 4.0
-		"half":
-			beats_to_fade = 2.0
-		"quarter":
-			beats_to_fade = 1.0
-		"sixteenth":
-			beats_to_fade = 0.5
-
-	# Calculate fade duration in seconds based on BPM
-	var seconds_per_beat = 60.0 / bpm if bpm > 0 else 0.395  # Default 152 BPM
-	var fade_duration = beats_to_fade * seconds_per_beat
-
-	# Get note height to calculate fall distance (half of note height)
-	var note_height = 200.0
+	# Get note color and size from NoteTemplate
+	var note_color = Color.WHITE
+	var note_size = Vector2(200, 200)  # Default
 	if note.has_node("NoteTemplate"):
-		note_height = note.get_node("NoteTemplate").size.y
-	var fall_distance = note_height / 2.0
+		var template = note.get_node("NoteTemplate")
+		note_color = template.color
+		note_size = template.size
 
-	var current_y = note.position.y
+	# Hide the original note immediately
+	note.modulate.a = 0.0
 
-	# Create fade out tween
-	var fade_tween = note.create_tween()
-	fade_tween.set_parallel(true)
-	fade_tween.tween_property(note, "modulate:a", 0.0, fade_duration)
-	fade_tween.tween_property(note, "position:y", current_y + fall_distance, fade_duration)
-	fade_tween.chain().tween_callback(func():
-		if is_instance_valid(note):
-			note.queue_free()
-	)
+	# Get the parent to add shards to (should be the battle scene)
+	var parent = note.get_parent()
+	if not is_instance_valid(parent):
+		note.queue_free()
+		return null
 
-	return fade_tween
+	# Create a 4x4 grid of pieces that form the note
+	var grid_size = 4
+	var piece_size = Vector2(note_size.x / grid_size, note_size.y / grid_size)
+	var note_top_left = note.global_position  # Note position is already at top-left
+	var explosion_duration = 0.8  # Shatter duration
+
+	for row in range(grid_size):
+		for col in range(grid_size):
+			var piece = ColorRect.new()
+			piece.color = note_color
+			piece.size = piece_size
+
+			# Position piece to form the original note shape
+			var piece_x = note_top_left.x + (col * piece_size.x)
+			var piece_y = note_top_left.y + (row * piece_size.y)
+			piece.position = Vector2(piece_x, piece_y)
+
+			parent.add_child(piece)
+
+			# Calculate direction from note center
+			var note_center = note_top_left + note_size / 2.0
+			var piece_center = piece.position + piece_size / 2.0
+			var direction = (piece_center - note_center).normalized()
+
+			# Add some randomness to explosion
+			var random_offset = Vector2(randf_range(-50, 50), randf_range(-50, 50))
+			direction = (direction + random_offset.normalized() * 0.3).normalized()
+
+			# Pieces further from center fly faster
+			var distance_from_center = piece_center.distance_to(note_center)
+			var speed = 200 + (distance_from_center * 2.0)
+			var target_offset = direction * speed
+
+			# Create tween on parent (not piece) to avoid lambda capture errors
+			var piece_tween = parent.create_tween()
+			piece_tween.set_parallel(true)
+
+			# Move outward
+			piece_tween.tween_property(piece, "position", piece.position + target_offset, explosion_duration)
+
+			# Rotate based on position (edge pieces spin more)
+			var rotation_amount = randf_range(-PI, PI) * (1.0 + distance_from_center / 100.0)
+			piece_tween.tween_property(piece, "rotation", rotation_amount, explosion_duration)
+
+			# Fade out
+			piece_tween.tween_property(piece, "modulate:a", 0.0, explosion_duration)
+
+			# Scale down slightly
+			piece_tween.tween_property(piece, "scale", Vector2(0.5, 0.5), explosion_duration)
+
+			# Clean up piece after animation (no need to capture, just queue_free directly)
+			piece_tween.chain().tween_callback(piece.queue_free)
+
+	# Clean up original note after a short delay
+	var cleanup_tween = parent.create_tween()
+	cleanup_tween.tween_callback(note.queue_free).set_delay(explosion_duration)
+
+	return cleanup_tween
 
 func create_miss_fade_tween(note: Node) -> Tween:
 	"""
@@ -653,8 +714,14 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	if note.has_method("stop_movement"):
 		note.stop_movement()
 
+	# Get parent to create tween on (avoids lambda capture errors)
+	var parent = note.get_parent()
+	if not is_instance_valid(parent):
+		note.queue_free()
+		return null
+
 	# Turn note black and fade out fast
-	var tween = note.create_tween()
+	var tween = parent.create_tween()
 	tween.set_parallel(true)
 
 	# Turn black immediately
@@ -663,11 +730,8 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	# Fade out quickly
 	tween.tween_property(note, "modulate:a", 0.0, 0.4)
 
-	# Free the note after fade completes
-	tween.chain().tween_callback(func():
-		if is_instance_valid(note):
-			note.queue_free()
-	)
+	# Free the note after fade completes (no lambda to avoid capture errors)
+	tween.chain().tween_callback(note.queue_free)
 
 	return tween
 
@@ -775,6 +839,107 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	# This allows for better control of sprite placement per-battle
 
 	return displays
+
+func get_note_height(note: Node) -> float:
+	"""
+	Universal helper to get note height dynamically.
+	Works for all note types by checking for NoteTemplate child.
+
+	Args:
+		note: The note node to get height for
+
+	Returns:
+		float: The note's height in pixels (defaults to 200.0 if not found)
+	"""
+	if note.has_node("NoteTemplate"):
+		return note.get_node("NoteTemplate").size.y
+	return 200.0  # Default fallback
+
+func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node) -> Array:
+	"""
+	Universal function to create yellow tutorial indicators (borders and numbers) on all hit zones.
+	Displays lane numbers with pulsing animation and yellow borders.
+	Scales automatically with HIT_ZONE_POSITIONS - works for 3, 4, 5+ lanes.
+
+	Args:
+		ui_layer: The CanvasLayer to add indicator nodes to
+		tween_parent: The node to create tweens on (prevents lambda capture errors)
+
+	Returns:
+		Array of indicator nodes (borders and labels) that can be cleaned up later
+	"""
+	var indicator_nodes = []
+
+	# Show groove bar tutorial message
+	show_groove_tutorial.emit()
+
+	# Create indicators for each lane dynamically
+	for lane_key in HIT_ZONE_POSITIONS.keys():
+		var pos = HIT_ZONE_POSITIONS[lane_key]
+
+		# Create yellow border
+		var border = Line2D.new()
+		border.width = INDICATOR_BORDER_WIDTH
+		border.default_color = INDICATOR_BORDER_COLOR
+		border.modulate.a = 0.0  # Start invisible for fade in
+		border.add_point(Vector2(0, 0))
+		border.add_point(Vector2(HITZONE_HEIGHT, 0))
+		border.add_point(Vector2(HITZONE_HEIGHT, HITZONE_HEIGHT))
+		border.add_point(Vector2(0, HITZONE_HEIGHT))
+		border.add_point(Vector2(0, 0))
+		border.position = pos
+		border.z_index = 350
+		ui_layer.add_child(border)
+		indicator_nodes.append(border)
+
+		# Fade in border
+		var border_fade_tween = tween_parent.create_tween()
+		border_fade_tween.tween_property(border, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
+
+		# Create lane number label
+		var label = Label.new()
+		label.text = lane_key
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", INDICATOR_LABEL_SIZE)
+		label.add_theme_color_override("font_color", INDICATOR_LABEL_COLOR)
+		label.position = pos + Vector2(50, 50)
+		label.size = Vector2(100, 100)
+		label.pivot_offset = Vector2(50, 50)  # Scale from center
+		label.modulate.a = 0.0  # Start invisible for fade in
+		label.z_index = 350
+		ui_layer.add_child(label)
+		indicator_nodes.append(label)
+
+		# Fade in label
+		var fade_tween = tween_parent.create_tween()
+		fade_tween.tween_property(label, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
+
+		# Pulsing scale animation
+		var scale_tween = tween_parent.create_tween()
+		scale_tween.set_loops(INDICATOR_PULSE_LOOPS)
+		scale_tween.tween_property(label, "scale", INDICATOR_PULSE_SCALE, INDICATOR_PULSE_DURATION)
+		scale_tween.tween_property(label, "scale", Vector2(1.0, 1.0), INDICATOR_PULSE_DURATION)
+
+	return indicator_nodes
+
+func stop_hit_zone_indicators(indicator_nodes: Array, tween_parent: Node):
+	"""
+	Universal function to fade out and remove all hit zone indicator nodes.
+
+	Args:
+		indicator_nodes: Array of indicator nodes (borders and labels) to remove
+		tween_parent: The node to create fade tweens on
+	"""
+	# Hide groove bar tutorial message
+	hide_groove_tutorial.emit()
+
+	for indicator in indicator_nodes:
+		if is_instance_valid(indicator):
+			var fade_out_tween = tween_parent.create_tween()
+			fade_out_tween.tween_property(indicator, "modulate:a", 0.0, INDICATOR_FADE_DURATION)
+			# Pass queue_free directly to avoid lambda capture errors
+			fade_out_tween.tween_callback(indicator.queue_free)
 
 func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_above: float, label_height: float) -> Vector2:
 	"""
@@ -906,28 +1071,36 @@ func get_track_color(track_key: String) -> String:
 # VISUAL EFFECTS
 # ============================================================================
 
-func explode_note_at_position(_note: Node, color_type: String, intensity: int, explosion_pos: Vector2, effects_layer: Node2D, scene_root: Node):
+func explode_note_at_position(note: Node, color_type: String, intensity: int, explosion_pos: Vector2, effects_layer: Node2D, scene_root: Node):
 	"""Create particle explosion effect at note position.
 
 	Universal explosion system for all battles with different color schemes:
-	- Rainbow: PERFECT hits
+	- Rainbow: PERFECT hits (starts with note color, transitions to rainbow)
 	- Cyan/Magenta/Yellow: Track-colored hits
 	- Black/Gray: MISS
 
 	Args:
-		_note: The note node (unused, for future extensions)
+		note: The note node (used to get note color for PERFECT transitions)
 		color_type: "rainbow", "cyan", "magenta", "yellow", "white", or "black"
 		intensity: Explosion strength (1-5), affects particle count
 		explosion_pos: Center position for explosion
 		effects_layer: Node2D to add particles to
 		scene_root: Root node for create_tween()
 	"""
-	# Clamp explosion center to screen bounds so it's visible even if note is off-screen
-	var viewport_size = get_viewport().get_visible_rect().size
-	var note_center = Vector2(
-		clamp(explosion_pos.x, 100, viewport_size.x - 100),
-		clamp(explosion_pos.y, 100, viewport_size.y - 100)
-	)
+	# Only clamp MISS explosions to screen bounds (keep others at actual note position)
+	var note_center = explosion_pos
+	if color_type == "black":
+		var viewport_size = get_viewport().get_visible_rect().size
+		note_center = Vector2(
+			clamp(explosion_pos.x, 100, viewport_size.x - 100),
+			clamp(explosion_pos.y, 100, viewport_size.y - 100)
+		)
+
+	# Get note's original color for PERFECT transitions
+	var note_color = Color.WHITE
+	if color_type == "rainbow" and is_instance_valid(note) and note.has_node("NoteTemplate"):
+		note_color = note.get_node("NoteTemplate").color
+
 	var particle_count = intensity * 20
 
 	for i in range(particle_count):
@@ -936,10 +1109,14 @@ func explode_note_at_position(_note: Node, color_type: String, intensity: int, e
 		particle.size = Vector2(particle_size, particle_size)
 		particle.pivot_offset = particle.size / 2
 
+		var target_color = Color.WHITE
 		match color_type:
 			"rainbow":
+				# Start with note's color
+				particle.color = note_color
+				# Pick a rainbow color to transition to
 				var rainbow_colors = [Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.PURPLE, Color.MAGENTA, Color.PINK]
-				particle.color = rainbow_colors[i % rainbow_colors.size()]
+				target_color = rainbow_colors[i % rainbow_colors.size()]
 			"cyan":
 				var cyan_shades = [Color.CYAN, Color.LIGHT_CYAN, Color.AQUA, Color.TURQUOISE]
 				particle.color = cyan_shades[i % cyan_shades.size()]
@@ -957,6 +1134,11 @@ func explode_note_at_position(_note: Node, color_type: String, intensity: int, e
 
 		particle.rotation = randf() * TAU
 		particle.position = note_center + Vector2(randi_range(-40, 40), randi_range(-40, 40))
+
+		# For PERFECT hits, start particles slightly larger to show the color transition better
+		if color_type == "rainbow":
+			particle.scale = Vector2(1.5, 1.5)
+
 		effects_layer.add_child(particle)
 
 		# Capture particle in local variable for lambda
@@ -964,20 +1146,27 @@ func explode_note_at_position(_note: Node, color_type: String, intensity: int, e
 		var tween = scene_root.create_tween()
 		tween.set_parallel(true)
 
-		# Original explosion behavior: larger radius, longer duration
+		# Original explosion behavior: larger radius, good duration
 		var explosion_radius = 600 if color_type == "rainbow" else 450
 		var random_direction = Vector2(randf_range(-explosion_radius, explosion_radius), randf_range(-explosion_radius, explosion_radius))
-		var duration = randf_range(0.8, 1.5)
+		var duration = randf_range(0.7, 1.1)  # Particle explosion duration
 
 		tween.tween_property(p, "position", p.position + random_direction, duration)
 		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)
-		tween.tween_property(p, "modulate:a", 0.0, duration)
+
+		# For PERFECT, delay fade so color transition is visible
+		if color_type == "rainbow":
+			tween.tween_property(p, "modulate:a", 0.0, duration * 0.6).set_delay(duration * 0.4)
+			# Transition color from note color to rainbow over 60% of duration
+			tween.tween_property(p, "color", target_color, duration * 0.6)
+		else:
+			tween.tween_property(p, "modulate:a", 0.0, duration)
+
 		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
 		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
-		tween.tween_callback(func():
-			if is_instance_valid(p):
-				p.queue_free()
-		).set_delay(duration)
+
+		# Clean up particle (no lambda to avoid capture errors)
+		tween.tween_callback(p.queue_free).set_delay(duration)
 
 func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool, effects_layer: Node2D, scene_root: Node):
 	"""Show floating feedback text at note position.
@@ -1018,16 +1207,12 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 		flash_tween.tween_property(scene_root, "modulate", Color.WHITE, 0.2)
 
 	# ALL feedback moves up and fades identically at the same rate
-	# Capture label in local variable for lambda
-	var lbl = label
 	var move_tween = scene_root.create_tween()
 	move_tween.set_parallel(true)
-	move_tween.tween_property(lbl, "position:y", lbl.position.y - 80, 0.8)
-	move_tween.tween_property(lbl, "modulate:a", 0.0, 1.0)
-	move_tween.tween_callback(func():
-		if is_instance_valid(lbl):
-			lbl.queue_free()
-	).set_delay(1.0)
+	move_tween.tween_property(label, "position:y", label.position.y - 80, 0.8)
+	move_tween.tween_property(label, "modulate:a", 0.0, 1.0)
+	# Clean up label (no lambda to avoid capture errors)
+	move_tween.tween_callback(label.queue_free).set_delay(1.0)
 
 # ============================================================================
 # CHARACTER ANIMATIONS
@@ -1079,24 +1264,20 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 			_execute_jump_animation(player_sprite, player_original_pos, scene_root)
 		# Regular SpriteFrames animation
 		elif player_sprite.sprite_frames and player_sprite.sprite_frames.has_animation(random_animation):
-			# Disconnect any existing connection
-			if player_sprite.animation_finished.is_connected(_on_player_pecs_finished):
-				player_sprite.animation_finished.disconnect(_on_player_pecs_finished)
-
 			player_sprite.play(random_animation)
 
-			# Connect one-shot to return to idle
-			player_sprite.animation_finished.connect(
-				func():
-					if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
-						if player_sprite.sprite_frames.has_animation("idle"):
-							player_sprite.play("idle")
-			, CONNECT_ONE_SHOT
-			)
+			# Disconnect all existing animation_finished connections to avoid "already connected" errors
+			# This is safe because we're using ONE_SHOT connections
+			for connection in player_sprite.animation_finished.get_connections():
+				player_sprite.animation_finished.disconnect(connection["callable"])
 
-func _on_player_pecs_finished():
-	"""Callback stub for animation_finished signal."""
-	pass
+			# Connect one-shot to return to idle (use bind to avoid lambda capture)
+			if player_sprite.sprite_frames.has_animation("idle"):
+				player_sprite.animation_finished.connect(
+					player_sprite.play.bind("idle"),
+					CONNECT_ONE_SHOT
+				)
+
 
 func _execute_jump_animation(sprite: AnimatedSprite2D, original_pos: Vector2, scene_root: Node):
 	"""Execute universal jump tween animation.
@@ -1120,12 +1301,12 @@ func _execute_jump_animation(sprite: AnimatedSprite2D, original_pos: Vector2, sc
 	tween.tween_property(sprite, "position:y", original_pos.y, 0.25).set_delay(0.25)
 
 	# Return to idle after jump completes
+	# Note: Sprite persists throughout battle, but we check animation exists before creating callback
+	# to avoid any potential issues
 	tween.chain()
-	tween.tween_callback(func():
-		if is_instance_valid(sprite) and sprite.sprite_frames:
-			if sprite.sprite_frames.has_animation("idle"):
-				sprite.play("idle")
-	)
+	if sprite.sprite_frames and sprite.sprite_frames.has_animation("idle"):
+		# Use bind to pass argument without lambda capture
+		tween.tween_callback(sprite.play.bind("idle"))
 
 func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_pos: Vector2, scene_root: Node):
 	"""Animate opponent character on player MISS.
@@ -1156,11 +1337,14 @@ func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_
 		elif opponent_sprite.sprite_frames and opponent_sprite.sprite_frames.has_animation(random_animation):
 			opponent_sprite.play(random_animation)
 
-			# Connect one-shot to return to idle
-			opponent_sprite.animation_finished.connect(
-				func():
-					if is_instance_valid(opponent_sprite) and opponent_sprite.sprite_frames:
-						if opponent_sprite.sprite_frames.has_animation("idle"):
-							opponent_sprite.play("idle")
-			, CONNECT_ONE_SHOT
-			)
+			# Disconnect all existing animation_finished connections to avoid "already connected" errors
+			# This is safe because we're using ONE_SHOT connections
+			for connection in opponent_sprite.animation_finished.get_connections():
+				opponent_sprite.animation_finished.disconnect(connection["callable"])
+
+			# Connect one-shot to return to idle (use bind to avoid lambda capture)
+			if opponent_sprite.sprite_frames.has_animation("idle"):
+				opponent_sprite.animation_finished.connect(
+					opponent_sprite.play.bind("idle"),
+					CONNECT_ONE_SHOT
+				)

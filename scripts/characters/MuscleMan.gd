@@ -13,7 +13,10 @@ func _ready():
 	# Move him into frame
 	var tween = create_tween()
 	tween.tween_property(self, "position:x", 925, 5.0)
-	tween.tween_callback(func(): play("idle"))
+	tween.tween_callback(func():
+		if is_instance_valid(self):
+			play("idle")
+	)
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
