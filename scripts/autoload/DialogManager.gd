@@ -212,6 +212,9 @@ func _spawn_number_now(text: String, font_size: int, color: Color, linger: float
 		shake_tw.tween_property(label, "rotation", deg_to_rad(3), 0.05)
 		shake_tw.tween_property(label, "rotation", deg_to_rad(-3), 0.05)
 
-	# Capture layer to avoid lambda issues
+	# Capture layer to avoid lambda issues - use lambda wrapper for queue_free
 	var l = layer
-	tw.tween_callback(l.queue_free).set_delay(fade_duration)
+	tw.tween_callback(func():
+		if is_instance_valid(l):
+			l.queue_free()
+	).set_delay(fade_duration)

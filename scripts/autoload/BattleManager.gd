@@ -615,13 +615,19 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 			# Scale down slightly
 			piece_tween.tween_property(p, "scale", Vector2(0.5, 0.5), explosion_duration)
 
-			# Clean up piece after animation - use chain() to avoid lambda issues
-			piece_tween.chain().tween_callback(p.queue_free)
+			# Clean up piece after animation - wrap queue_free in lambda
+			piece_tween.chain().tween_callback(func():
+				if is_instance_valid(p):
+					p.queue_free()
+			)
 
-	# Clean up original note after a short delay - capture note to avoid lambda issues
+	# Clean up original note after a short delay - wrap queue_free in lambda
 	var n = note
 	var cleanup_tween = parent.create_tween()
-	cleanup_tween.tween_callback(n.queue_free).set_delay(explosion_duration)
+	cleanup_tween.tween_callback(func():
+		if is_instance_valid(n):
+			n.queue_free()
+	).set_delay(explosion_duration)
 
 	return cleanup_tween
 
@@ -669,8 +675,11 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	# Fade out quickly
 	tween.tween_property(n, "modulate:a", 0.0, 0.4)
 
-	# Free the note after fade completes
-	tween.chain().tween_callback(n.queue_free)
+	# Free the note after fade completes - wrap queue_free in lambda
+	tween.chain().tween_callback(func():
+		if is_instance_valid(n):
+			n.queue_free()
+	)
 
 	return tween
 
@@ -883,7 +892,10 @@ func stop_hit_zone_indicators(indicator_nodes: Array, tween_parent: Node):
 			var ind = indicator
 			var fade_out_tween = tween_parent.create_tween()
 			fade_out_tween.tween_property(ind, "modulate:a", 0.0, INDICATOR_FADE_DURATION)
-			fade_out_tween.chain().tween_callback(ind.queue_free)
+			fade_out_tween.chain().tween_callback(func():
+				if is_instance_valid(ind):
+					ind.queue_free()
+			)
 
 func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
 	"""
@@ -1070,8 +1082,11 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
 		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
 
-		# Clean up particle
-		tween.chain().tween_callback(p.queue_free)
+		# Clean up particle - wrap queue_free in lambda
+		tween.chain().tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		)
 
 func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool, effects_layer: Node2D, scene_root: Node):
 	"""Show floating feedback text at note position.
@@ -1116,9 +1131,12 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 	move_tween.set_parallel(true)
 	move_tween.tween_property(label, "position:y", label.position.y - 80, 0.8)
 	move_tween.tween_property(label, "modulate:a", 0.0, 1.0)
-	# Clean up label - capture to avoid lambda issues
+	# Clean up label - wrap queue_free in lambda
 	var lbl = label
-	move_tween.tween_callback(lbl.queue_free).set_delay(1.0)
+	move_tween.tween_callback(func():
+		if is_instance_valid(lbl):
+			lbl.queue_free()
+	).set_delay(1.0)
 
 # ============================================================================
 # CHARACTER ANIMATIONS

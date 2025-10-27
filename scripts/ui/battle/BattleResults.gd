@@ -241,7 +241,10 @@ func _spawn_firework():
 	# Fade out trail after explosion triggered - capture to avoid lambda issues
 	var t = trail
 	tween.tween_property(t, "modulate:a", 0.0, 0.1)
-	tween.chain().tween_callback(t.queue_free)
+	tween.chain().tween_callback(func():
+		if is_instance_valid(t):
+			t.queue_free()
+	)
 
 func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, firework_color: Color, is_rainbow: bool):
 	"""Create an explosion of particles at the given position with gravity."""
@@ -309,7 +312,10 @@ func _create_sunburst_ring(explosion_pos: Vector2, count: int, firework_color: C
 		# Fade while falling
 		var fade_tween = create_tween()
 		fade_tween.tween_property(p, "modulate:a", 0.0, 0.8).set_delay(explosion_time + delay + 0.2)
-		fade_tween.chain().tween_callback(p.queue_free)
+		fade_tween.chain().tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		)
 
 func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create upside-down U shaped explosion - particles arc up and out then fall."""
@@ -351,7 +357,10 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firewo
 		# Fade while drooping
 		var fade_tween = create_tween()
 		fade_tween.tween_property(p, "modulate:a", 0.0, 1.3).set_delay(peak_time + 0.3)
-		fade_tween.chain().tween_callback(p.queue_free)
+		fade_tween.chain().tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		)
 
 func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create realistic chaotic explosion with varied arm lengths - mostly circular but irregular."""
@@ -389,7 +398,10 @@ func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color:
 		var fade_delay = explosion_time + randf_range(0.1, 0.4)
 		var fade_duration = randf_range(0.7, 1.0)
 		fade_tween.tween_property(p, "modulate:a", 0.0, fade_duration).set_delay(fade_delay)
-		fade_tween.chain().tween_callback(p.queue_free)
+		fade_tween.chain().tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		)
 
 func _fade_to_black():
 	"""Fade overlay to black for scene transition."""
