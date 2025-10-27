@@ -209,8 +209,8 @@ func _spawn_firework():
 	var target_y = randf_range(viewport_size.y * 0.15, viewport_size.y * 0.65)
 	var target_pos = Vector2(target_x, target_y)
 
-	# Choose explosion type (3 types) and color FIRST so trail can match
-	var explosion_type = randi() % 3  # 0=sunburst, 1=weeping willow, 2=chaos
+	# Choose explosion type (2 types) and color FIRST so trail can match
+	var explosion_type = randi() % 2  # 0=sunburst, 1=chaos
 	var use_rainbow = randf() > 0.93  # Rainbow is rare - about 1 in 14 fireworks
 
 	# Pick ONE solid color for the firework (cyan, yellow, or magenta) OR rainbow
@@ -247,16 +247,13 @@ func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, fir
 	# Vary size - some explosions are bigger than others
 	var size_multiplier = randf_range(0.8, 1.5)
 
-	# Number of particles varies by explosion type
+	# Number of particles varies by explosion type (only 2 types now: sunburst and chaos)
 	var particle_count = 0
 	match explosion_type:
 		0:  # Sunburst (perfectly even circular explosion)
 			particle_count = int(60 * size_multiplier)
 			_create_sunburst_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
-		1:  # Weeping Willow (drooping arms like the tree)
-			particle_count = int(50 * size_multiplier)
-			_create_weeping_willow_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
-		2:  # Chaos (varied length arms, mostly circular but irregular)
+		_:  # Chaos (varied length arms, mostly circular but irregular) - default for type 1
 			particle_count = int(70 * size_multiplier)
 			_create_chaos_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
 
@@ -306,10 +303,11 @@ func _create_sunburst_ring(explosion_pos: Vector2, count: int, firework_color: C
 		# Fall with gravity
 		tween.tween_property(particle, "position", end_point, 1.0).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
-		# Fade while falling
+		# Fade while falling - capture particle to avoid lambda issues
+		var p = particle
 		var fade_tween = create_tween()
-		fade_tween.tween_property(particle, "modulate:a", 0.0, 0.8).set_delay(explosion_time + delay + 0.2)
-		fade_tween.tween_callback(particle.queue_free)
+		fade_tween.tween_property(p, "modulate:a", 0.0, 0.8).set_delay(explosion_time + delay + 0.2)
+		fade_tween.chain().tween_callback(p.queue_free)
 
 func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create upside-down U shaped explosion - particles arc up and out then fall."""
@@ -380,12 +378,13 @@ func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color:
 		# Fall with gravity
 		tween.tween_property(particle, "position", end_point, 1.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
-		# Fade while falling (starts during fall, varied timing for chaos)
+		# Fade while falling (starts during fall, varied timing for chaos) - capture particle to avoid lambda issues
+		var p = particle
 		var fade_tween = create_tween()
 		var fade_delay = explosion_time + randf_range(0.1, 0.4)
 		var fade_duration = randf_range(0.7, 1.0)
-		fade_tween.tween_property(particle, "modulate:a", 0.0, fade_duration).set_delay(fade_delay)
-		fade_tween.tween_callback(particle.queue_free)
+		fade_tween.tween_property(p, "modulate:a", 0.0, fade_duration).set_delay(fade_delay)
+		fade_tween.chain().tween_callback(p.queue_free)
 
 func _fade_to_black():
 	"""Fade overlay to black for scene transition."""
