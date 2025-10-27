@@ -148,9 +148,11 @@ func _type_text(node: Node, full_text: String) -> void:
 func _close_dialog_after_timer(dialog_ref: Control):
 	"""Callback to close dialog after timer - avoids nested lambdas."""
 	if is_instance_valid(dialog_ref):
+		# Capture dialog_ref to avoid it being freed before callback
+		var d = dialog_ref
 		var tw := create_tween()
-		tw.tween_property(dialog_ref, "modulate:a", 0.0, 0.4)
-		tw.tween_callback(_free_dialog_ref.bind(dialog_ref))
+		tw.tween_property(d, "modulate:a", 0.0, 0.4)
+		tw.tween_callback(func(): _free_dialog_ref(d))
 
 func _free_dialog_ref(dialog_ref: Control):
 	"""Callback to free dialog reference - avoids lambda capture."""
@@ -161,7 +163,13 @@ func _free_dialog_ref(dialog_ref: Control):
 
 func _spawn_number_later(text: String, delay: float, font_size: int, color: Color, linger: float, is_go: bool = false) -> void:
 	var timer := get_tree().create_timer(delay)
-	timer.timeout.connect(Callable(self, "_spawn_number_now").bind(text, font_size, color, linger, is_go))
+	# Don't use .bind() with timeout signal - capture parameters in lambda instead
+	var t = text
+	var fs = font_size
+	var c = color
+	var l = linger
+	var ig = is_go
+	timer.timeout.connect(func(): _spawn_number_now(t, fs, c, l, ig))
 
 func _spawn_number_now(text: String, font_size: int, color: Color, linger: float, is_go: bool = false) -> void:
 	var label := Label.new()
