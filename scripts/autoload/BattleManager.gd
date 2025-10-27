@@ -867,11 +867,14 @@ func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node) -> Ar
 		var fade_tween = tween_parent.create_tween()
 		fade_tween.tween_property(lbl, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
 
-		# Pulsing scale animation
+		# Pulsing scale animation - store tween reference in label metadata
 		var scale_tween = tween_parent.create_tween()
 		scale_tween.set_loops(INDICATOR_PULSE_LOOPS)
 		scale_tween.tween_property(lbl, "scale", INDICATOR_PULSE_SCALE, INDICATOR_PULSE_DURATION)
 		scale_tween.tween_property(lbl, "scale", Vector2(1.0, 1.0), INDICATOR_PULSE_DURATION)
+
+		# Store tween reference so we can kill it later
+		lbl.set_meta("pulse_tween", scale_tween)
 
 	return indicator_nodes
 
@@ -888,6 +891,13 @@ func stop_hit_zone_indicators(indicator_nodes: Array, tween_parent: Node):
 
 	for indicator in indicator_nodes:
 		if is_instance_valid(indicator):
+			# CRITICAL: Kill the looping pulse tween FIRST!
+			# This prevents it from trying to animate the freed node
+			if indicator.has_meta("pulse_tween"):
+				var pulse_tween = indicator.get_meta("pulse_tween")
+				if pulse_tween and pulse_tween.is_valid():
+					pulse_tween.kill()
+
 			# Capture indicator FIRST to avoid lambda issues in loop
 			var ind = indicator
 			var fade_out_tween = tween_parent.create_tween()
