@@ -125,13 +125,12 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 		_set_text(text_node, "")
 		await _type_text(text_node, text)
 	
-	# Use the original timer system but with better timing
-	if auto_close_time > 0.0:
-		var timer := get_tree().create_timer(auto_close_time)
-		# Don't use .bind() with timeout signal - it doesn't accept parameters!
-		# Instead, capture the dialog reference in a lambda (safe here - not in a loop)
-		var dialog_ref = current_dialog
-		timer.timeout.connect(func(): _close_dialog_after_timer(dialog_ref))
+	# DISABLED auto-close for debugging - let dialogs stay until replaced
+	# TODO: Re-enable after fixing lambda capture errors
+	# if auto_close_time > 0.0:
+	# 	var timer := get_tree().create_timer(auto_close_time)
+	# 	var dialog_ref = current_dialog
+	# 	timer.timeout.connect(func(): _close_dialog_after_timer(dialog_ref))
 
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
