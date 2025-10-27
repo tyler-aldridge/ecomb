@@ -1130,11 +1130,12 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 			_execute_jump_animation(player_sprite, player_original_pos, scene_root)
 		# Regular SpriteFrames animation
 		elif player_sprite.sprite_frames and player_sprite.sprite_frames.has_animation(random_animation):
-			# Disconnect any existing connection
-			if player_sprite.animation_finished.is_connected(_on_player_pecs_finished):
-				player_sprite.animation_finished.disconnect(_on_player_pecs_finished)
-
 			player_sprite.play(random_animation)
+
+			# Disconnect all existing animation_finished connections to avoid "already connected" errors
+			# This is safe because we're using ONE_SHOT connections
+			for connection in player_sprite.animation_finished.get_connections():
+				player_sprite.animation_finished.disconnect(connection["callable"])
 
 			# Connect one-shot to return to idle (use bind to avoid lambda capture)
 			if player_sprite.sprite_frames.has_animation("idle"):
@@ -1204,6 +1205,11 @@ func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_
 		# Regular SpriteFrames animation
 		elif opponent_sprite.sprite_frames and opponent_sprite.sprite_frames.has_animation(random_animation):
 			opponent_sprite.play(random_animation)
+
+			# Disconnect all existing animation_finished connections to avoid "already connected" errors
+			# This is safe because we're using ONE_SHOT connections
+			for connection in opponent_sprite.animation_finished.get_connections():
+				opponent_sprite.animation_finished.disconnect(connection["callable"])
 
 			# Connect one-shot to return to idle (use bind to avoid lambda capture)
 			if opponent_sprite.sprite_frames.has_animation("idle"):

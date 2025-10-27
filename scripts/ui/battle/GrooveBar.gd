@@ -19,6 +19,8 @@ var pulse_time: float = 0.0
 var is_warning_active: bool = false
 var warning_color_tween: Tween = null
 var warning_scale_tween: Tween = null
+var full_groove_pulse_tween: Tween = null
+var full_groove_glow_tween: Tween = null
 
 # Rainbow colors for full groove pulse
 var rainbow_colors = [
@@ -50,28 +52,21 @@ func _ready():
 
 func _process(delta):
 	if is_full:
-		# Liquid rainbow flow animation on bar when full
-		# Creates a flowing effect by sampling multiple colors and blending them
+		# Fast horizontal flowing rainbow animation on bar when full
 		if progress_bar:
-			rainbow_time += delta * 2.0  # Flow speed
+			rainbow_time += delta * 3.5  # Faster flow speed for more visible effect
 			if rainbow_time >= rainbow_colors.size():
 				rainbow_time = 0.0
 
 			var fill_style = progress_bar.get_theme_stylebox("fill")
 			if fill_style and fill_style is StyleBoxFlat:
-				# Create flowing liquid effect by blending 3 adjacent colors
-				var offset = rainbow_time
-				var color1_index = int(offset) % rainbow_colors.size()
-				var color2_index = (color1_index + 1) % rainbow_colors.size()
-				var color3_index = (color1_index + 2) % rainbow_colors.size()
+				# Cycle through rainbow colors with clear transitions
+				var current_index = int(rainbow_time) % rainbow_colors.size()
+				var next_index = (current_index + 1) % rainbow_colors.size()
+				var t = rainbow_time - floor(rainbow_time)
 
-				var t = offset - floor(offset)  # 0.0 to 1.0 interpolation
-
-				# Blend the colors to create a flowing liquid appearance
-				# Use quadratic blending for smoother transitions
-				var blend1 = rainbow_colors[color1_index].lerp(rainbow_colors[color2_index], t)
-				var blend2 = rainbow_colors[color2_index].lerp(rainbow_colors[color3_index], t * 0.5)
-				fill_style.bg_color = blend1.lerp(blend2, 0.3 + sin(rainbow_time * 2) * 0.2)
+				# Simple lerp for clean color transitions
+				fill_style.bg_color = rainbow_colors[current_index].lerp(rainbow_colors[next_index], t)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -82,7 +77,14 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 	current_percentage = percentage
 
 	# Check if full for rainbow pulsing
+	var was_full = is_full
 	is_full = percentage >= 100.0
+
+	# Start or stop full groove celebration animation
+	if is_full and not was_full:
+		play_full_groove_celebration()
+	elif not is_full and was_full:
+		stop_full_groove_celebration()
 
 	# Animate the value change with smooth easing
 	var tween = create_tween()
@@ -140,18 +142,50 @@ func stop_low_groove_warning():
 	"""Stop the warning animation when groove recovers."""
 	if not is_warning_active:
 		return
-	
+
 	is_warning_active = false
-	
+
 	# Kill ONLY the warning tweens, not all tweens
 	if warning_color_tween and is_instance_valid(warning_color_tween):
 		warning_color_tween.kill()
 		warning_color_tween = null
-	
+
 	if warning_scale_tween and is_instance_valid(warning_scale_tween):
 		warning_scale_tween.kill()
 		warning_scale_tween = null
-	
+
+	# Reset to normal appearance
+	modulate = Color(1, 1, 1, 1)
+	scale = Vector2(1.0, 1.0)
+
+func play_full_groove_celebration():
+	"""Play celebration pulsing animation when groove reaches 100% - bright glow and scale pulse."""
+	# Stop if already playing to restart
+	stop_full_groove_celebration()
+
+	# Bright glow pulse - cycle between normal and bright (infinite loop)
+	full_groove_glow_tween = create_tween()
+	full_groove_glow_tween.set_loops(0)  # 0 = infinite loops
+	full_groove_glow_tween.tween_property(self, "modulate", Color(1.3, 1.3, 1.3, 1), 0.4)
+	full_groove_glow_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.4)
+
+	# Scale pulse at the same time (slightly larger than warning pulse)
+	full_groove_pulse_tween = create_tween()
+	full_groove_pulse_tween.set_loops(0)  # 0 = infinite loops
+	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.08, 1.08), 0.4)
+	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.4)
+
+func stop_full_groove_celebration():
+	"""Stop the celebration animation when groove drops below 100%."""
+	# Kill full groove tweens
+	if full_groove_glow_tween and is_instance_valid(full_groove_glow_tween):
+		full_groove_glow_tween.kill()
+		full_groove_glow_tween = null
+
+	if full_groove_pulse_tween and is_instance_valid(full_groove_pulse_tween):
+		full_groove_pulse_tween.kill()
+		full_groove_pulse_tween = null
+
 	# Reset to normal appearance
 	modulate = Color(1, 1, 1, 1)
 	scale = Vector2(1.0, 1.0)
