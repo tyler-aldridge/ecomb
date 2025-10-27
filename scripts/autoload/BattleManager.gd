@@ -927,28 +927,36 @@ func get_track_color(track_key: String) -> String:
 # VISUAL EFFECTS
 # ============================================================================
 
-func explode_note_at_position(_note: Node, color_type: String, intensity: int, explosion_pos: Vector2, effects_layer: Node2D, scene_root: Node):
+func explode_note_at_position(note: Node, color_type: String, intensity: int, explosion_pos: Vector2, effects_layer: Node2D, scene_root: Node):
 	"""Create particle explosion effect at note position.
 
 	Universal explosion system for all battles with different color schemes:
-	- Rainbow: PERFECT hits
+	- Rainbow: PERFECT hits (starts with note color, transitions to rainbow)
 	- Cyan/Magenta/Yellow: Track-colored hits
 	- Black/Gray: MISS
 
 	Args:
-		_note: The note node (unused, for future extensions)
+		note: The note node (used to get note color for PERFECT transitions)
 		color_type: "rainbow", "cyan", "magenta", "yellow", "white", or "black"
 		intensity: Explosion strength (1-5), affects particle count
 		explosion_pos: Center position for explosion
 		effects_layer: Node2D to add particles to
 		scene_root: Root node for create_tween()
 	"""
-	# Clamp explosion center to screen bounds so it's visible even if note is off-screen
-	var viewport_size = get_viewport().get_visible_rect().size
-	var note_center = Vector2(
-		clamp(explosion_pos.x, 100, viewport_size.x - 100),
-		clamp(explosion_pos.y, 100, viewport_size.y - 100)
-	)
+	# Only clamp MISS explosions to screen bounds (keep others at actual note position)
+	var note_center = explosion_pos
+	if color_type == "black":
+		var viewport_size = get_viewport().get_visible_rect().size
+		note_center = Vector2(
+			clamp(explosion_pos.x, 100, viewport_size.x - 100),
+			clamp(explosion_pos.y, 100, viewport_size.y - 100)
+		)
+
+	# Get note's original color for PERFECT transitions
+	var note_color = Color.WHITE
+	if color_type == "rainbow" and is_instance_valid(note) and note.has_node("NoteTemplate"):
+		note_color = note.get_node("NoteTemplate").color
+
 	var particle_count = intensity * 20
 
 	for i in range(particle_count):
@@ -957,10 +965,14 @@ func explode_note_at_position(_note: Node, color_type: String, intensity: int, e
 		particle.size = Vector2(particle_size, particle_size)
 		particle.pivot_offset = particle.size / 2
 
+		var target_color = Color.WHITE
 		match color_type:
 			"rainbow":
+				# Start with note's color
+				particle.color = note_color
+				# Pick a rainbow color to transition to
 				var rainbow_colors = [Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.PURPLE, Color.MAGENTA, Color.PINK]
-				particle.color = rainbow_colors[i % rainbow_colors.size()]
+				target_color = rainbow_colors[i % rainbow_colors.size()]
 			"cyan":
 				var cyan_shades = [Color.CYAN, Color.LIGHT_CYAN, Color.AQUA, Color.TURQUOISE]
 				particle.color = cyan_shades[i % cyan_shades.size()]
@@ -995,6 +1007,11 @@ func explode_note_at_position(_note: Node, color_type: String, intensity: int, e
 		tween.tween_property(p, "modulate:a", 0.0, duration)
 		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
 		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
+
+		# For rainbow (PERFECT), transition color from note color to rainbow
+		if color_type == "rainbow":
+			tween.tween_property(p, "color", target_color, duration * 0.3)
+
 		tween.tween_callback(func():
 			if is_instance_valid(p):
 				p.queue_free()
