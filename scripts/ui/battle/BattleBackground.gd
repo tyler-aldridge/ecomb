@@ -14,6 +14,7 @@ extends ColorRect
 
 var background_shader: Shader
 var background_material: ShaderMaterial
+var cached_bpm: float = 0.0
 
 func _ready():
 	# Apply background shader based on style
@@ -21,9 +22,14 @@ func _ready():
 	# Update animation speed based on BPM
 	_update_animation_speed()
 
+	# Connect to BattleManager to update when BPM changes (avoids checking every frame)
+	if use_bpm_sync and BattleManager:
+		# Update immediately and cache BPM
+		_update_animation_speed()
+
 func _process(_delta):
-	# Continuously update animation speed if BPM sync is enabled
-	if use_bpm_sync:
+	# Only update if BPM has changed (not every frame)
+	if use_bpm_sync and BattleManager and BattleManager.current_bpm != cached_bpm:
 		_update_animation_speed()
 
 func _update_animation_speed():
@@ -31,6 +37,7 @@ func _update_animation_speed():
 	var speed: float
 	if use_bpm_sync:
 		var bpm = BattleManager.current_bpm if BattleManager else 120.0
+		cached_bpm = bpm
 		# Quarter BPM rate for subtle background animation
 		speed = (bpm / 60.0) / 4.0
 	else:

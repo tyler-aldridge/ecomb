@@ -11,6 +11,16 @@ var hit_zones = []
 @export var level_data_path: String = "res://scripts/battle/data/Lesson1Data.json"
 var level_data: Dictionary = {}
 
+# Pre-sorted event arrays for fast lookups (avoids iterating all events every beat)
+var sorted_notes: Array = []
+var sorted_dialogues: Array = []
+var sorted_countdowns: Array = []
+var sorted_triggers: Array = []
+var next_note_index: int = 0
+var next_dialogue_index: int = 0
+var next_countdown_index: int = 0
+var next_trigger_index: int = 0
+
 # ============================================================================
 # UNIVERSAL BATTLE MECHANICS - See BattleManager autoload
 # ============================================================================
@@ -35,11 +45,6 @@ var level_data: Dictionary = {}
 
 # Hit detection
 var active_notes = []
-
-# Scoring
-var score = 0
-var combo = 0
-var max_combo = 0
 
 # Effects layer
 var effects_layer: Node2D
@@ -253,6 +258,23 @@ func convert_bar_beat_to_spawn_positions():
 			# Store spawn position for use in _on_beat
 			note_data["spawn_position"] = spawn_position
 
+	# Pre-sort all event arrays by beat_position for fast sequential lookups
+	if level_data.has("notes"):
+		sorted_notes = level_data["notes"].duplicate()
+		sorted_notes.sort_custom(func(a, b): return a.get("spawn_position", 0) < b.get("spawn_position", 0))
+
+	if level_data.has("dialogue"):
+		sorted_dialogues = level_data["dialogue"].duplicate()
+		sorted_dialogues.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
+
+	if level_data.has("countdowns"):
+		sorted_countdowns = level_data["countdowns"].duplicate()
+		sorted_countdowns.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
+
+	if level_data.has("triggers"):
+		sorted_triggers = level_data["triggers"].duplicate()
+		sorted_triggers.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
+
 func create_fade_overlay():
 	fade_overlay = ColorRect.new()
 	fade_overlay.color = Color.BLACK
@@ -305,54 +327,69 @@ func start_character_animations():
 func _on_beat(beat_position: int):
 	check_automatic_misses()
 
-	# Process dialogue events
-	if level_data.has("dialogue"):
-		for dialogue in level_data["dialogue"]:
-			if int(dialogue.get("beat_position", 0)) == beat_position:
-				var text = dialogue.get("text", "")
-				var character = dialogue.get("character", "opponent")
-				var duration = dialogue.get("duration", 3.0)
-				DialogManager.show_dialog(text, character, duration)
+	# Process dialogue events (optimized: check only next pending dialogue)
+	while next_dialogue_index < sorted_dialogues.size():
+		var dialogue = sorted_dialogues[next_dialogue_index]
+		var dialogue_beat = int(dialogue.get("beat_position", 0))
+		if dialogue_beat > beat_position:
+			break
+		if dialogue_beat == beat_position:
+			var text = dialogue.get("text", "")
+			var character = dialogue.get("character", "opponent")
+			var duration = dialogue.get("duration", 3.0)
+			DialogManager.show_dialog(text, character, duration)
 
-				# Handle triggers
-				if dialogue.has("triggers"):
-					handle_trigger(dialogue["triggers"])
+			# Handle triggers
+			if dialogue.has("triggers"):
+				handle_trigger(dialogue["triggers"])
+		next_dialogue_index += 1
 
-	# Process countdown events
-	if level_data.has("countdowns"):
-		for countdown in level_data["countdowns"]:
-			if int(countdown.get("beat_position", 0)) == beat_position:
-				var text = countdown.get("text", "")
-				var countdown_type = countdown.get("type", "single")
-				if countdown_type == "multi":
-					var values = countdown.get("values", [])
-					var interval = countdown.get("interval", 0.5)
-					var size = int(countdown.get("size", 500))
-					DialogManager.show_countdown(values, interval, size)
-				elif countdown_type == "single":
-					var duration = countdown.get("duration", 1.0)
-					var size = int(countdown.get("size", 500))
-					var color_str = countdown.get("color", "white")
-					var color = Color.WHITE
-					if color_str == "red":
-						color = Color.RED
-					DialogManager.show_countdown_number(text, duration, size, color)
+	# Process countdown events (optimized: check only next pending countdown)
+	while next_countdown_index < sorted_countdowns.size():
+		var countdown = sorted_countdowns[next_countdown_index]
+		var countdown_beat = int(countdown.get("beat_position", 0))
+		if countdown_beat > beat_position:
+			break
+		if countdown_beat == beat_position:
+			var text = countdown.get("text", "")
+			var countdown_type = countdown.get("type", "single")
+			if countdown_type == "multi":
+				var values = countdown.get("values", [])
+				var interval = countdown.get("interval", 0.5)
+				var size = int(countdown.get("size", 500))
+				DialogManager.show_countdown(values, interval, size)
+			elif countdown_type == "single":
+				var duration = countdown.get("duration", 1.0)
+				var size = int(countdown.get("size", 500))
+				var color_str = countdown.get("color", "white")
+				var color = Color.WHITE
+				if color_str == "red":
+					color = Color.RED
+				DialogManager.show_countdown_number(text, duration, size, color)
+		next_countdown_index += 1
 
-	# Process trigger events
-	if level_data.has("triggers"):
-		for trigger in level_data["triggers"]:
-			if int(trigger.get("beat_position", 0)) == beat_position:
-				var trigger_name = trigger.get("trigger", "")
-				handle_trigger(trigger_name)
+	# Process trigger events (optimized: check only next pending trigger)
+	while next_trigger_index < sorted_triggers.size():
+		var trigger = sorted_triggers[next_trigger_index]
+		var trigger_beat = int(trigger.get("beat_position", 0))
+		if trigger_beat > beat_position:
+			break
+		if trigger_beat == beat_position:
+			var trigger_name = trigger.get("trigger", "")
+			handle_trigger(trigger_name)
+		next_trigger_index += 1
 
-	# Process notes - check if any note should spawn at this beat
-	if level_data.has("notes"):
-		for note_data in level_data["notes"]:
-			if int(note_data.get("spawn_position", 0)) == beat_position:
-				var note_type = note_data.get("note", "quarter")
-				var lane = note_data.get("lane", "random")  # Support lane designation
-				var spawn_pos = int(note_data.get("spawn_position", 0))  # Pass spawn position for overlap detection
-				spawn_note_by_type(note_type, lane, spawn_pos)
+	# Process notes (optimized: check only next pending notes)
+	while next_note_index < sorted_notes.size():
+		var note_data = sorted_notes[next_note_index]
+		var note_spawn = int(note_data.get("spawn_position", 0))
+		if note_spawn > beat_position:
+			break
+		if note_spawn == beat_position:
+			var note_type = note_data.get("note", "quarter")
+			var lane = note_data.get("lane", "random")
+			spawn_note_by_type(note_type, lane, note_spawn)
+		next_note_index += 1
 
 func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""
@@ -613,26 +650,17 @@ func process_hit(quality: String, note: Node, effect_pos: Vector2):
 
 	match quality:
 		"PERFECT":
-			score += 100
-			combo = BattleManager.get_combo_current()
 			BattleManager.explode_note_at_position(note, "rainbow", 5, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, effects_layer, self)
 			BattleManager.animate_player_hit(player_sprite, player_original_pos, quality, self)
 		"GOOD":
-			score += 50
-			combo = BattleManager.get_combo_current()
 			BattleManager.explode_note_at_position(note, BattleManager.get_track_color(note.track_key), 3, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, effects_layer, self)
 		"OKAY":
-			score += 25
-			combo = BattleManager.get_combo_current()
 			BattleManager.explode_note_at_position(note, BattleManager.get_track_color(note.track_key), 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, effects_layer, self)
-
-	max_combo = BattleManager.get_combo_max()
 
 func process_miss():
 	# Register miss with BattleManager (handles combo reset, groove penalty, etc.)
 	BattleManager.register_hit("MISS")
-	combo = 0
 	BattleManager.animate_opponent_miss(opponent_sprite, opponent_original_pos, self)

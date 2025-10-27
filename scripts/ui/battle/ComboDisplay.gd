@@ -23,7 +23,6 @@ var rainbow_colors = [
 	Color(1, 0, 1, 1)     # Magenta
 ]
 var color_index: float = 0.0
-var wave_offset: float = 0.0
 
 func _ready():
 	# Connect to BattleManager signals

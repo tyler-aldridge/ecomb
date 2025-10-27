@@ -1,14 +1,6 @@
 extends Node
 
-# ============================================================================
-# BATTLE MANAGER - Universal Rhythm Battle Mechanics
-# ============================================================================
-# Handles all combat mechanics shared across all rhythm battles:
-# - Groove bar (health/failure system)
-# - Combo tracking and multipliers
-# - Hit quality tracking
-# - Strength (XP) calculation
-# - Battle results and rewards
+# Universal Rhythm Battle Mechanics: groove, combo, hits, XP, and results
 
 # ============================================================================
 # SIGNALS
@@ -48,75 +40,38 @@ const COMBO_THRESHOLDS = {
 
 const MAX_COMBO_MULTIPLIER = 3.0
 
-# ============================================================================
-# NOTE TYPE CONFIGURATION - Universal Note Definitions
-# ============================================================================
-
-# Note type configuration (scalable for future note types)
-# To add a new note type:
-#   1. Create scene file with appropriate size (e.g., HalfNote.tscn at 200x400)
-#   2. Add entry here with scene path and spawn_offset (in half-beats)
-#   3. Add note type to level JSON files
-#   4. All hit detection, spawn positioning, and timing automatically scale!
-#
-# Note: travel_time is calculated dynamically based on spawn_offset and song BPM
-#       Formula: travel_time (seconds) = spawn_offset × 30 ÷ BPM
-#       This makes notes fall faster for fast songs, slower for slow songs
+# Note type configuration: scene, spawn_offset (half-beats before hit time)
 const NOTE_TYPE_CONFIG = {
 	"whole": {
-		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
-		"spawn_offset": 16  # Half-beats before hit time to spawn
+		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),
+		"spawn_offset": 16
 	},
 	"half": {
-		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
-		"spawn_offset": 12  # Calibrated for 152 BPM = 2.37s travel time
+		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),
+		"spawn_offset": 12
 	},
 	"quarter": {
-		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
-		"spawn_offset": 12  # Calibrated for 152 BPM = 2.37s travel time
+		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),
+		"spawn_offset": 12
 	}
 }
 
-# ============================================================================
-# HIT ZONE CONFIGURATION - Universal Hit Zone Settings
-# ============================================================================
-
-# Hit zone height (universal for now, may become dynamic for SixteenthNote songs)
 const HITZONE_HEIGHT = 200.0
-
-# Hit zone lane positions (3 lanes at y=650, centered on screen)
-# Screen width: 1920, Total hitzone width with gaps: 700px (200+50+200+50+200)
-# Centered: starts at 610
 const HIT_ZONE_POSITIONS = {
 	"1": Vector2(610.0, 650.0),
 	"2": Vector2(860.0, 650.0),
 	"3": Vector2(1110.0, 650.0)
 }
 
-# Spawn settings
 const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
-
-# Lane overlap prevention
-const OVERLAP_PREVENTION_WINDOW = 6  # Half-beats window to prevent same-lane spawns
-var recent_note_spawns = {}  # {beat_position: lane} - tracks recent spawns to avoid overlap
-
-# Miss detection threshold (how far past HitZone before automatic miss)
+const OVERLAP_PREVENTION_WINDOW = 6
+var recent_note_spawns = {}
 const MISS_WINDOW = 150.0
-
-# ============================================================================
-# UI CONSTANTS - Universal Visual Settings
-# ============================================================================
-
-# Fade durations
 const FADE_FROM_BLACK_DURATION = 1.5
 const FADE_TO_BLACK_DURATION = 2.0
 const BATTLE_START_DELAY = 1.0
-
-# Hit zone visual properties
 const HITZONE_BORDER_WIDTH = 3.0
 const HITZONE_BORDER_COLOR = Color.WHITE
-
-# Tutorial indicator properties (yellow borders and numbers)
 const INDICATOR_BORDER_WIDTH = 5.0
 const INDICATOR_BORDER_COLOR = Color.YELLOW
 const INDICATOR_LABEL_SIZE = 100
@@ -124,41 +79,13 @@ const INDICATOR_LABEL_COLOR = Color.YELLOW
 const INDICATOR_FADE_DURATION = 0.5
 const INDICATOR_PULSE_SCALE = Vector2(1.3, 1.3)
 const INDICATOR_PULSE_DURATION = 0.325
-const INDICATOR_PULSE_LOOPS = 200  # Loop for ~130 seconds
-
-# ============================================================================
-# DIFFICULTY SYSTEM - Hit Detection Thresholds
-# ============================================================================
-
-# Hit detection difficulty presets (percentages of HitZone height exposed)
-# Used by battle scenes to determine Perfect/Good/Okay thresholds
-# Themed around gym/fitness culture - respecting the grind!
+const INDICATOR_PULSE_LOOPS = 200
 const DIFFICULTY_PRESETS = {
-	"wimpy": {
-		"perfect": 0.25,   # 25% - for those who skip leg day (50px for 200px HitZone)
-		"good": 0.50,      # 50% - warming up (100px for 200px)
-		"okay": 0.90       # 90% - light stretch (180px for 200px)
-	},
-	"casual": {
-		"perfect": 0.20,   # 20% - warming up (40px for 200px HitZone)
-		"good": 0.40,      # 40% - getting started (80px for 200px)
-		"okay": 0.85       # 85% - easy gains (170px for 200px)
-	},
-	"gymbro": {
-		"perfect": 0.125,  # 12.5% - respect the grind (25px for 200px HitZone)
-		"good": 0.25,      # 25% - balanced workout (50px for 200px)
-		"okay": 0.75       # 75% - solid form (150px for 200px)
-	},
-	"meathead": {
-		"perfect": 0.075,  # 7.5% - no pain no gain (15px for 200px HitZone)
-		"good": 0.15,      # 15% - strict form (30px for 200px)
-		"okay": 0.50       # 50% - heavy lifting (100px for 200px)
-	},
-	"gigachad": {
-		"perfect": 0.05,   # 5% - LIGHT WEIGHT BABY! (10px for 200px HitZone)
-		"good": 0.10,      # 10% - absolute beast mode (20px for 200px)
-		"okay": 0.30       # 30% - ain't nothin' but a peanut (60px for 200px)
-	}
+	"wimpy": {"perfect": 0.25, "good": 0.50, "okay": 0.90},
+	"casual": {"perfect": 0.20, "good": 0.40, "okay": 0.85},
+	"gymbro": {"perfect": 0.125, "good": 0.25, "okay": 0.75},
+	"meathead": {"perfect": 0.075, "good": 0.15, "okay": 0.50},
+	"gigachad": {"perfect": 0.05, "good": 0.10, "okay": 0.30}
 }
 
 # Current difficulty setting (persists across battles)
@@ -175,7 +102,6 @@ var battle_active: bool = false
 var battle_id: String = ""
 var battle_level: int = 1
 var battle_type: String = "story"  # "story", "lesson", or "random"
-var player_quit_to_title: bool = false  # Set to true when player manually quits to title
 
 # Groove bar (health system)
 var groove_current: float = 0.0
@@ -633,8 +559,8 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 		note.queue_free()
 		return null
 
-	# Create a 4x4 grid of pieces that form the note
-	var grid_size = 4
+	# Create a 3x3 grid of pieces that form the note (reduced from 4x4 for better performance)
+	var grid_size = 3
 	var piece_size = Vector2(note_size.x / grid_size, note_size.y / grid_size)
 	var note_top_left = note.global_position  # Note position is already at top-left
 	var explosion_duration = 0.8  # Shatter duration
@@ -941,44 +867,6 @@ func stop_hit_zone_indicators(indicator_nodes: Array, tween_parent: Node):
 			# Pass queue_free directly to avoid lambda capture errors
 			fade_out_tween.tween_callback(indicator.queue_free)
 
-func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_above: float, label_height: float) -> Vector2:
-	"""
-	Calculate dynamic label position above an AnimatedSprite2D.
-
-	This ensures labels always appear at the correct distance above sprites,
-	regardless of sprite size or scale changes.
-
-	Args:
-		sprite: The AnimatedSprite2D to position above
-		offset_above: How many pixels above the sprite top edge (e.g., 50.0)
-		label_height: Height of the label in pixels (e.g., 50.0 for combo display)
-
-	Returns:
-		Vector2 position for the label relative to sprite center
-	"""
-	if not sprite or not sprite.sprite_frames:
-		return Vector2(0, -200)  # Fallback
-
-	# Get current frame texture to determine sprite size
-	var current_animation = sprite.animation
-	var current_frame = sprite.frame
-	var texture = sprite.sprite_frames.get_frame_texture(current_animation, current_frame)
-
-	if not texture:
-		return Vector2(0, -200)  # Fallback
-
-	# Calculate actual rendered height: texture height * sprite scale
-	var texture_height = texture.get_height()
-	var scaled_height = texture_height * sprite.scale.y
-
-	# Sprite center is at (0, 0), so top edge is at -half_height
-	var top_edge = -scaled_height / 2.0
-
-	# Position label: top edge - offset above - half label height
-	var label_y = top_edge - offset_above - (label_height / 2.0)
-
-	return Vector2(0, label_y)
-
 func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
 	"""
 	Apply visual effect to opponent sprite.
@@ -1101,7 +989,8 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 	if color_type == "rainbow" and is_instance_valid(note) and note.has_node("NoteTemplate"):
 		note_color = note.get_node("NoteTemplate").color
 
-	var particle_count = intensity * 20
+	# Reduce particle count for HTML5 performance (was intensity * 20)
+	var particle_count = intensity * 12
 
 	for i in range(particle_count):
 		var particle = ColorRect.new()

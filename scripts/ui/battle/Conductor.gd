@@ -13,6 +13,8 @@ var seconds_per_beat: float
 var last_reported_beat: int = 0
 var beats_before_start: int = 28
 var current_measure: int = 1
+var cached_output_latency: float = 0.0
+var latency_cache_timer: float = 0.0
 
 var start_timer: Timer
 
@@ -23,15 +25,20 @@ func _ready() -> void:
 		bpm = 120.0
 
 	seconds_per_beat = 60.0 / bpm
-	if OS.has_feature("web"):
-		Engine.time_scale = 1.0
-		# Increase audio buffer size for web
-		AudioServer.set_bus_effect_enabled(0, 0, true)
 
-func _physics_process(_delta: float) -> void:
+	# Cache output latency once at start
+	cached_output_latency = AudioServer.get_output_latency()
+
+func _physics_process(delta: float) -> void:
 	if playing:
+		# Refresh latency cache every second (not every frame)
+		latency_cache_timer += delta
+		if latency_cache_timer >= 1.0:
+			cached_output_latency = AudioServer.get_output_latency()
+			latency_cache_timer = 0.0
+
 		song_position = get_playback_position() + AudioServer.get_time_since_last_mix()
-		song_position -= AudioServer.get_output_latency()
+		song_position -= cached_output_latency
 		# Apply user-configurable timing offset for audio latency compensation
 		song_position += GameManager.get_timing_offset()
 		song_position_in_beats = int((song_position / seconds_per_beat) * 2) - 8
