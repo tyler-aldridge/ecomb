@@ -9,7 +9,7 @@
 "bpm": 152,
 "beats_per_bar": 4,
 "beats_before_start": 36,
-"_note": "beat_position values represent HIT times (when note should line up with HitZone for Perfect hit in Logic Pro Bar/Beat). Game automatically calculates spawn time by subtracting travel offset. Formula: Bar N Beat B = (N-1)*8 + (B-1)*2 - 8. AND notes add +1.",
+"_note": "beat_position values represent HIT times (when note should line up with HitZone for Perfect hit in Logic Pro Bar/Beat). Game automatically calculates spawn time by subtracting travel offset. Formula: Bar N Beat B = (N-1)*8 + (B-1)*2 - 8. AND notes add +1. Optional 'lane' parameter: 'random' (default), '1', '2', '3' for designated lanes.",
 
 "dialogue": [
 {"beat_position": -35, "text": "Yo chump! Open them ears, this only gets said once!", "character": "opponent", "duration": 5.0, "triggers": "create_hit_zone_indicators"},

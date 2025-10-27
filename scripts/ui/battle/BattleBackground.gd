@@ -9,7 +9,8 @@ extends ColorRect
 # - Future: Add more styles as needed
 
 @export var background_style: String = "vaporwave"
-@export var animation_speed: float = 1.5
+@export var use_bpm_sync: bool = true  # Sync animation to BPM (quarter rate)
+@export var manual_speed: float = 1.5  # Used if use_bpm_sync is false
 
 var background_shader: Shader
 var background_material: ShaderMaterial
@@ -17,6 +18,26 @@ var background_material: ShaderMaterial
 func _ready():
 	# Apply background shader based on style
 	apply_background_shader()
+	# Update animation speed based on BPM
+	_update_animation_speed()
+
+func _process(_delta):
+	# Continuously update animation speed if BPM sync is enabled
+	if use_bpm_sync:
+		_update_animation_speed()
+
+func _update_animation_speed():
+	"""Update animation speed based on BPM (quarter rate) or manual setting."""
+	var speed: float
+	if use_bpm_sync:
+		var bpm = BattleManager.current_bpm if BattleManager else 120.0
+		# Quarter BPM rate for subtle background animation
+		speed = (bpm / 60.0) / 4.0
+	else:
+		speed = manual_speed
+
+	if background_material:
+		background_material.set_shader_parameter("speed", speed)
 
 func apply_background_shader():
 	"""Apply background shader based on selected style."""
@@ -26,7 +47,7 @@ func apply_background_shader():
 			if background_shader:
 				background_material = ShaderMaterial.new()
 				background_material.shader = background_shader
-				background_material.set_shader_parameter("speed", animation_speed)
+				# Speed will be set by _update_animation_speed()
 				material = background_material
 		_:
 			# Default to vaporwave
@@ -40,7 +61,8 @@ func set_background_style(style: String):
 	apply_background_shader()
 
 func set_animation_speed(speed: float):
-	"""Change animation speed at runtime."""
-	animation_speed = speed
+	"""Change animation speed at runtime (disables BPM sync)."""
+	use_bpm_sync = false
+	manual_speed = speed
 	if background_material:
 		background_material.set_shader_parameter("speed", speed)

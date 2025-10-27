@@ -115,6 +115,8 @@ func _ready():
 	if level_data.has("bpm"):
 		conductor.bpm = float(level_data["bpm"])
 		conductor.seconds_per_beat = 60.0 / conductor.bpm
+		# Set BPM in BattleManager for UI animations (groove bar, background)
+		BattleManager.current_bpm = conductor.bpm
 	if level_data.has("beats_before_start"):
 		conductor.beats_before_start = int(level_data["beats_before_start"])
 	if level_data.has("audio_file"):
@@ -340,7 +342,8 @@ func _on_beat(beat_position: int):
 		for note_data in level_data["notes"]:
 			if int(note_data.get("spawn_position", 0)) == beat_position:
 				var note_type = note_data.get("note", "quarter")
-				spawn_note_by_type(note_type)
+				var lane = note_data.get("lane", "random")  # Support lane designation
+				spawn_note_by_type(note_type, lane)
 
 func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""
@@ -355,16 +358,28 @@ func handle_trigger(trigger_name: String):
 		"fade_to_title":
 			fade_to_title()
 
-func spawn_note_by_type(note_type: String):
-	"""Unified note spawning function that uses BattleManager.NOTE_TYPE_CONFIG for scalability"""
+func spawn_note_by_type(note_type: String, lane: String = "random"):
+	"""Unified note spawning function that uses BattleManager.NOTE_TYPE_CONFIG for scalability
+
+	Args:
+		note_type: Type of note (whole, half, quarter, eighth, etc.)
+		lane: Lane designation - "random", "1", "2", "3", etc. Defaults to "random"
+	"""
 	if not BattleManager.NOTE_TYPE_CONFIG.has(note_type):
 		push_warning("Unknown note type '" + note_type + "', defaulting to 'quarter'")
 		note_type = "quarter"
 
 	var config = BattleManager.NOTE_TYPE_CONFIG[note_type]
 	var current_beat = conductor.song_position_in_beats if conductor else 0
-	var random_track = BattleManager.choose_lane_avoiding_overlap(current_beat)
-	var target_pos = BattleManager.HIT_ZONE_POSITIONS[random_track]
+
+	# Choose lane: use designated lane if valid, otherwise use smart random selection
+	var chosen_track: String
+	if lane != "random" and BattleManager.HIT_ZONE_POSITIONS.has(lane):
+		chosen_track = lane  # Use designated lane from note data
+	else:
+		chosen_track = BattleManager.choose_lane_avoiding_overlap(current_beat)  # Smart random
+
+	var target_pos = BattleManager.HIT_ZONE_POSITIONS[chosen_track]
 
 	# Instantiate note from config
 	var note = config["scene"].instantiate()
@@ -380,7 +395,7 @@ func spawn_note_by_type(note_type: String):
 
 
 	note.z_index = 50
-	note.setup(random_track, spawn_pos, target_pos.y)
+	note.setup(chosen_track, spawn_pos, target_pos.y)
 
 	# Calculate travel_time from spawn_offset and BPM
 	# This makes notes fall faster for fast songs, slower for slow songs

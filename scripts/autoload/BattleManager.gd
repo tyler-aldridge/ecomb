@@ -164,6 +164,9 @@ const DIFFICULTY_PRESETS = {
 # Current difficulty setting (persists across battles)
 var current_difficulty: String = "gymbro"
 
+# Current BPM (set by battle scene, used for UI animations)
+var current_bpm: float = 120.0
+
 # ============================================================================
 # BATTLE STATE
 # ============================================================================
