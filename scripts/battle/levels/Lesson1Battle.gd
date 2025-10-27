@@ -242,11 +242,8 @@ func convert_bar_beat_to_spawn_positions():
 				var beat = note_data.get("beat", 1)
 				hit_position = bar_beat_to_position(bar, beat)
 
-			# Calculate spawn_offset dynamically based on travel_time and BPM
-			# Formula: spawn_offset (half-beats) = ceil(travel_time × BPM ÷ 30)
-			# Note: Divide by 30 (not 60) because beat_position uses half-beats
-			var travel_time = BattleManager.NOTE_TYPE_CONFIG[note_type]["travel_time"] if BattleManager.NOTE_TYPE_CONFIG.has(note_type) else 1.55
-			var spawn_offset = ceil(travel_time * conductor.bpm / 30.0)
+			# Get spawn_offset from config (fixed per note type)
+			var spawn_offset = BattleManager.NOTE_TYPE_CONFIG[note_type]["spawn_offset"] if BattleManager.NOTE_TYPE_CONFIG.has(note_type) else 8
 			var spawn_position = hit_position - spawn_offset
 
 			# Store spawn position for use in _on_beat
@@ -385,7 +382,13 @@ func spawn_note_by_type(note_type: String):
 
 	note.z_index = 50
 	note.setup(random_track, spawn_pos, target_pos.y)
-	note.set_travel_time(config["travel_time"])
+
+	# Calculate travel_time from spawn_offset and BPM
+	# This makes notes fall faster for fast songs, slower for slow songs
+	var spawn_offset = config["spawn_offset"]
+	var travel_time = spawn_offset * 30.0 / conductor.bpm
+	note.set_travel_time(travel_time)
+
 	note.set_meta("note_type", note_type)  # Use note_type instead of is_ambient
 	active_notes.append(note)
 

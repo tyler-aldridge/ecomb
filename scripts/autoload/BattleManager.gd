@@ -55,25 +55,25 @@ const MAX_COMBO_MULTIPLIER = 3.0
 # Note type configuration (scalable for future note types)
 # To add a new note type:
 #   1. Create scene file with appropriate size (e.g., HalfNote.tscn at 200x400)
-#   2. Add entry here with scene path and travel_time
+#   2. Add entry here with scene path and spawn_offset (in half-beats)
 #   3. Add note type to level JSON files
 #   4. All hit detection, spawn positioning, and timing automatically scale!
 #
-# Note: spawn_offset is calculated dynamically based on travel_time and song BPM
-#       Formula: spawn_offset (half-beats) = ceil(travel_time × BPM ÷ 30)
-#       Divide by 30 (not 60) because beat_position uses half-beats
+# Note: travel_time is calculated dynamically based on spawn_offset and song BPM
+#       Formula: travel_time (seconds) = spawn_offset × 30 ÷ BPM
+#       This makes notes fall faster for fast songs, slower for slow songs
 const NOTE_TYPE_CONFIG = {
 	"whole": {
 		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
-		"travel_time": 3.0  # Seconds for note to travel from spawn to hitzone
+		"spawn_offset": 16  # Half-beats before hit time to spawn
 	},
 	"half": {
 		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
-		"travel_time": 2.0
+		"spawn_offset": 8
 	},
 	"quarter": {
 		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
-		"travel_time": 2.0
+		"spawn_offset": 8
 	}
 }
 
