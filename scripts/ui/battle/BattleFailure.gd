@@ -106,9 +106,9 @@ func _connect_dialog_button_sounds():
 
 	# Connect hover sounds
 	if ok_btn and button_hover_sound:
-		ok_btn.mouse_entered.connect(func(): button_hover_sound.play())
+		ok_btn.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 	if cancel_btn and button_hover_sound:
-		cancel_btn.mouse_entered.connect(func(): button_hover_sound.play())
+		cancel_btn.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 
 	# Keep separation between the two buttons
 	if ok_btn and ok_btn.get_parent() is HBoxContainer:
