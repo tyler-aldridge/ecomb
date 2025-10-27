@@ -1055,8 +1055,9 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 		tween.tween_property(particle, "scale", Vector2(3.0, 3.0), duration * 0.2)
 		tween.tween_property(particle, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
 
-		# Clean up particle - use chain() to avoid lambda capture errors
-		tween.chain().tween_callback(particle.queue_free)
+		# Clean up particle - capture to avoid lambda errors
+		var p = particle
+		tween.chain().tween_callback(p.queue_free)
 
 func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool, effects_layer: Node2D, scene_root: Node):
 	"""Show floating feedback text at note position.
