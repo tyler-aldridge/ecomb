@@ -38,7 +38,7 @@
 ],
 
 "notes": [
-{"bar": 1, "beat": 1, "beat_position": -8, "note": "whole", "lane": "random"},
+{"bar": 1, "beat": 1, "beat_position": -4, "note": "whole", "lane": "random"},
 {"bar": 8, "beat": 1, "beat_position": 48, "note": "whole", "lane": "random"},
 {"bar": 14, "beat": 1, "beat_position": 96, "note": "whole", "lane": "random"},
 {"bar": 19, "beat": 1, "beat_position": 136, "note": "whole", "lane": "random"},

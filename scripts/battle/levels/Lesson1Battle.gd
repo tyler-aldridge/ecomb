@@ -343,7 +343,8 @@ func _on_beat(beat_position: int):
 			if int(note_data.get("spawn_position", 0)) == beat_position:
 				var note_type = note_data.get("note", "quarter")
 				var lane = note_data.get("lane", "random")  # Support lane designation
-				spawn_note_by_type(note_type, lane)
+				var spawn_pos = int(note_data.get("spawn_position", 0))  # Pass spawn position for overlap detection
+				spawn_note_by_type(note_type, lane, spawn_pos)
 
 func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""
@@ -358,26 +359,26 @@ func handle_trigger(trigger_name: String):
 		"fade_to_title":
 			fade_to_title()
 
-func spawn_note_by_type(note_type: String, lane: String = "random"):
+func spawn_note_by_type(note_type: String, lane: String = "random", spawn_beat_position: int = 0):
 	"""Unified note spawning function that uses BattleManager.NOTE_TYPE_CONFIG for scalability
 
 	Args:
 		note_type: Type of note (whole, half, quarter, eighth, etc.)
 		lane: Lane designation - "random", "1", "2", "3", etc. Defaults to "random"
+		spawn_beat_position: Beat position for overlap detection (from JSON spawn_position)
 	"""
 	if not BattleManager.NOTE_TYPE_CONFIG.has(note_type):
 		push_warning("Unknown note type '" + note_type + "', defaulting to 'quarter'")
 		note_type = "quarter"
 
 	var config = BattleManager.NOTE_TYPE_CONFIG[note_type]
-	var current_beat = conductor.song_position_in_beats if conductor else 0
 
 	# Choose lane: use designated lane if valid, otherwise use smart random selection
 	var chosen_track: String
 	if lane != "random" and BattleManager.HIT_ZONE_POSITIONS.has(lane):
 		chosen_track = lane  # Use designated lane from note data
 	else:
-		chosen_track = BattleManager.choose_lane_avoiding_overlap(current_beat)  # Smart random
+		chosen_track = BattleManager.choose_lane_avoiding_overlap(spawn_beat_position)  # Smart random with overlap prevention
 
 	var target_pos = BattleManager.HIT_ZONE_POSITIONS[chosen_track]
 
