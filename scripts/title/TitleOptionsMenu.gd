@@ -36,7 +36,7 @@ func _ready():
 	# Connect close button
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)
-		close_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		close_button.mouse_entered.connect(_on_button_hover)
 
 	# Load saved settings
 	load_settings()
@@ -154,3 +154,8 @@ func load_settings():
 		fullscreen_checkbox.button_pressed = GameManager.get_setting("fullscreen", false)
 	if framerate_checkbox:
 		framerate_checkbox.button_pressed = GameManager.get_setting("show_fps", false)
+
+func _on_button_hover():
+	"""Play hover sound when mouse enters button."""
+	if button_hover_sound:
+		button_hover_sound.play()

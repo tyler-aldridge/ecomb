@@ -15,10 +15,7 @@ func _ready():
 	# Create tween to move the crab
 	var tween = create_tween()
 	tween.tween_property(self, "position", Vector2(128, 765), 3.0)  # Move over 3 seconds
-	tween.tween_callback(func():
-		if is_instance_valid(self):
-			play("idle")  # Switch to idle when he arrives
-	)
+	tween.tween_callback(_on_move_complete)
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -70,3 +67,8 @@ func animate_death(start_x: float, start_y: float):
 	tween2.tween_property(self, "position:x", start_x, 0.3)
 	tween2.tween_property(self, "position:y", start_y + 5, 0.3)
 	tween2.tween_property(self, "rotation_degrees", 180, 0.3)
+
+func _on_move_complete():
+	"""Play idle animation when movement completes."""
+	if is_instance_valid(self):
+		play("idle")

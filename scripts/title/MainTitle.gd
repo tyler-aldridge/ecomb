@@ -59,10 +59,7 @@ func _ready():
 	fade.modulate.a = 1.0
 	var tween = create_tween()
 	tween.tween_property(fade, "modulate:a", 0.0, FADE_DUR)
-	tween.tween_callback(func():
-		if is_instance_valid(fade):
-			fade.hide()
-	)
+	tween.tween_callback(_hide_fade_overlay)
 	
 	# Title animation
 	hit_timer.wait_time = HIT_TIME
@@ -144,29 +141,20 @@ func _on_new_button_pressed() -> void:
 	# Connect hover sounds for CharacterCreation buttons
 	var start_button = ui.get_node_or_null("CenterContainer/VBoxContainer/ButtonContainer/StartButton")
 	var cancel_button = ui.get_node_or_null("CenterContainer/VBoxContainer/ButtonContainer/CancelButton")
-	
+
 	if start_button:
-		start_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
-		start_button.pressed.connect(func(): if success_sound: success_sound.play())
+		start_button.mouse_entered.connect(_on_button_hover)
+		start_button.pressed.connect(_on_button_success)
 	if cancel_button:
-		cancel_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
-		cancel_button.pressed.connect(func(): if cancel_sound: cancel_sound.play())
+		cancel_button.mouse_entered.connect(_on_button_hover)
+		cancel_button.pressed.connect(_on_button_cancel)
 	
 	# Connect signals if they exist
 	if ui.has_signal("closed"):
 		ui.closed.connect(_close_modal)
-	
+
 	if ui.has_signal("finished"):
-		ui.finished.connect(func():
-			if is_instance_valid(self) and is_instance_valid(music):
-				music.stop()
-			if is_instance_valid(self):
-				_close_modal()
-				_fade_to_black()
-				await get_tree().create_timer(1.5).timeout
-				if is_instance_valid(self):
-					_start_opening_cutscene()
-		)
+		ui.finished.connect(_on_character_creation_finished)
 
 func _on_load_button_pressed() -> void:
 	if current_modal and not is_instance_valid(current_modal):
@@ -182,16 +170,16 @@ func _on_load_button_pressed() -> void:
 	var load_button = ui.get_node_or_null("VBoxContainer/ButtonContainer/LoadButton")
 	var delete_button = ui.get_node_or_null("VBoxContainer/ButtonContainer/DeleteButton")
 	var close_button = ui.get_node_or_null("VBoxContainer/ButtonContainer/CloseButton")
-	
+
 	if load_button:
-		load_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
-		load_button.pressed.connect(func(): if success_sound: success_sound.play())
+		load_button.mouse_entered.connect(_on_button_hover)
+		load_button.pressed.connect(_on_button_success)
 	if delete_button:
-		delete_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
-		delete_button.pressed.connect(func(): if warning_confirm_sound: warning_confirm_sound.play())
+		delete_button.mouse_entered.connect(_on_button_hover)
+		delete_button.pressed.connect(_on_button_warning)
 	if close_button:
-		close_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
-		close_button.pressed.connect(func(): if cancel_sound: cancel_sound.play())
+		close_button.mouse_entered.connect(_on_button_hover)
+		close_button.pressed.connect(_on_button_cancel)
 	
 	# Connect basic signals
 	if ui.has_signal("closed"):
@@ -229,16 +217,14 @@ func _on_options_button_pressed() -> void:
 	var save_button = ui.get_node_or_null("OptionsContainer/SaveButton")
 
 	if save_button:
-		save_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
-		save_button.pressed.connect(func(): if success_sound: success_sound.play())
-	
+		save_button.mouse_entered.connect(_on_button_hover)
+		save_button.pressed.connect(_on_button_success)
+
 	if ui.has_signal("closed"):
 		ui.closed.connect(_close_modal)
-	
+
 	if ui.has_signal("option_changed"):
-		ui.option_changed.connect(func(opt_name: String, value: Variant):
-			_save_option(opt_name, value)
-		)
+		ui.option_changed.connect(_save_option)
 
 func _on_exit_button_pressed() -> void:
 	exit_confirm_sound.play()
@@ -350,3 +336,40 @@ func _delete_save_file(save_id: String) -> void:
 	var save_path = "user://saves/" + save_id + ".dat"
 	if FileAccess.file_exists(save_path):
 		DirAccess.remove_absolute(save_path)
+
+# --- Helper Methods for Lambda Fixes ---
+func _hide_fade_overlay():
+	"""Hide fade overlay after fade-in completes."""
+	if is_instance_valid(fade):
+		fade.hide()
+
+func _on_character_creation_finished():
+	"""Handle character creation completion."""
+	if is_instance_valid(self) and is_instance_valid(music):
+		music.stop()
+	if is_instance_valid(self):
+		_close_modal()
+		_fade_to_black()
+		await get_tree().create_timer(1.5).timeout
+		if is_instance_valid(self):
+			_start_opening_cutscene()
+
+func _on_button_hover():
+	"""Play hover sound when mouse enters button."""
+	if button_hover_sound:
+		button_hover_sound.play()
+
+func _on_button_success():
+	"""Play success sound when button is pressed."""
+	if success_sound:
+		success_sound.play()
+
+func _on_button_cancel():
+	"""Play cancel sound when button is pressed."""
+	if cancel_sound:
+		cancel_sound.play()
+
+func _on_button_warning():
+	"""Play warning sound when button is pressed."""
+	if warning_confirm_sound:
+		warning_confirm_sound.play()
