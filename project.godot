@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+MusicManager="*res://scripts/autoload/MusicManager.gd"
 GameManager="*res://scripts/autoload/GameManager.gd"
 Router="*res://scripts/autoload/Router.gd"
 DialogManager="*res://scripts/autoload/DialogManager.gd"

@@ -131,11 +131,12 @@ func _ready():
 		conductor.beats_before_start = int(level_data["beats_before_start"])
 	if level_data.has("audio_file"):
 		var audio_path = level_data["audio_file"]
-		var audio_stream = load(audio_path)
+		# Use MusicManager for instant, preloaded music (no web stuttering!)
+		var audio_stream = MusicManager.get_music_by_path(audio_path)
 		if audio_stream:
 			conductor.stream = audio_stream
 		else:
-			push_error("Failed to load audio file: " + audio_path)
+			push_error("Failed to get music from MusicManager: " + audio_path)
 
 	# Calculate max possible strength (assuming all PERFECT hits with full combo)
 	# PERFECT base = 10, but with combo multipliers it scales up

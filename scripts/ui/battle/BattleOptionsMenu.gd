@@ -129,7 +129,17 @@ func show_menu():
 	show()
 	get_tree().paused = true
 
+	# Pause the music/Conductor to prevent desync
+	var conductor = get_tree().get_first_node_in_group("conductor")
+	if conductor and conductor is AudioStreamPlayer:
+		conductor.stream_paused = true
+
 func hide_menu():
+	# Unpause the music/Conductor first
+	var conductor = get_tree().get_first_node_in_group("conductor")
+	if conductor and conductor is AudioStreamPlayer:
+		conductor.stream_paused = false
+
 	hide()
 	get_tree().paused = false
 	emit_signal("closed")
