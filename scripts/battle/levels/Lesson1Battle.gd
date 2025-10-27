@@ -387,7 +387,10 @@ func spawn_note_by_type(note_type: String):
 	# This makes notes fall faster for fast songs, slower for slow songs
 	var spawn_offset = config["spawn_offset"]
 	var travel_time = spawn_offset * 30.0 / conductor.bpm
-	note.set_travel_time(travel_time)
+
+	# Pass the actual distance the note needs to travel
+	var actual_distance = target_pos.y - spawn_pos.y
+	note.set_travel_time_and_distance(travel_time, actual_distance)
 
 	note.set_meta("note_type", note_type)  # Use note_type instead of is_ambient
 	active_notes.append(note)
