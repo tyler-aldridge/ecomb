@@ -43,6 +43,8 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	# Skip processing if stream is paused (options menu open)
+	# This keeps timing in sync: audio paused = no beat signals = no song_position updates
+	# Notes also freeze (tree paused), so everything stays synchronized
 	if stream_paused:
 		return
 
