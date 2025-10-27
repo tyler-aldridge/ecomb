@@ -592,25 +592,28 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 			var speed = 200 + (distance_from_center * 2.0)
 			var target_offset = direction * speed
 
+			# Capture piece in local var to avoid lambda capture errors in loop
+			var p = piece
+
 			# Create tween on parent (not piece) to avoid lambda capture errors
 			var piece_tween = parent.create_tween()
 			piece_tween.set_parallel(true)
 
 			# Move outward
-			piece_tween.tween_property(piece, "position", piece.position + target_offset, explosion_duration)
+			piece_tween.tween_property(p, "position", p.position + target_offset, explosion_duration)
 
 			# Rotate based on position (edge pieces spin more)
 			var rotation_amount = randf_range(-PI, PI) * (1.0 + distance_from_center / 100.0)
-			piece_tween.tween_property(piece, "rotation", rotation_amount, explosion_duration)
+			piece_tween.tween_property(p, "rotation", rotation_amount, explosion_duration)
 
 			# Fade out
-			piece_tween.tween_property(piece, "modulate:a", 0.0, explosion_duration)
+			piece_tween.tween_property(p, "modulate:a", 0.0, explosion_duration)
 
 			# Scale down slightly
-			piece_tween.tween_property(piece, "scale", Vector2(0.5, 0.5), explosion_duration)
+			piece_tween.tween_property(p, "scale", Vector2(0.5, 0.5), explosion_duration)
 
-			# Clean up piece after animation (no need to capture, just queue_free directly)
-			piece_tween.chain().tween_callback(piece.queue_free)
+			# Clean up piece after animation - use chain() to avoid lambda issues
+			piece_tween.chain().tween_callback(p.queue_free)
 
 	# Clean up original note after a short delay
 	var cleanup_tween = parent.create_tween()
