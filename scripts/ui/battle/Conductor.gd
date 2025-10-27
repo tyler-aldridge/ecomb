@@ -19,9 +19,8 @@ var latency_cache_timer: float = 0.0
 var start_timer: Timer
 
 func _ready() -> void:
-	# CRITICAL: Make Conductor immune to pause so it stays in sync when options menu opens
-	# Without this, audio continues but beat tracking stops = massive desync
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Add to group so BattleOptionsMenu can find and pause us
+	add_to_group("conductor")
 
 	# Validate BPM to prevent division by zero
 	if bpm <= 0:
