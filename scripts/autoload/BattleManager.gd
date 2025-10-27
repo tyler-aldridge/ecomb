@@ -681,8 +681,14 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	if note.has_method("stop_movement"):
 		note.stop_movement()
 
+	# Get parent to create tween on (avoids lambda capture errors)
+	var parent = note.get_parent()
+	if not is_instance_valid(parent):
+		note.queue_free()
+		return null
+
 	# Turn note black and fade out fast
-	var tween = note.create_tween()
+	var tween = parent.create_tween()
 	tween.set_parallel(true)
 
 	# Turn black immediately
@@ -691,11 +697,8 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	# Fade out quickly
 	tween.tween_property(note, "modulate:a", 0.0, 0.4)
 
-	# Free the note after fade completes
-	tween.chain().tween_callback(func():
-		if is_instance_valid(note):
-			note.queue_free()
-	)
+	# Free the note after fade completes (no lambda to avoid capture errors)
+	tween.chain().tween_callback(note.queue_free)
 
 	return tween
 
@@ -1028,10 +1031,8 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
 		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
 
-		tween.tween_callback(func():
-			if is_instance_valid(p):
-				p.queue_free()
-		).set_delay(duration)
+		# Clean up particle (no lambda to avoid capture errors)
+		tween.tween_callback(p.queue_free).set_delay(duration)
 
 func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool, effects_layer: Node2D, scene_root: Node):
 	"""Show floating feedback text at note position.
@@ -1072,16 +1073,12 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 		flash_tween.tween_property(scene_root, "modulate", Color.WHITE, 0.2)
 
 	# ALL feedback moves up and fades identically at the same rate
-	# Capture label in local variable for lambda
-	var lbl = label
 	var move_tween = scene_root.create_tween()
 	move_tween.set_parallel(true)
-	move_tween.tween_property(lbl, "position:y", lbl.position.y - 80, 0.8)
-	move_tween.tween_property(lbl, "modulate:a", 0.0, 1.0)
-	move_tween.tween_callback(func():
-		if is_instance_valid(lbl):
-			lbl.queue_free()
-	).set_delay(1.0)
+	move_tween.tween_property(label, "position:y", label.position.y - 80, 0.8)
+	move_tween.tween_property(label, "modulate:a", 0.0, 1.0)
+	# Clean up label (no lambda to avoid capture errors)
+	move_tween.tween_callback(label.queue_free).set_delay(1.0)
 
 # ============================================================================
 # CHARACTER ANIMATIONS
