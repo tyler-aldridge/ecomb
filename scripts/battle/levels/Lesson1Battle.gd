@@ -455,14 +455,10 @@ func stop_hit_zone_indicators():
 
 	for indicator in hit_zone_indicator_nodes:
 		if is_instance_valid(indicator):
-			# Capture the indicator in a local variable to avoid loop variable issues
-			var ind = indicator
 			var fade_out_tween = create_tween()
-			fade_out_tween.tween_property(ind, "modulate:a", 0.0, 0.5)
-			fade_out_tween.tween_callback(func():
-				if is_instance_valid(ind):
-					ind.queue_free()
-			)
+			fade_out_tween.tween_property(indicator, "modulate:a", 0.0, 0.5)
+			# Pass queue_free directly to avoid lambda capture errors
+			fade_out_tween.tween_callback(indicator.queue_free)
 	hit_zone_indicator_nodes.clear()
 
 func fade_to_title():
