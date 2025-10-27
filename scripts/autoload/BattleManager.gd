@@ -825,9 +825,11 @@ func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node) -> Ar
 		ui_layer.add_child(border)
 		indicator_nodes.append(border)
 
+		# Capture border to avoid lambda issues in loop
+		var b = border
 		# Fade in border
 		var border_fade_tween = tween_parent.create_tween()
-		border_fade_tween.tween_property(border, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
+		border_fade_tween.tween_property(b, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
 
 		# Create lane number label
 		var label = Label.new()
@@ -844,15 +846,17 @@ func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node) -> Ar
 		ui_layer.add_child(label)
 		indicator_nodes.append(label)
 
+		# Capture label to avoid lambda issues in loop
+		var lbl = label
 		# Fade in label
 		var fade_tween = tween_parent.create_tween()
-		fade_tween.tween_property(label, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
+		fade_tween.tween_property(lbl, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
 
 		# Pulsing scale animation
 		var scale_tween = tween_parent.create_tween()
 		scale_tween.set_loops(INDICATOR_PULSE_LOOPS)
-		scale_tween.tween_property(label, "scale", INDICATOR_PULSE_SCALE, INDICATOR_PULSE_DURATION)
-		scale_tween.tween_property(label, "scale", Vector2(1.0, 1.0), INDICATOR_PULSE_DURATION)
+		scale_tween.tween_property(lbl, "scale", INDICATOR_PULSE_SCALE, INDICATOR_PULSE_DURATION)
+		scale_tween.tween_property(lbl, "scale", Vector2(1.0, 1.0), INDICATOR_PULSE_DURATION)
 
 	return indicator_nodes
 
@@ -869,10 +873,10 @@ func stop_hit_zone_indicators(indicator_nodes: Array, tween_parent: Node):
 
 	for indicator in indicator_nodes:
 		if is_instance_valid(indicator):
-			var fade_out_tween = tween_parent.create_tween()
-			fade_out_tween.tween_property(indicator, "modulate:a", 0.0, INDICATOR_FADE_DURATION)
-			# Capture indicator to avoid lambda issues
+			# Capture indicator FIRST to avoid lambda issues in loop
 			var ind = indicator
+			var fade_out_tween = tween_parent.create_tween()
+			fade_out_tween.tween_property(ind, "modulate:a", 0.0, INDICATOR_FADE_DURATION)
 			fade_out_tween.chain().tween_callback(ind.queue_free)
 
 func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):

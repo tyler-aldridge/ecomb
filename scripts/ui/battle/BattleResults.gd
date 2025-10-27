@@ -85,10 +85,10 @@ func _ready():
 	# Connect buttons
 	if continue_button:
 		continue_button.pressed.connect(_on_continue_pressed)
-		continue_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		continue_button.mouse_entered.connect(_on_button_hover)
 	if restart_button:
 		restart_button.pressed.connect(_on_restart_pressed)
-		restart_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		restart_button.mouse_entered.connect(_on_button_hover)
 
 func _exit_tree():
 	"""Clean up when scene is freed."""
@@ -398,3 +398,8 @@ func _fade_to_black():
 	fade_rect.modulate.a = 0.0
 	var tween = create_tween()
 	tween.tween_property(fade_rect, "modulate:a", 1.0, 1.5)
+
+func _on_button_hover():
+	"""Play hover sound when mouse enters button."""
+	if button_hover_sound:
+		button_hover_sound.play()
