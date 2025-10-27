@@ -562,7 +562,7 @@ func choose_lane_avoiding_overlap(current_beat: int) -> String:
 
 	return chosen_lane
 
-func create_fade_out_tween(note: Node, bpm: float) -> Tween:
+func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 	"""
 	Create a universal fade out tween for hit notes with shard explosion effect.
 
@@ -571,7 +571,7 @@ func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 
 	Args:
 		note: The note node to fade
-		bpm: Current song BPM for timing calculation
+		_bpm: Current song BPM (unused, kept for API compatibility)
 
 	Returns:
 		Tween configured for fade animation
@@ -589,8 +589,12 @@ func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 		var template = note.get_node("NoteTemplate")
 		note_color = template.color
 
-	# Hide the original note immediately
-	note.modulate.a = 0.0
+	# Make the note implode/shrink quickly while shards fly out
+	var implode_duration = 0.15
+	var note_tween = note.create_tween()
+	note_tween.set_parallel(true)
+	note_tween.tween_property(note, "scale", Vector2(0.0, 0.0), implode_duration)
+	note_tween.tween_property(note, "modulate:a", 0.0, implode_duration)
 
 	# Create shards that explode outward
 	var num_shards = 8

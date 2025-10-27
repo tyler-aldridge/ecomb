@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/battle/BattleResults.gd" id="1_results"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="2_hover"]
 [ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="3_success"]
-[ext_resource type="AudioStream" uid="uid://dhtbdhmvbcl4f" path="res://assets/audio/sfx/hurt.ogg" id="4_hurt"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="4_hurt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0, 0, 0, 0.85)
