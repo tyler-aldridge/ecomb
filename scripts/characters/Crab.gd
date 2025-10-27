@@ -15,7 +15,10 @@ func _ready():
 	# Create tween to move the crab
 	var tween = create_tween()
 	tween.tween_property(self, "position", Vector2(128, 765), 3.0)  # Move over 3 seconds
-	tween.tween_callback(func(): play("idle"))  # Switch to idle when he arrives
+	tween.tween_callback(func():
+		if is_instance_valid(self):
+			play("idle")  # Switch to idle when he arrives
+	)
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
