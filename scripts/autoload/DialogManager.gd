@@ -2,9 +2,8 @@ extends Node
 
 var dialog_box_scene := preload("res://scenes/ui/universal/DialogBox.tscn")
 var current_dialog: Control = null
-var dialog_id_counter: int = 0  # Unique ID for each dialog to prevent race conditions
 
-func show_dialog(text: String, _character: String, auto_close_time: float, _dialog_id: String = "") -> void:
+func show_dialog(text: String, _character: String, _auto_close_time: float, _dialog_id: String = "") -> void:
 	# Add a small delay to prevent immediate replacement
 	await get_tree().create_timer(0.1).timeout
 
@@ -23,10 +22,6 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 		)
 
 	current_dialog = dialog_box_scene.instantiate()
-
-	# Assign unique ID to this dialog to prevent race conditions
-	dialog_id_counter += 1
-	current_dialog.set_meta("dialog_id", dialog_id_counter)
 
 	# Set high z-index to appear above everything else
 	current_dialog.z_index = 1000
@@ -130,12 +125,11 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 		_set_text(text_node, "")
 		await _type_text(text_node, text)
 	
-	# Auto-close with proper ID checking to prevent race conditions
-	if auto_close_time > 0.0:
-		var timer := get_tree().create_timer(auto_close_time)
-		var dialog_ref = current_dialog
-		var dialog_unique_id = dialog_id_counter  # Capture the ID for this specific dialog
-		timer.timeout.connect(func(): _close_dialog_after_timer(dialog_ref, dialog_unique_id))
+	# PERMANENT FIX: Don't auto-close dialogs at all!
+	# Each new dialog will replace the previous one naturally.
+	# This completely eliminates the timer/tween race condition bug.
+	# The duration parameter is now ignored - dialogs stay until replaced.
+	pass  # No auto-close logic needed!
 
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
