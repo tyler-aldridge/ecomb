@@ -114,11 +114,9 @@ func _on_difficulty_changed(value):
 		difficulty_value_label.text = display_text
 
 func _on_fullscreen_toggled(checked):
-	print(">>> Fullscreen toggled: ", checked)
 	GameManager.set_setting("fullscreen", checked)
 
 func _on_framerate_toggled(checked):
-	print(">>> Framerate toggled: ", checked)
 	GameManager.set_setting("show_fps", checked)
 
 func toggle_menu():

@@ -112,12 +112,7 @@ func _on_start_pressed():
 			GameManager.set_player_name(player_name)
 			GameManager.set_favorite_thing(favorite_thing)
 			GameManager.set_selected_character(selected_character_id)
-			
-			print("Starting rhythm tutorial with:")
-			print("Character: ", selected_character_id)
-			print("Name: ", player_name)
-			print("Favorite Thing: ", favorite_thing)
-			
+
 			# Emit finished signal to trigger fade transition in MainTitle
 			emit_signal("finished")
 

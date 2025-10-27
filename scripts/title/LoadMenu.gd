@@ -77,15 +77,10 @@ func _on_save_selected(_index: int):
 		delete_btn.disabled = false
 
 func _on_load_pressed():
-	print("Load button pressed!")
 	var selected: PackedInt32Array = list.get_selected_items()
 	if selected.size() > 0:
-		print("Selected slot: ", selected[0])
 		var slot_idx: int = selected[0]
-		print("Emitting file_chosen signal for slot: ", slot_idx)
 		emit_signal("file_chosen", "slot_%d" % slot_idx)
-	else:
-		print("No save slot selected")
 
 func _on_delete_pressed():
 	var selected: PackedInt32Array = list.get_selected_items()
