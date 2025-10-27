@@ -65,19 +65,15 @@ const MAX_COMBO_MULTIPLIER = 3.0
 const NOTE_TYPE_CONFIG = {
 	"whole": {
 		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
-		"travel_time": 4.5
+		"travel_time": 3.0  # Seconds for note to travel from spawn to hitzone
 	},
 	"half": {
 		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
-		"travel_time": 1.55
+		"travel_time": 2.0
 	},
 	"quarter": {
 		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
-		"travel_time": 1.55
-	},
-	"sixteenth": {
-		"scene": preload("res://scenes/ui/battle/SixteenthNote.tscn"),  # 200x100
-		"travel_time": 1.55
+		"travel_time": 2.0
 	}
 }
 
