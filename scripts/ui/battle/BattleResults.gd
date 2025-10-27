@@ -295,17 +295,18 @@ func _create_sunburst_ring(explosion_pos: Vector2, count: int, firework_color: C
 		var fall_distance = gravity * explosion_time * 0.5
 		var end_point = Vector2(mid_point.x, mid_point.y + fall_distance)
 
+		# Capture particle BEFORE creating any tweens to avoid lambda issues in loop
+		var p = particle
 		var tween = create_tween()
 		# Delay for ring timing
 		if delay > 0:
 			tween.tween_interval(delay)
 		# Explode outward
-		tween.tween_property(particle, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
+		tween.tween_property(p, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
 		# Fall with gravity
-		tween.tween_property(particle, "position", end_point, 1.0).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(p, "position", end_point, 1.0).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
-		# Fade while falling - capture particle to avoid lambda issues
-		var p = particle
+		# Fade while falling
 		var fade_tween = create_tween()
 		fade_tween.tween_property(p, "modulate:a", 0.0, 0.8).set_delay(explosion_time + delay + 0.2)
 		fade_tween.chain().tween_callback(p.queue_free)
@@ -339,14 +340,15 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firewo
 		var droop_distance = randf_range(450, 750) * size_mult  # Long drooping tendrils
 		var end_pos = Vector2(peak_pos.x, peak_pos.y + droop_distance)
 
+		# Capture particle BEFORE creating any tweens to avoid lambda issues in loop
+		var p = particle
 		var tween = create_tween()
 		# Rise to dome peak with ease out for natural arc
-		tween.tween_property(particle, "position", peak_pos, peak_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(p, "position", peak_pos, peak_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 		# Droop down like umbrella edges/jellyfish tendrils
-		tween.tween_property(particle, "position", end_pos, droop_time).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
+		tween.tween_property(p, "position", end_pos, droop_time).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 
-		# Fade while drooping - capture particle to avoid lambda issues
-		var p = particle
+		# Fade while drooping
 		var fade_tween = create_tween()
 		fade_tween.tween_property(p, "modulate:a", 0.0, 1.3).set_delay(peak_time + 0.3)
 		fade_tween.chain().tween_callback(p.queue_free)
@@ -374,14 +376,15 @@ func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color:
 		var fall_distance = gravity * randf_range(0.8, 1.2)  # Varied fall adds chaos
 		var end_point = Vector2(mid_point.x, mid_point.y + fall_distance)
 
+		# Capture particle BEFORE creating any tweens to avoid lambda issues in loop
+		var p = particle
 		var tween = create_tween()
 		# Explode with chaos
-		tween.tween_property(particle, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
+		tween.tween_property(p, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
 		# Fall with gravity
-		tween.tween_property(particle, "position", end_point, 1.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(p, "position", end_point, 1.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
-		# Fade while falling (starts during fall, varied timing for chaos) - capture particle to avoid lambda issues
-		var p = particle
+		# Fade while falling (starts during fall, varied timing for chaos)
 		var fade_tween = create_tween()
 		var fade_delay = explosion_time + randf_range(0.1, 0.4)
 		var fade_duration = randf_range(0.7, 1.0)
