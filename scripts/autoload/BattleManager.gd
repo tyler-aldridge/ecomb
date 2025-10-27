@@ -615,9 +615,10 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 			# Clean up piece after animation - use chain() to avoid lambda issues
 			piece_tween.chain().tween_callback(p.queue_free)
 
-	# Clean up original note after a short delay
+	# Clean up original note after a short delay - capture note to avoid lambda issues
+	var n = note
 	var cleanup_tween = parent.create_tween()
-	cleanup_tween.tween_callback(note.queue_free).set_delay(explosion_duration)
+	cleanup_tween.tween_callback(n.queue_free).set_delay(explosion_duration)
 
 	return cleanup_tween
 
@@ -867,8 +868,9 @@ func stop_hit_zone_indicators(indicator_nodes: Array, tween_parent: Node):
 		if is_instance_valid(indicator):
 			var fade_out_tween = tween_parent.create_tween()
 			fade_out_tween.tween_property(indicator, "modulate:a", 0.0, INDICATOR_FADE_DURATION)
-			# Pass queue_free directly to avoid lambda capture errors
-			fade_out_tween.tween_callback(indicator.queue_free)
+			# Capture indicator to avoid lambda issues
+			var ind = indicator
+			fade_out_tween.chain().tween_callback(ind.queue_free)
 
 func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
 	"""
@@ -1098,8 +1100,9 @@ func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bo
 	move_tween.set_parallel(true)
 	move_tween.tween_property(label, "position:y", label.position.y - 80, 0.8)
 	move_tween.tween_property(label, "modulate:a", 0.0, 1.0)
-	# Clean up label (no lambda to avoid capture errors)
-	move_tween.tween_callback(label.queue_free).set_delay(1.0)
+	# Clean up label - capture to avoid lambda issues
+	var lbl = label
+	move_tween.tween_callback(lbl.queue_free).set_delay(1.0)
 
 # ============================================================================
 # CHARACTER ANIMATIONS

@@ -238,9 +238,10 @@ func _spawn_firework():
 	# This ensures fireworks ALWAYS explode at the right time
 	tween.tween_callback(_create_firework_explosion.bind(target_pos, explosion_type, firework_color, use_rainbow))
 
-	# Fade out trail after explosion triggered
-	tween.tween_property(trail, "modulate:a", 0.0, 0.1)
-	tween.tween_callback(trail.queue_free)
+	# Fade out trail after explosion triggered - capture to avoid lambda issues
+	var t = trail
+	tween.tween_property(t, "modulate:a", 0.0, 0.1)
+	tween.chain().tween_callback(t.queue_free)
 
 func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, firework_color: Color, is_rainbow: bool):
 	"""Create an explosion of particles at the given position with gravity."""
@@ -344,10 +345,11 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firewo
 		# Droop down like umbrella edges/jellyfish tendrils
 		tween.tween_property(particle, "position", end_pos, droop_time).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 
-		# Fade while drooping
+		# Fade while drooping - capture particle to avoid lambda issues
+		var p = particle
 		var fade_tween = create_tween()
-		fade_tween.tween_property(particle, "modulate:a", 0.0, 1.3).set_delay(peak_time + 0.3)
-		fade_tween.tween_callback(particle.queue_free)
+		fade_tween.tween_property(p, "modulate:a", 0.0, 1.3).set_delay(peak_time + 0.3)
+		fade_tween.chain().tween_callback(p.queue_free)
 
 func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create realistic chaotic explosion with varied arm lengths - mostly circular but irregular."""
