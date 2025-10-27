@@ -281,13 +281,18 @@ func setup_hit_zone_borders():
 			hit_zone.add_child(border)
 
 func start_character_animations():
+	# Store original positions FIRST before any animation changes
 	if player_sprite:
 		player_original_pos = player_sprite.position
+	if opponent_sprite:
+		opponent_original_pos = opponent_sprite.position
+
+	# Now play idle animations (sprites already have animations set in scene)
+	if player_sprite:
 		if player_sprite.sprite_frames and player_sprite.sprite_frames.has_animation("idle"):
 			player_sprite.play("idle")
 
 	if opponent_sprite:
-		opponent_original_pos = opponent_sprite.position
 		if opponent_sprite.sprite_frames and opponent_sprite.sprite_frames.has_animation("idle"):
 			opponent_sprite.play("idle")
 

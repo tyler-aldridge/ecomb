@@ -604,7 +604,7 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 	var grid_size = 4
 	var piece_size = Vector2(note_size.x / grid_size, note_size.y / grid_size)
 	var note_top_left = note.global_position  # Note position is already at top-left
-	var explosion_duration = 0.6  # Shatter duration slightly longer for better visibility
+	var explosion_duration = 0.9  # Shatter duration for better visibility
 
 	for row in range(grid_size):
 		for col in range(grid_size):
@@ -1012,10 +1012,10 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 		var tween = scene_root.create_tween()
 		tween.set_parallel(true)
 
-		# Original explosion behavior: larger radius, shorter duration
+		# Original explosion behavior: larger radius, good duration
 		var explosion_radius = 600 if color_type == "rainbow" else 450
 		var random_direction = Vector2(randf_range(-explosion_radius, explosion_radius), randf_range(-explosion_radius, explosion_radius))
-		var duration = randf_range(0.5, 0.9)  # Reduced from 0.8-1.5s
+		var duration = randf_range(0.8, 1.2)  # Increased for better visual impact
 
 		tween.tween_property(p, "position", p.position + random_direction, duration)
 		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)
@@ -1136,14 +1136,12 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 
 			player_sprite.play(random_animation)
 
-			# Connect one-shot to return to idle
-			player_sprite.animation_finished.connect(
-				func():
-					if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
-						if player_sprite.sprite_frames.has_animation("idle"):
-							player_sprite.play("idle")
-			, CONNECT_ONE_SHOT
-			)
+			# Connect one-shot to return to idle (use bind to avoid lambda capture)
+			if player_sprite.sprite_frames.has_animation("idle"):
+				player_sprite.animation_finished.connect(
+					player_sprite.play.bind("idle"),
+					CONNECT_ONE_SHOT
+				)
 
 func _on_player_pecs_finished():
 	"""Callback stub for animation_finished signal."""
@@ -1207,11 +1205,9 @@ func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_
 		elif opponent_sprite.sprite_frames and opponent_sprite.sprite_frames.has_animation(random_animation):
 			opponent_sprite.play(random_animation)
 
-			# Connect one-shot to return to idle
-			opponent_sprite.animation_finished.connect(
-				func():
-					if is_instance_valid(opponent_sprite) and opponent_sprite.sprite_frames:
-						if opponent_sprite.sprite_frames.has_animation("idle"):
-							opponent_sprite.play("idle")
-			, CONNECT_ONE_SHOT
-			)
+			# Connect one-shot to return to idle (use bind to avoid lambda capture)
+			if opponent_sprite.sprite_frames.has_animation("idle"):
+				opponent_sprite.animation_finished.connect(
+					opponent_sprite.play.bind("idle"),
+					CONNECT_ONE_SHOT
+				)
