@@ -12,28 +12,42 @@ signal closed
 @onready var framerate_checkbox: CheckBox = $OptionsContainer/FramerateContainer/FramerateCheckbox
 @onready var close_button: Button = $OptionsContainer/CloseButton
 
+# Audio players
+@onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
+@onready var success_sound: AudioStreamPlayer = $SuccessSound
+
 func _ready():
 	# Connect volume sliders
 	if master_volume_slider:
 		master_volume_slider.value_changed.connect(_on_master_volume_changed)
+		master_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
 	if music_volume_slider:
 		music_volume_slider.value_changed.connect(_on_music_volume_changed)
+		music_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
 	if sound_volume_slider:
 		sound_volume_slider.value_changed.connect(_on_sound_volume_changed)
+		sound_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect rhythm timing slider
 	if rhythm_timing_slider:
 		rhythm_timing_slider.value_changed.connect(_on_rhythm_timing_changed)
+		rhythm_timing_slider.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect difficulty slider
 	if difficulty_slider:
 		difficulty_slider.value_changed.connect(_on_difficulty_changed)
+		difficulty_slider.mouse_entered.connect(func(): button_hover_sound.play())
 
-	# Checkboxes are already connected in the editor, so we don't connect them here
+	# Connect checkboxes
+	if fullscreen_checkbox:
+		fullscreen_checkbox.mouse_entered.connect(func(): button_hover_sound.play())
+	if framerate_checkbox:
+		framerate_checkbox.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect close button
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)
+		close_button.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Load saved settings
 	load_settings()
@@ -91,6 +105,7 @@ func _on_framerate_toggled(checked):
 	GameManager.set_setting("show_fps", checked)
 
 func _on_close_pressed():
+	success_sound.play()
 	emit_signal("closed")
 
 
