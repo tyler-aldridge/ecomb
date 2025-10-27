@@ -511,18 +511,20 @@ func fade_to_title():
 	var fade_tween = create_tween()
 	fade_tween.tween_property(fade_overlay, "modulate:a", 1.0, BattleManager.FADE_TO_BLACK_DURATION)
 
-	# Capture variables for lambda to avoid freed object errors
+	# Capture variables to avoid freed object errors
 	var succeeded = battle_succeeded
 	var results_copy = results.duplicate()
 	var br = battle_results
 
-	fade_tween.tween_callback(func():
-		# After fade to black, show BattleResults if succeeded, otherwise go to title
-		if succeeded and is_instance_valid(br):
-			br.show_battle_results(results_copy)
-		elif is_instance_valid(self):
-			change_to_title()
-	)
+	# Use bind instead of lambda to avoid capture issues
+	fade_tween.tween_callback(_show_battle_results_after_fade.bind(succeeded, results_copy, br))
+
+func _show_battle_results_after_fade(succeeded: bool, results_copy: Dictionary, br: Control):
+	"""Callback after fade to black - show results or go to title."""
+	if succeeded and is_instance_valid(br):
+		br.show_battle_results(results_copy)
+	elif is_instance_valid(self):
+		change_to_title()
 
 func _on_battle_failed():
 	# Hide battle UI elements (combo display and groove bar)
