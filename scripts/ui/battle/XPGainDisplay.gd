@@ -58,9 +58,7 @@ func show_xp(amount: int, perfect: bool = false):
 	# Animate popup
 	play_popup_animation()
 
-func _process(_delta):
-	# No color cycling - always white
-	pass
+# Removed _process - not needed (was empty)
 
 func _reset_display():
 	"""Reset display state - called by tween callback."""

@@ -9,7 +9,7 @@ extends ColorRect
 # - Future: Add more styles as needed
 
 @export var background_style: String = "vaporwave"
-@export var use_bpm_sync: bool = true  # Sync animation to BPM (quarter rate)
+@export var use_bpm_sync: bool = false  # Sync animation to BPM (quarter rate)
 @export var manual_speed: float = 1.5  # Used if use_bpm_sync is false
 
 var background_shader: Shader
