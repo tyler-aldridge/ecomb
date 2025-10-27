@@ -60,7 +60,8 @@ const MAX_COMBO_MULTIPLIER = 3.0
 #   4. All hit detection, spawn positioning, and timing automatically scale!
 #
 # Note: spawn_offset is calculated dynamically based on travel_time and song BPM
-#       Formula: spawn_offset (beats) = ceil(travel_time × BPM ÷ 60)
+#       Formula: spawn_offset (half-beats) = ceil(travel_time × BPM ÷ 30)
+#       Divide by 30 (not 60) because beat_position uses half-beats
 const NOTE_TYPE_CONFIG = {
 	"whole": {
 		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
