@@ -556,21 +556,30 @@ func change_to_title():
 
 func check_automatic_misses():
 	"""Check if any notes have passed the hit zone and register automatic misses."""
+	# CRITICAL: Collect notes to remove first, then process them
+	# Never modify an array while iterating over it!
+	var notes_to_remove = []
+
 	for note in active_notes:
 		if is_instance_valid(note):
 			var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[note.track_key].y
 			if note.position.y > hit_zone_y + BattleManager.MISS_WINDOW:
-				# Get note's actual height dynamically using universal helper
-				var note_height = BattleManager.get_note_height(note)
+				notes_to_remove.append(note)
 
-				# Calculate effect position at note's center (dynamic for any note size)
-				var effect_pos = note.position + Vector2(100, note_height / 2.0)
+	# Now process the missed notes outside the iteration
+	for note in notes_to_remove:
+		if is_instance_valid(note):
+			# Get note's actual height dynamically using universal helper
+			var note_height = BattleManager.get_note_height(note)
 
-				BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
-				BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
-				process_miss()
-				BattleManager.create_miss_fade_tween(note)
-				active_notes.erase(note)
+			# Calculate effect position at note's center (dynamic for any note size)
+			var effect_pos = note.position + Vector2(100, note_height / 2.0)
+
+			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
+			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
+			process_miss()
+			BattleManager.create_miss_fade_tween(note)
+			active_notes.erase(note)
 
 func _unhandled_input(event):
 	"""Handle keyboard input dynamically based on number of lanes in BattleManager.HIT_ZONE_POSITIONS."""
