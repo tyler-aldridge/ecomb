@@ -56,6 +56,9 @@ const NOTE_TYPE_CONFIG = {
 	}
 }
 
+# Opponent shader effect (color invert for visual distinction)
+const OPPONENT_INVERT_SHADER = preload("res://assets/shaders/color_invert.gdshader")
+
 const HITZONE_HEIGHT = 200.0
 const HIT_ZONE_POSITIONS = {
 	"1": Vector2(610.0, 650.0),
@@ -921,11 +924,10 @@ func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
 	if not opponent_sprite:
 		return
 
-	var invert_shader = load("res://assets/shaders/color_invert.gdshader")
-	if invert_shader:
-		var invert_material = ShaderMaterial.new()
-		invert_material.shader = invert_shader
-		opponent_sprite.material = invert_material
+	# Use preloaded shader for optimal performance
+	var invert_material = ShaderMaterial.new()
+	invert_material.shader = OPPONENT_INVERT_SHADER
+	opponent_sprite.material = invert_material
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
