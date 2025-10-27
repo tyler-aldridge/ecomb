@@ -564,15 +564,10 @@ func choose_lane_avoiding_overlap(current_beat: int) -> String:
 
 func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 	"""
-	Create a universal fade out tween for hit notes.
+	Create a universal fade out tween for hit notes with shard explosion effect.
 
-	Notes fade based on their beat duration:
-	- Whole notes: 4 beats
-	- Half notes: 2 beats
-	- Quarter notes: 1 beat
-	- Sixteenth notes: 0.5 beats
-
-	Notes continue falling by half their height during the fade.
+	Notes explode into shards that fly outward, rotate, and fade away.
+	The explosion is themed to match the note's color.
 
 	Args:
 		note: The note node to fade
@@ -588,44 +583,70 @@ func create_fade_out_tween(note: Node, bpm: float) -> Tween:
 	if note.has_method("stop_movement"):
 		note.stop_movement()
 
-	# Get note type from metadata to determine fade duration
-	var note_type = note.get_meta("note_type", "quarter")
-
-	# Map note type to beats
-	var beats_to_fade = 1.0  # Default: quarter note = 1 beat
-	match note_type:
-		"whole":
-			beats_to_fade = 4.0
-		"half":
-			beats_to_fade = 2.0
-		"quarter":
-			beats_to_fade = 1.0
-		"sixteenth":
-			beats_to_fade = 0.5
-
-	# Calculate fade duration in seconds based on BPM
-	var seconds_per_beat = 60.0 / bpm if bpm > 0 else 0.395  # Default 152 BPM
-	var fade_duration = beats_to_fade * seconds_per_beat
-
-	# Get note height to calculate fall distance (half of note height)
-	var note_height = 200.0
+	# Get note color from NoteTemplate
+	var note_color = Color.WHITE
 	if note.has_node("NoteTemplate"):
-		note_height = note.get_node("NoteTemplate").size.y
-	var fall_distance = note_height / 2.0
+		var template = note.get_node("NoteTemplate")
+		note_color = template.color
 
-	var current_y = note.position.y
+	# Hide the original note immediately
+	note.modulate.a = 0.0
 
-	# Create fade out tween
-	var fade_tween = note.create_tween()
-	fade_tween.set_parallel(true)
-	fade_tween.tween_property(note, "modulate:a", 0.0, fade_duration)
-	fade_tween.tween_property(note, "position:y", current_y + fall_distance, fade_duration)
-	fade_tween.chain().tween_callback(func():
+	# Create shards that explode outward
+	var num_shards = 8
+	var shard_size = Vector2(40, 40)
+	var explosion_duration = 0.6
+	var note_center = note.global_position
+
+	# Get the parent to add shards to (should be the battle scene)
+	var parent = note.get_parent()
+	if not is_instance_valid(parent):
+		note.queue_free()
+		return null
+
+	for i in range(num_shards):
+		var shard = ColorRect.new()
+		shard.color = note_color
+		shard.size = shard_size
+		shard.position = note_center - shard_size / 2.0  # Center the shard
+		parent.add_child(shard)
+
+		# Calculate random outward direction
+		var angle = (i / float(num_shards)) * TAU + randf_range(-0.3, 0.3)
+		var speed = randf_range(200, 400)
+		var direction = Vector2(cos(angle), sin(angle))
+		var target_offset = direction * speed
+
+		# Create tween for this shard
+		var shard_tween = shard.create_tween()
+		shard_tween.set_parallel(true)
+
+		# Move outward
+		shard_tween.tween_property(shard, "position", shard.position + target_offset, explosion_duration)
+
+		# Rotate randomly
+		shard_tween.tween_property(shard, "rotation", randf_range(-PI * 2, PI * 2), explosion_duration)
+
+		# Fade out
+		shard_tween.tween_property(shard, "modulate:a", 0.0, explosion_duration)
+
+		# Scale down
+		shard_tween.tween_property(shard, "scale", Vector2(0.3, 0.3), explosion_duration)
+
+		# Clean up shard after animation
+		shard_tween.chain().tween_callback(func():
+			if is_instance_valid(shard):
+				shard.queue_free()
+		)
+
+	# Clean up original note after a short delay
+	var cleanup_tween = note.create_tween()
+	cleanup_tween.tween_callback(func():
 		if is_instance_valid(note):
 			note.queue_free()
-	)
+	).set_delay(explosion_duration)
 
-	return fade_tween
+	return cleanup_tween
 
 func create_miss_fade_tween(note: Node) -> Tween:
 	"""
