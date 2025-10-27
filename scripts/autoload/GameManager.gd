@@ -92,6 +92,14 @@ func _ready():
 		dir.make_dir("saves")
 
 	load_settings()
+
+	# Apply web-specific timing compensation BEFORE other settings
+	if OS.has_feature("web"):
+		# Web browsers have significantly higher audio latency (100-300ms)
+		# If no custom timing offset is saved, use web-optimized default
+		if not settings.has("rhythm_timing_offset") or settings["rhythm_timing_offset"] == 0:
+			settings["rhythm_timing_offset"] = 150  # 150ms delay for web (adjustable in settings)
+
 	apply_audio_settings()
 	apply_display_settings()
 
