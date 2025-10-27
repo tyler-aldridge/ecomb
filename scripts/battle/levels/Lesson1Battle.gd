@@ -19,17 +19,19 @@ var level_data: Dictionary = {}
 # - HIT_ZONE_POSITIONS: Lane positions for all 3 tracks
 # - SPAWN_HEIGHT_ABOVE_TARGET: How far above screen notes spawn
 # - HITZONE_HEIGHT: HitZone height constant
+# - MISS_WINDOW: Automatic miss threshold
 # - OVERLAP_PREVENTION_WINDOW: Lane overlap prevention window
+# - UI_CONSTANTS: Fade durations, border widths, indicator properties
 # - get_hit_quality_for_note(): Edge-based hit detection logic
 # - choose_lane_avoiding_overlap(): Lane selection with overlap prevention
 # - create_fade_out_tween(): Beat-based note fade animation
+# - get_note_height(): Dynamic note height helper
+# - create_hit_zone_indicators(): Universal yellow tutorial indicators
+# - stop_hit_zone_indicators(): Remove tutorial indicators
 # - Difficulty system: DIFFICULTY_PRESETS and thresholds
 #
 # To modify universal mechanics, edit scripts/autoload/BattleManager.gd
 # ============================================================================
-
-# Miss threshold for notes that passed HitZone completely
-const MISS_WINDOW = 150.0
 
 # Hit detection
 var active_notes = []
@@ -160,16 +162,8 @@ func _ready():
 	conductor.beat.connect(_on_beat)
 
 	# Start with beat offset
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
 	conductor.play_with_beat_offset()
-
-func _exit_tree():
-	"""Clean up tweens to prevent lambda capture errors when scene is freed."""
-	# Kill all tweens on this node to prevent lambda callbacks from accessing freed objects
-	var tween_count = get_tree().get_processed_tweens()
-	for tween in tween_count:
-		if is_instance_valid(tween):
-			tween.kill()
 
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
@@ -258,25 +252,27 @@ func create_fade_overlay():
 	add_child(fade_overlay)
 
 func fade_from_black():
+	"""Fade from black overlay using universal BattleManager duration."""
 	if not is_instance_valid(fade_overlay):
 		return
 	fade_overlay.modulate.a = 1.0
 	var fade_tween = create_tween()
-	fade_tween.tween_property(fade_overlay, "modulate:a", 0.0, 1.5)
+	fade_tween.tween_property(fade_overlay, "modulate:a", 0.0, BattleManager.FADE_FROM_BLACK_DURATION)
 
 func setup_hit_zone_borders():
+	"""Add white borders to all hit zones using universal BattleManager constants."""
 	for i in range(hit_zones.size()):
 		var hit_zone = hit_zones[i]
 		if is_instance_valid(hit_zone):
 			hit_zone.color = Color(1, 1, 1, 0)
 
 			var border = Line2D.new()
-			border.width = 3.0
-			border.default_color = Color.WHITE
+			border.width = BattleManager.HITZONE_BORDER_WIDTH
+			border.default_color = BattleManager.HITZONE_BORDER_COLOR
 			border.add_point(Vector2(0, 0))
-			border.add_point(Vector2(200, 0))
-			border.add_point(Vector2(200, 200))
-			border.add_point(Vector2(0, 200))
+			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, 0))
+			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, BattleManager.HITZONE_HEIGHT))
+			border.add_point(Vector2(0, BattleManager.HITZONE_HEIGHT))
 			border.add_point(Vector2(0, 0))
 			hit_zone.add_child(border)
 
@@ -347,17 +343,17 @@ func _on_beat(beat_position: int):
 				spawn_note_by_type(note_type)
 
 func handle_trigger(trigger_name: String):
+	"""Handle trigger events using universal BattleManager functions where possible."""
 	match trigger_name:
 		"create_hit_zone_indicators":
-			create_hit_zone_indicators()
+			# Use universal BattleManager function
+			hit_zone_indicator_nodes = BattleManager.create_hit_zone_indicators(ui_layer, self)
 		"stop_hit_zone_indicators":
-			stop_hit_zone_indicators()
+			# Use universal BattleManager function
+			BattleManager.stop_hit_zone_indicators(hit_zone_indicator_nodes, self)
+			hit_zone_indicator_nodes = []
 		"fade_to_title":
 			fade_to_title()
-
-func delayed_fade_to_title():
-	await get_tree().create_timer(5.0).timeout
-	fade_to_title()
 
 func spawn_note_by_type(note_type: String):
 	"""Unified note spawning function that uses BattleManager.NOTE_TYPE_CONFIG for scalability"""
@@ -374,10 +370,8 @@ func spawn_note_by_type(note_type: String):
 	var note = config["scene"].instantiate()
 	add_child(note)
 
-	# Get note's actual height dynamically for scalable spawn positioning
-	var note_height = 200.0  # Default
-	if note.has_node("NoteTemplate"):
-		note_height = note.get_node("NoteTemplate").size.y
+	# Get note's actual height dynamically using universal helper
+	var note_height = BattleManager.get_note_height(note)
 
 	# Calculate spawn position: center-align all notes with HitZone
 	# Adjust spawn position so note's CENTER aligns with HitZone center (not top/bottom edge)
@@ -399,72 +393,6 @@ func spawn_note_by_type(note_type: String):
 
 	note.set_meta("note_type", note_type)  # Use note_type instead of is_ambient
 	active_notes.append(note)
-
-func create_hit_zone_indicators():
-	# Clear any existing indicators first
-	stop_hit_zone_indicators()
-
-	# Show groove bar tutorial message via BattleManager signal
-	BattleManager.show_groove_tutorial.emit()
-
-	for i in range(3):
-		var zone_key = str(i + 1)
-		var pos = BattleManager.HIT_ZONE_POSITIONS[zone_key]
-
-		var border = Line2D.new()
-		border.width = 5.0
-		border.default_color = Color.YELLOW
-		border.modulate.a = 0.0  # Start invisible for fade in
-		border.add_point(Vector2(0, 0))
-		border.add_point(Vector2(200, 0))
-		border.add_point(Vector2(200, 200))
-		border.add_point(Vector2(0, 200))
-		border.add_point(Vector2(0, 0))
-		border.position = pos
-		border.z_index = 350
-		ui_layer.add_child(border) 
-		hit_zone_indicator_nodes.append(border)
-
-		# Fade in border
-		var border_fade_tween = create_tween()
-		border_fade_tween.tween_property(border, "modulate:a", 1.0, 0.5)
-
-		var label = Label.new()
-		label.text = zone_key
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 100)
-		label.add_theme_color_override("font_color", Color.YELLOW)
-		label.position = pos + Vector2(50, 50)
-		label.size = Vector2(100, 100)
-		label.pivot_offset = Vector2(50, 50)  # Scale from center
-		label.modulate.a = 0.0  # Start invisible for fade in
-		label.z_index = 350
-		ui_layer.add_child(label)
-		hit_zone_indicator_nodes.append(label)
-
-		# Fade in label
-		var fade_tween = create_tween()
-		fade_tween.tween_property(label, "modulate:a", 1.0, 0.5)
-
-		# Pulsing scale animation
-		var scale_tween = create_tween()
-		scale_tween.set_loops(200)  # Loop for a very long time (200 loops = ~130 seconds)
-		scale_tween.tween_property(label, "scale", Vector2(1.3, 1.3), 0.325)
-		scale_tween.tween_property(label, "scale", Vector2(1.0, 1.0), 0.325)
-
-func stop_hit_zone_indicators():
-	"""Fade out and remove all hit zone indicator nodes (yellow borders and numbers)."""
-	# Hide groove bar tutorial message via BattleManager signal
-	BattleManager.hide_groove_tutorial.emit()
-
-	for indicator in hit_zone_indicator_nodes:
-		if is_instance_valid(indicator):
-			var fade_out_tween = create_tween()
-			fade_out_tween.tween_property(indicator, "modulate:a", 0.0, 0.5)
-			# Pass queue_free directly to avoid lambda capture errors
-			fade_out_tween.tween_callback(indicator.queue_free)
-	hit_zone_indicator_nodes.clear()
 
 func fade_to_title():
 	# Hide battle UI elements (combo display and groove bar) before showing results
@@ -492,7 +420,7 @@ func fade_to_title():
 		if results.get("battle_id", "") == "battle_tutorial":
 			GameManager.complete_tutorial()
 
-	# Fade to black
+	# Fade to black using universal BattleManager duration
 	if not is_instance_valid(fade_overlay):
 		if battle_succeeded and is_instance_valid(battle_results):
 			battle_results.show_battle_results(results)
@@ -502,7 +430,7 @@ func fade_to_title():
 
 	fade_overlay.modulate.a = 0.0
 	var fade_tween = create_tween()
-	fade_tween.tween_property(fade_overlay, "modulate:a", 1.0, 2.0)
+	fade_tween.tween_property(fade_overlay, "modulate:a", 1.0, BattleManager.FADE_TO_BLACK_DURATION)
 
 	# Capture variables for lambda to avoid freed object errors
 	var succeeded = battle_succeeded
@@ -546,14 +474,13 @@ func change_to_title():
 		get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
 
 func check_automatic_misses():
+	"""Check if any notes have passed the hit zone and register automatic misses."""
 	for note in active_notes:
 		if is_instance_valid(note):
 			var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[note.track_key].y
-			if note.position.y > hit_zone_y + MISS_WINDOW:
-				# Get note's actual height dynamically
-				var note_height = 200.0  # Default
-				if note.has_node("NoteTemplate"):
-					note_height = note.get_node("NoteTemplate").size.y
+			if note.position.y > hit_zone_y + BattleManager.MISS_WINDOW:
+				# Get note's actual height dynamically using universal helper
+				var note_height = BattleManager.get_note_height(note)
 
 				# Calculate effect position at note's center (dynamic for any note size)
 				var effect_pos = note.position + Vector2(100, note_height / 2.0)
@@ -565,13 +492,27 @@ func check_automatic_misses():
 				active_notes.erase(note)
 
 func _unhandled_input(event):
+	"""Handle keyboard input dynamically based on number of lanes in BattleManager.HIT_ZONE_POSITIONS."""
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_1:
-			handle_input("1")
-		elif event.keycode == KEY_2:
-			handle_input("2")
-		elif event.keycode == KEY_3:
-			handle_input("3")
+		# Map keycodes to lane keys dynamically (supports 1-9 lanes)
+		var keycode_to_lane = {
+			KEY_1: "1",
+			KEY_2: "2",
+			KEY_3: "3",
+			KEY_4: "4",
+			KEY_5: "5",
+			KEY_6: "6",
+			KEY_7: "7",
+			KEY_8: "8",
+			KEY_9: "9"
+		}
+
+		# Check if this keycode maps to a valid lane
+		if keycode_to_lane.has(event.keycode):
+			var lane_key = keycode_to_lane[event.keycode]
+			# Only handle input if this lane exists in BattleManager configuration
+			if BattleManager.HIT_ZONE_POSITIONS.has(lane_key):
+				handle_input(lane_key)
 
 func handle_input(track_key: String):
 	flash_hit_zone(track_key)
@@ -602,10 +543,8 @@ func check_hit(track_key: String):
 		if note.track_key == track_key:
 			var distance = 999999.0
 
-			# Get note's actual height dynamically for scalability
-			var note_height = 200.0  # Default
-			if note.has_node("NoteTemplate"):
-				note_height = note.get_node("NoteTemplate").size.y
+			# Get note's actual height dynamically using universal helper
+			var note_height = BattleManager.get_note_height(note)
 
 			# Calculate centers dynamically based on actual note size
 			var note_center_y = note.position.y + (note_height / 2.0)
@@ -617,12 +556,10 @@ func check_hit(track_key: String):
 			if distance < best_distance:
 				best_distance = distance
 				closest_note = note
-	
+
 	if closest_note:
-		# Get note's actual height dynamically
-		var note_height = 200.0  # Default
-		if closest_note.has_node("NoteTemplate"):
-			note_height = closest_note.get_node("NoteTemplate").size.y
+		# Get note's actual height dynamically using universal helper
+		var note_height = BattleManager.get_note_height(closest_note)
 
 		# Pass note position and hitzone position for edge-based checking
 		var hit_quality = BattleManager.get_hit_quality_for_note(best_distance, closest_note, hit_zone_y)

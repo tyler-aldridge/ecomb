@@ -100,6 +100,32 @@ const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
 const OVERLAP_PREVENTION_WINDOW = 6  # Half-beats window to prevent same-lane spawns
 var recent_note_spawns = {}  # {beat_position: lane} - tracks recent spawns to avoid overlap
 
+# Miss detection threshold (how far past HitZone before automatic miss)
+const MISS_WINDOW = 150.0
+
+# ============================================================================
+# UI CONSTANTS - Universal Visual Settings
+# ============================================================================
+
+# Fade durations
+const FADE_FROM_BLACK_DURATION = 1.5
+const FADE_TO_BLACK_DURATION = 2.0
+const BATTLE_START_DELAY = 1.0
+
+# Hit zone visual properties
+const HITZONE_BORDER_WIDTH = 3.0
+const HITZONE_BORDER_COLOR = Color.WHITE
+
+# Tutorial indicator properties (yellow borders and numbers)
+const INDICATOR_BORDER_WIDTH = 5.0
+const INDICATOR_BORDER_COLOR = Color.YELLOW
+const INDICATOR_LABEL_SIZE = 100
+const INDICATOR_LABEL_COLOR = Color.YELLOW
+const INDICATOR_FADE_DURATION = 0.5
+const INDICATOR_PULSE_SCALE = Vector2(1.3, 1.3)
+const INDICATOR_PULSE_DURATION = 0.325
+const INDICATOR_PULSE_LOOPS = 200  # Loop for ~130 seconds
+
 # ============================================================================
 # DIFFICULTY SYSTEM - Hit Detection Thresholds
 # ============================================================================
@@ -806,6 +832,107 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	# This allows for better control of sprite placement per-battle
 
 	return displays
+
+func get_note_height(note: Node) -> float:
+	"""
+	Universal helper to get note height dynamically.
+	Works for all note types by checking for NoteTemplate child.
+
+	Args:
+		note: The note node to get height for
+
+	Returns:
+		float: The note's height in pixels (defaults to 200.0 if not found)
+	"""
+	if note.has_node("NoteTemplate"):
+		return note.get_node("NoteTemplate").size.y
+	return 200.0  # Default fallback
+
+func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node) -> Array:
+	"""
+	Universal function to create yellow tutorial indicators (borders and numbers) on all hit zones.
+	Displays lane numbers with pulsing animation and yellow borders.
+	Scales automatically with HIT_ZONE_POSITIONS - works for 3, 4, 5+ lanes.
+
+	Args:
+		ui_layer: The CanvasLayer to add indicator nodes to
+		tween_parent: The node to create tweens on (prevents lambda capture errors)
+
+	Returns:
+		Array of indicator nodes (borders and labels) that can be cleaned up later
+	"""
+	var indicator_nodes = []
+
+	# Show groove bar tutorial message
+	show_groove_tutorial.emit()
+
+	# Create indicators for each lane dynamically
+	for lane_key in HIT_ZONE_POSITIONS.keys():
+		var pos = HIT_ZONE_POSITIONS[lane_key]
+
+		# Create yellow border
+		var border = Line2D.new()
+		border.width = INDICATOR_BORDER_WIDTH
+		border.default_color = INDICATOR_BORDER_COLOR
+		border.modulate.a = 0.0  # Start invisible for fade in
+		border.add_point(Vector2(0, 0))
+		border.add_point(Vector2(HITZONE_HEIGHT, 0))
+		border.add_point(Vector2(HITZONE_HEIGHT, HITZONE_HEIGHT))
+		border.add_point(Vector2(0, HITZONE_HEIGHT))
+		border.add_point(Vector2(0, 0))
+		border.position = pos
+		border.z_index = 350
+		ui_layer.add_child(border)
+		indicator_nodes.append(border)
+
+		# Fade in border
+		var border_fade_tween = tween_parent.create_tween()
+		border_fade_tween.tween_property(border, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
+
+		# Create lane number label
+		var label = Label.new()
+		label.text = lane_key
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", INDICATOR_LABEL_SIZE)
+		label.add_theme_color_override("font_color", INDICATOR_LABEL_COLOR)
+		label.position = pos + Vector2(50, 50)
+		label.size = Vector2(100, 100)
+		label.pivot_offset = Vector2(50, 50)  # Scale from center
+		label.modulate.a = 0.0  # Start invisible for fade in
+		label.z_index = 350
+		ui_layer.add_child(label)
+		indicator_nodes.append(label)
+
+		# Fade in label
+		var fade_tween = tween_parent.create_tween()
+		fade_tween.tween_property(label, "modulate:a", 1.0, INDICATOR_FADE_DURATION)
+
+		# Pulsing scale animation
+		var scale_tween = tween_parent.create_tween()
+		scale_tween.set_loops(INDICATOR_PULSE_LOOPS)
+		scale_tween.tween_property(label, "scale", INDICATOR_PULSE_SCALE, INDICATOR_PULSE_DURATION)
+		scale_tween.tween_property(label, "scale", Vector2(1.0, 1.0), INDICATOR_PULSE_DURATION)
+
+	return indicator_nodes
+
+func stop_hit_zone_indicators(indicator_nodes: Array, tween_parent: Node):
+	"""
+	Universal function to fade out and remove all hit zone indicator nodes.
+
+	Args:
+		indicator_nodes: Array of indicator nodes (borders and labels) to remove
+		tween_parent: The node to create fade tweens on
+	"""
+	# Hide groove bar tutorial message
+	hide_groove_tutorial.emit()
+
+	for indicator in indicator_nodes:
+		if is_instance_valid(indicator):
+			var fade_out_tween = tween_parent.create_tween()
+			fade_out_tween.tween_property(indicator, "modulate:a", 0.0, INDICATOR_FADE_DURATION)
+			# Pass queue_free directly to avoid lambda capture errors
+			fade_out_tween.tween_callback(indicator.queue_free)
 
 func calculate_label_position_above_sprite(sprite: AnimatedSprite2D, offset_above: float, label_height: float) -> Vector2:
 	"""
