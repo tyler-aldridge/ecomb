@@ -7,15 +7,15 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 	# Add a small delay to prevent immediate replacement
 	await get_tree().create_timer(0.1).timeout
 
-	# CRITICAL: If there's an existing dialog, fade it out properly before freeing
+	# CRITICAL: If there's an existing dialog, fade it out SUPER FAST before freeing
 	# Don't just call queue_free() - there might be tweens running on it!
 	if current_dialog and is_instance_valid(current_dialog):
 		var old_dialog = current_dialog
 		current_dialog = null  # Clear reference immediately
 
-		# Fade out old dialog before freeing
+		# SUPER FAST fade out (0.1s) to minimize overlap
 		var fade_tween = create_tween()
-		fade_tween.tween_property(old_dialog, "modulate:a", 0.0, 0.2)
+		fade_tween.tween_property(old_dialog, "modulate:a", 0.0, 0.1)
 		fade_tween.tween_callback(func():
 			if is_instance_valid(old_dialog):
 				old_dialog.queue_free()
@@ -124,12 +124,28 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 	if text_node:
 		_set_text(text_node, "")
 		await _type_text(text_node, text)
-	
-	# PERMANENT FIX: Don't auto-close dialogs at all!
-	# Each new dialog will replace the previous one naturally.
-	# This completely eliminates the timer/tween race condition bug.
-	# The duration parameter is now ignored - dialogs stay until replaced.
-	pass  # No auto-close logic needed!
+
+	# Auto-close with SUPER FAST fade to prevent race conditions
+	# Capture dialog reference BEFORE waiting
+	var dialog_ref = current_dialog
+
+	if _auto_close_time > 0.0:
+		await get_tree().create_timer(_auto_close_time).timeout
+
+		# CRITICAL: Only proceed if this dialog is still the current one
+		if not is_instance_valid(dialog_ref):
+			return
+		if current_dialog != dialog_ref:
+			return  # New dialog replaced this one, abort
+
+		# Safe to close with FAST fade (0.15s instead of 0.4s)
+		var tw := create_tween()
+		tw.tween_property(dialog_ref, "modulate:a", 0.0, 0.15)
+		tw.tween_callback(func():
+			if is_instance_valid(dialog_ref) and current_dialog == dialog_ref:
+				dialog_ref.queue_free()
+				current_dialog = null
+		)
 
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
