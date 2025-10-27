@@ -1278,9 +1278,6 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 					CONNECT_ONE_SHOT
 				)
 
-func _on_player_pecs_finished():
-	"""Callback stub for animation_finished signal."""
-	pass
 
 func _execute_jump_animation(sprite: AnimatedSprite2D, original_pos: Vector2, scene_root: Node):
 	"""Execute universal jump tween animation.

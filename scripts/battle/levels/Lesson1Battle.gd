@@ -134,7 +134,10 @@ func _ready():
 
 	# Calculate max possible strength (assuming all PERFECT hits)
 	# PERFECT = 30 strength per note (from BattleManager.HIT_VALUES)
-	var total_notes = level_data.get("notes", []).size()
+	var notes_array = level_data.get("notes", [])
+	if notes_array.size() == 0:
+		push_warning("No notes found in level data! Battle may not function correctly.")
+	var total_notes = notes_array.size()
 	var max_strength = total_notes * 30  # 30 is PERFECT strength value
 
 	# Start battle with BattleManager
@@ -569,7 +572,7 @@ func check_hit(track_key: String):
 
 			# Calculate centers dynamically based on actual note size
 			var note_center_y = note.position.y + (note_height / 2.0)
-			var hit_zone_center_y = hit_zone_y + 100.0  # HitZone is always 200px tall
+			var hit_zone_center_y = hit_zone_y + (BattleManager.HITZONE_HEIGHT / 2.0)
 
 			# Measure center-to-center distance (same method for all note sizes)
 			distance = abs(note_center_y - hit_zone_center_y)
