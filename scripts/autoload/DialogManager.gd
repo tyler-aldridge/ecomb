@@ -2,6 +2,7 @@ extends Node
 
 var dialog_box_scene := preload("res://scenes/ui/universal/DialogBox.tscn")
 var current_dialog: Control = null
+var dialog_id_counter: int = 0  # Unique ID for each dialog to prevent race conditions
 
 func show_dialog(text: String, _character: String, auto_close_time: float, _dialog_id: String = "") -> void:
 	# Add a small delay to prevent immediate replacement
@@ -22,6 +23,10 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 		)
 
 	current_dialog = dialog_box_scene.instantiate()
+
+	# Assign unique ID to this dialog to prevent race conditions
+	dialog_id_counter += 1
+	current_dialog.set_meta("dialog_id", dialog_id_counter)
 
 	# Set high z-index to appear above everything else
 	current_dialog.z_index = 1000
@@ -125,12 +130,12 @@ func show_dialog(text: String, _character: String, auto_close_time: float, _dial
 		_set_text(text_node, "")
 		await _type_text(text_node, text)
 	
-	# DISABLED auto-close for debugging - let dialogs stay until replaced
-	# TODO: Re-enable after fixing lambda capture errors
-	# if auto_close_time > 0.0:
-	# 	var timer := get_tree().create_timer(auto_close_time)
-	# 	var dialog_ref = current_dialog
-	# 	timer.timeout.connect(func(): _close_dialog_after_timer(dialog_ref))
+	# Auto-close with proper ID checking to prevent race conditions
+	if auto_close_time > 0.0:
+		var timer := get_tree().create_timer(auto_close_time)
+		var dialog_ref = current_dialog
+		var dialog_unique_id = dialog_id_counter  # Capture the ID for this specific dialog
+		timer.timeout.connect(func(): _close_dialog_after_timer(dialog_ref, dialog_unique_id))
 
 func show_countdown(numbers: Array, per_number_seconds: float, font_size: int = 600) -> void:
 	for i in range(numbers.size()):
@@ -155,19 +160,48 @@ func _type_text(node: Node, full_text: String) -> void:
 		_set_text(node, full_text.substr(0, i))
 		await get_tree().create_timer(0.02).timeout
 
-func _close_dialog_after_timer(dialog_ref: Control):
-	"""Callback to close dialog after timer - avoids nested lambdas."""
-	if is_instance_valid(dialog_ref):
-		# Capture dialog_ref to avoid it being freed before callback
-		var d = dialog_ref
-		var tw := create_tween()
-		tw.tween_property(d, "modulate:a", 0.0, 0.4)
-		tw.tween_callback(func(): _free_dialog_ref(d))
+func _close_dialog_after_timer(dialog_ref: Control, expected_id: int):
+	"""Callback to close dialog after timer - with ID checking to prevent race conditions."""
+	# CRITICAL: Only close if this dialog is still the current one!
+	# If a new dialog appeared, this one was already replaced and freed.
+	if not is_instance_valid(dialog_ref):
+		return
 
-func _free_dialog_ref(dialog_ref: Control):
-	"""Callback to free dialog reference - avoids lambda capture."""
-	if is_instance_valid(dialog_ref):
-		dialog_ref.queue_free()
+	# Check if this dialog's ID matches what we expect
+	if not dialog_ref.has_meta("dialog_id"):
+		return
+
+	var actual_id = dialog_ref.get_meta("dialog_id")
+	if actual_id != expected_id:
+		# This dialog was replaced by a newer one, don't close it
+		return
+
+	# Only close if it's still the current dialog
+	if current_dialog != dialog_ref:
+		return
+
+	# Safe to close now - this is the right dialog
+	var d = dialog_ref
+	var tw := create_tween()
+	tw.tween_property(d, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(func(): _free_dialog_ref(d, expected_id))
+
+func _free_dialog_ref(dialog_ref: Control, expected_id: int):
+	"""Callback to free dialog reference - with ID validation."""
+	if not is_instance_valid(dialog_ref):
+		return
+
+	# Double-check the ID one more time before freeing
+	if dialog_ref.has_meta("dialog_id"):
+		var actual_id = dialog_ref.get_meta("dialog_id")
+		if actual_id != expected_id:
+			# Not the dialog we expected to free
+			return
+
+	# Safe to free
+	dialog_ref.queue_free()
+
+	# Clear current_dialog only if this was the current one
 	if current_dialog == dialog_ref:
 		current_dialog = null
 
