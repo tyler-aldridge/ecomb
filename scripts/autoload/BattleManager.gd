@@ -69,11 +69,11 @@ const NOTE_TYPE_CONFIG = {
 	},
 	"half": {
 		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
-		"spawn_offset": 8
+		"spawn_offset": 10
 	},
 	"quarter": {
 		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
-		"spawn_offset": 8
+		"spawn_offset": 10
 	}
 }
 
