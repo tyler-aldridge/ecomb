@@ -1212,9 +1212,9 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 			if player_sprite.sprite_frames.has_animation("idle"):
 				var sprite_ref = player_sprite
 				player_sprite.animation_finished.connect(
-					func(_anim_name):
+					func():
 						if is_instance_valid(sprite_ref):
-							sprite_ref.play("idle"),
+							sprite_ref.play("idle")
 					CONNECT_ONE_SHOT
 				)
 
@@ -1286,8 +1286,8 @@ func animate_opponent_miss(opponent_sprite: AnimatedSprite2D, opponent_original_
 			if opponent_sprite.sprite_frames.has_animation("idle"):
 				var sprite_ref = opponent_sprite
 				opponent_sprite.animation_finished.connect(
-					func(_anim_name):
+					func():
 						if is_instance_valid(sprite_ref):
-							sprite_ref.play("idle"),
+							sprite_ref.play("idle")
 					CONNECT_ONE_SHOT
 				)
