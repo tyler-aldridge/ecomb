@@ -14,6 +14,7 @@ extends Control
 
 var current_percentage: float = 50.0
 var rainbow_time: float = 0.0
+var scanline_offset: float = 0.0
 var is_full: bool = false
 var pulse_time: float = 0.0
 var is_warning_active: bool = false
@@ -21,6 +22,7 @@ var warning_color_tween: Tween = null
 var warning_scale_tween: Tween = null
 var full_groove_pulse_tween: Tween = null
 var full_groove_glow_tween: Tween = null
+var scanline_overlay: ColorRect = null
 
 # Rainbow colors for full groove pulse
 var rainbow_colors = [
@@ -50,6 +52,53 @@ func _ready():
 		# Set initial color to green (50%)
 		update_bar_color(50.0)
 
+	# Create VHS scanline overlay (hidden until full)
+	create_scanline_overlay()
+
+func create_scanline_overlay():
+	"""Create VHS-style scanline overlay effect for when groove is full."""
+	scanline_overlay = ColorRect.new()
+	scanline_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scanline_overlay.visible = false
+
+	# Create shader for horizontal scanlines
+	var shader_code = """
+shader_type canvas_item;
+
+uniform float offset : hint_range(0.0, 1.0) = 0.0;
+uniform float line_density : hint_range(1.0, 50.0) = 15.0;
+uniform float line_intensity : hint_range(0.0, 1.0) = 0.3;
+
+void fragment() {
+	// Calculate scanline position with scrolling offset
+	float line = fract((UV.y * line_density) + offset);
+
+	// Create sharp scanline bands (VHS effect)
+	float scanline = step(0.5, line) * line_intensity;
+
+	// Apply darkening effect where scanlines appear
+	COLOR.rgb *= (1.0 - scanline);
+	COLOR.a = scanline * 0.8;  // Semi-transparent dark bands
+}
+"""
+
+	var shader = Shader.new()
+	shader.code = shader_code
+
+	var shader_material = ShaderMaterial.new()
+	shader_material.shader = shader
+	shader_material.set_shader_parameter("line_density", 15.0)
+	shader_material.set_shader_parameter("line_intensity", 0.3)
+
+	scanline_overlay.material = shader_material
+	progress_bar.add_child(scanline_overlay)
+
+	# Match progress bar size
+	scanline_overlay.anchor_left = 0.0
+	scanline_overlay.anchor_top = 0.0
+	scanline_overlay.anchor_right = 1.0
+	scanline_overlay.anchor_bottom = 1.0
+
 func _process(delta):
 	if is_full:
 		# Fast horizontal flowing rainbow animation on bar when full
@@ -67,6 +116,13 @@ func _process(delta):
 
 				# Simple lerp for clean color transitions
 				fill_style.bg_color = rainbow_colors[current_index].lerp(rainbow_colors[next_index], t)
+
+		# Animate VHS scanlines scrolling downward
+		if scanline_overlay and scanline_overlay.material:
+			scanline_offset += delta * 2.0  # Scroll speed
+			if scanline_offset > 1.0:
+				scanline_offset -= 1.0
+			scanline_overlay.material.set_shader_parameter("offset", scanline_offset)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -163,20 +219,28 @@ func play_full_groove_celebration():
 	# Stop if already playing to restart
 	stop_full_groove_celebration()
 
-	# Bright glow pulse - cycle between normal and bright (infinite loop)
+	# Show VHS scanline overlay
+	if scanline_overlay:
+		scanline_overlay.visible = true
+
+	# DRAMATIC bright glow pulse - cycle between normal and very bright (infinite loop)
 	full_groove_glow_tween = create_tween()
 	full_groove_glow_tween.set_loops(0)  # 0 = infinite loops
-	full_groove_glow_tween.tween_property(self, "modulate", Color(1.3, 1.3, 1.3, 1), 0.4)
-	full_groove_glow_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.4)
+	full_groove_glow_tween.tween_property(self, "modulate", Color(1.5, 1.5, 1.5, 1), 0.3)
+	full_groove_glow_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.3)
 
-	# Scale pulse at the same time (slightly larger than warning pulse)
+	# DRAMATIC scale pulse - much larger than before
 	full_groove_pulse_tween = create_tween()
 	full_groove_pulse_tween.set_loops(0)  # 0 = infinite loops
-	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.08, 1.08), 0.4)
-	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.4)
+	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.15, 1.15), 0.3)
+	full_groove_pulse_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.3)
 
 func stop_full_groove_celebration():
 	"""Stop the celebration animation when groove drops below 100%."""
+	# Hide VHS scanline overlay
+	if scanline_overlay:
+		scanline_overlay.visible = false
+
 	# Kill full groove tweens
 	if full_groove_glow_tween and is_instance_valid(full_groove_glow_tween):
 		full_groove_glow_tween.kill()

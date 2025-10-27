@@ -292,10 +292,11 @@ func create_fps_display():
 	var canvas_layer = CanvasLayer.new()
 	canvas_layer.layer = 100  # High layer so it's always on top
 	add_child(canvas_layer)
-	
+
 	# Create a container for the background and border
 	var panel = PanelContainer.new()
 	panel.position = Vector2(10, 10)  # Top-left corner
+	panel.z_index = 1000  # Ensure it's above all battle UI elements
 	
 	# Create StyleBox for black background with white border
 	var style = StyleBoxFlat.new()
