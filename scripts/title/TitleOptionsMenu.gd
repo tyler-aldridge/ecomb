@@ -20,29 +20,23 @@ func _ready():
 	# Connect volume sliders
 	if master_volume_slider:
 		master_volume_slider.value_changed.connect(_on_master_volume_changed)
-		master_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
+		master_volume_slider.gui_input.connect(_on_slider_input.bind(master_volume_slider, 85))
 	if music_volume_slider:
 		music_volume_slider.value_changed.connect(_on_music_volume_changed)
-		music_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
+		music_volume_slider.gui_input.connect(_on_slider_input.bind(music_volume_slider, 75))
 	if sound_volume_slider:
 		sound_volume_slider.value_changed.connect(_on_sound_volume_changed)
-		sound_volume_slider.mouse_entered.connect(func(): button_hover_sound.play())
+		sound_volume_slider.gui_input.connect(_on_slider_input.bind(sound_volume_slider, 65))
 
 	# Connect rhythm timing slider
 	if rhythm_timing_slider:
 		rhythm_timing_slider.value_changed.connect(_on_rhythm_timing_changed)
-		rhythm_timing_slider.mouse_entered.connect(func(): button_hover_sound.play())
+		rhythm_timing_slider.gui_input.connect(_on_slider_input.bind(rhythm_timing_slider, 0))
 
 	# Connect difficulty slider
 	if difficulty_slider:
 		difficulty_slider.value_changed.connect(_on_difficulty_changed)
-		difficulty_slider.mouse_entered.connect(func(): button_hover_sound.play())
-
-	# Connect checkboxes
-	if fullscreen_checkbox:
-		fullscreen_checkbox.mouse_entered.connect(func(): button_hover_sound.play())
-	if framerate_checkbox:
-		framerate_checkbox.mouse_entered.connect(func(): button_hover_sound.play())
+		difficulty_slider.gui_input.connect(_on_slider_input.bind(difficulty_slider, 2))
 
 	# Connect close button
 	if close_button:
@@ -55,6 +49,12 @@ func _ready():
 func _unhandled_input(event):
 	if event.is_action_pressed("ui_cancel"):
 		_on_close_pressed()
+
+func _on_slider_input(event: InputEvent, slider: HSlider, default_value: float):
+	"""Handle double-click on sliders to reset to default value."""
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
+			slider.value = default_value
 
 # Volume control functions
 func _on_master_volume_changed(value):
