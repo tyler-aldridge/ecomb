@@ -53,6 +53,7 @@ var fade_overlay: ColorRect
 var hit_zone_indicator_nodes = []
 
 # Battle UI elements
+var ui_layer: CanvasLayer
 var groove_bar: Control
 var combo_display: Label
 var xp_gain_display: Label
@@ -173,7 +174,7 @@ func _exit_tree():
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
 	# Create UI layer for proper screen-space rendering
-	var ui_layer = CanvasLayer.new()
+	ui_layer = CanvasLayer.new() 
 	ui_layer.layer = 100
 	add_child(ui_layer)
 
@@ -376,7 +377,8 @@ func spawn_note_by_type(note_type: String):
 	# Calculate spawn position: center-align all notes with HitZone
 	# Adjust spawn position so note's CENTER aligns with HitZone center (not top/bottom edge)
 	var center_offset = (note_height - 200.0) / 2.0
-	var spawn_pos = Vector2(target_pos.x, target_pos.y - BattleManager.SPAWN_HEIGHT_ABOVE_TARGET - center_offset)
+	var spawn_pos = Vector2(target_pos.x, target_pos.y - BattleManager.SPAWN_HEIGHT_ABOVE_TARGET - center_offset - 200)
+
 
 	note.z_index = 50
 	note.setup(random_track, spawn_pos, target_pos.y)
@@ -406,7 +408,7 @@ func create_hit_zone_indicators():
 		border.add_point(Vector2(0, 0))
 		border.position = pos
 		border.z_index = 350
-		add_child(border)
+		ui_layer.add_child(border) 
 		hit_zone_indicator_nodes.append(border)
 
 		# Fade in border
@@ -424,7 +426,7 @@ func create_hit_zone_indicators():
 		label.pivot_offset = Vector2(50, 50)  # Scale from center
 		label.modulate.a = 0.0  # Start invisible for fade in
 		label.z_index = 350
-		add_child(label)
+		ui_layer.add_child(label)
 		hit_zone_indicator_nodes.append(label)
 
 		# Fade in label
@@ -663,4 +665,3 @@ func process_miss():
 	BattleManager.register_hit("MISS")
 	combo = 0
 	BattleManager.animate_opponent_miss(opponent_sprite, opponent_original_pos, self)
-

@@ -1,5 +1,0 @@
-res://scenes/title/SplashScreen.tscn
-res://assets/interface/themes/space-worm-theme/space_worm_theme.tres
-res://scripts/autoload/GameManager.gd
-res://scripts/battle/data/Lesson1Data.json
-res://scenes/title/CharacterCreation.tscn

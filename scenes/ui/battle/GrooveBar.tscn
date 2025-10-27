@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://bvt8qm3n6yprd"]
 
-[ext_resource type="Script" path="res://scripts/ui/battle/GrooveBar.gd" id="1_groove"]
+[ext_resource type="Script" uid="uid://ut4q4snmgsy2" path="res://scripts/ui/battle/GrooveBar.gd" id="1_groove"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.2, 0.2, 0.2, 1)
@@ -22,9 +22,9 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(1, 1, 1, 0.3)
 corner_radius_top_left = 5
-corner_radius_bottom_left = 5
 corner_radius_top_right = 20
 corner_radius_bottom_right = 20
+corner_radius_bottom_left = 5
 shadow_color = Color(0, 0.5, 0.8, 0.3)
 shadow_size = 3
 shadow_offset = Vector2(2, 2)
@@ -34,8 +34,7 @@ z_index = 100
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 0.0
-offset_bottom = 53.0
+offset_bottom = 75.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("1_groove")
@@ -49,22 +48,5 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
-max_value = 100.0
 value = 50.0
 show_percentage = false
-
-[node name="TutorialMessage" type="Label" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 68.0
-offset_bottom = 106.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 1, 0, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 24
-text = "This is your groove meter. Don't let it get to zero or you will lose the battle!"
-horizontal_alignment = 1
-vertical_alignment = 1

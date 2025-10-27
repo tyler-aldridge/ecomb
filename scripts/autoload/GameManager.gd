@@ -28,9 +28,9 @@ var player_data := {
 
 # Settings storage - enhanced with rhythm settings
 var settings = {
-	"master_volume": 100,
-	"music_volume": 100,
-	"sound_volume": 100,
+	"master_volume": 85,
+	"music_volume": 75,
+	"sound_volume": 65,
 	"rhythm_timing_offset": 0,  # For audio latency compensation (milliseconds, positive = notes spawn later/arrive later)
 	"fullscreen": false,
 	"show_fps": false,

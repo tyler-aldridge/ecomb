@@ -61,8 +61,8 @@ const MAX_COMBO_MULTIPLIER = 3.0
 const NOTE_TYPE_CONFIG = {
 	"whole": {
 		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),  # 200x800
-		"travel_time": 3.0,
-		"spawn_offset": 17  # 3.0s at 152 BPM = 15.2, but empirically needs 17
+		"travel_time": 4.5,
+		"spawn_offset": 25 
 	},
 	"half": {
 		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),  # 200x400
@@ -72,7 +72,7 @@ const NOTE_TYPE_CONFIG = {
 	"quarter": {
 		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),  # 200x200
 		"travel_time": 1.55,
-		"spawn_offset": 5  # Reduced to fix early arrival (was 7, too early)
+		"spawn_offset": 5  
 	},
 	"sixteenth": {
 		"scene": preload("res://scenes/ui/battle/SixteenthNote.tscn"),  # 200x100

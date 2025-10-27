@@ -5,12 +5,13 @@ signal closed
 @onready var music_volume_slider: HSlider = $GameOptionsContainer/MusicVolumeBox/MusicVolumeSlider
 @onready var sound_volume_slider: HSlider = $GameOptionsContainer/SoundVolumeBox/SoundVolumeSlider
 @onready var rhythm_timing_slider: HSlider = $GameOptionsContainer/RhythmTiming/RhythmTimingSlider
+@onready var rhythm_timing_label: Label = $GameOptionsContainer/RhythmTiming/RhythmTimingValue
 @onready var difficulty_slider: HSlider = $GameOptionsContainer/DifficultyBox/DifficultySlider
 @onready var difficulty_value_label: Label = $GameOptionsContainer/DifficultyBox/DifficultyValueLabel
 @onready var fullscreen_checkbox: CheckBox = $GameOptionsContainer/FullScreenContainer/FullScreenCheckbox
 @onready var framerate_checkbox: CheckBox = $GameOptionsContainer/FramerateContainer/FramerateCheckbox
-@onready var save_btn: Button = $GameOptionsContainer/ButtonsContainer/SaveButton
-@onready var exit_btn: Button = $GameOptionsContainer/ButtonsContainer/ExitButton
+@onready var close_button: Button = $GameOptionsContainer/ButtonsContainer/CloseButton
+@onready var exit_button: Button = $GameOptionsContainer/ButtonsContainer/ExitButton
 
 # Dialog and overlay
 @onready var exit_dialog: ConfirmationDialog = $ExitDialog
@@ -51,12 +52,12 @@ func _ready():
 		framerate_checkbox.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect buttons
-	if save_btn:
-		save_btn.pressed.connect(_on_save_pressed)
-		save_btn.mouse_entered.connect(func(): button_hover_sound.play())
-	if exit_btn:
-		exit_btn.pressed.connect(_on_exit_pressed)
-		exit_btn.mouse_entered.connect(func(): button_hover_sound.play())
+	if close_button:
+		close_button.pressed.connect(_on_close_pressed)
+		close_button.mouse_entered.connect(func(): button_hover_sound.play())
+	if exit_button:
+		exit_button.pressed.connect(_on_exit_pressed)
+		exit_button.mouse_entered.connect(func(): button_hover_sound.play())
 
 	# Connect dialog
 	if exit_dialog:
@@ -93,9 +94,9 @@ func _on_sound_volume_changed(value):
 	GameManager.set_setting("sound_volume", value)
 
 func _on_rhythm_timing_changed(value):
-	# Convert slider value (0-2000) to timing offset (-1000 to +1000)
-	var timing_offset = value - 1000
-	GameManager.set_setting("rhythm_timing_offset", timing_offset)
+	GameManager.set_setting("rhythm_timing_offset", value)
+	if rhythm_timing_label:
+		rhythm_timing_label.text = str(int(value)) + " ms"
 
 func _on_difficulty_changed(value):
 	# Convert slider value (0-4) to difficulty string
@@ -146,7 +147,7 @@ func hide_menu():
 	get_tree().paused = false
 	emit_signal("closed")
 
-func _on_save_pressed():
+func _on_close_pressed():
 	# Save and close the menu
 	success_sound.play()
 	GameManager.save_settings()
@@ -194,9 +195,10 @@ func load_settings():
 	if sound_volume_slider:
 		sound_volume_slider.value = GameManager.get_setting("sound_volume", 100)
 	if rhythm_timing_slider:
-		# Convert timing offset (-1000 to +1000) to slider value (0 to 2000)
 		var timing_offset = GameManager.get_setting("rhythm_timing_offset", 0)
-		rhythm_timing_slider.value = timing_offset + 1000
+		rhythm_timing_slider.value = timing_offset
+		if rhythm_timing_label:
+			rhythm_timing_label.text = str(int(timing_offset)) + " ms"
 	if difficulty_slider:
 		# Convert difficulty string to slider value (0-4)
 		var difficulty = GameManager.get_setting("difficulty", "gymbro")

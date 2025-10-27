@@ -115,7 +115,7 @@ theme_override_icons/grabber = ExtResource("3_glr2s")
 theme_override_icons/grabber_highlight = ExtResource("3_glr2s")
 theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
-value = 100.0
+value = 85.0
 
 [node name="MusicVolumeBox" type="HBoxContainer" parent="OptionsContainer"]
 custom_minimum_size = Vector2(150, 50)
@@ -139,7 +139,7 @@ theme_override_icons/grabber = ExtResource("3_glr2s")
 theme_override_icons/grabber_highlight = ExtResource("3_glr2s")
 theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
-value = 100.0
+value = 75.0
 
 [node name="SoundVolumeBox" type="HBoxContainer" parent="OptionsContainer"]
 custom_minimum_size = Vector2(150, 50)
@@ -163,7 +163,7 @@ theme_override_icons/grabber = ExtResource("3_glr2s")
 theme_override_icons/grabber_highlight = ExtResource("3_glr2s")
 theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
-value = 100.0
+value = 65.0
 
 [node name="RhythmTiming" type="HBoxContainer" parent="OptionsContainer"]
 custom_minimum_size = Vector2(150, 50)
@@ -187,8 +187,13 @@ theme_override_icons/grabber = ExtResource("3_glr2s")
 theme_override_icons/grabber_highlight = ExtResource("3_glr2s")
 theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
-max_value = 2000.0
-value = 1000.0
+min_value = -500.0
+max_value = 500.0
+
+[node name="RhythmTimingValue" type="Label" parent="OptionsContainer/RhythmTiming"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "0"
 
 [node name="RhythmTimingDescription" type="Label" parent="OptionsContainer"]
 custom_minimum_size = Vector2(325, 50)
@@ -196,7 +201,7 @@ layout_mode = 2
 size_flags_horizontal = 8
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 37
-text = "If rhythm feels off: too slow - move left, too fast - move right"
+text = "If rhythm feels off: too slow - move right, too fast - move left"
 horizontal_alignment = 2
 vertical_alignment = 1
 
@@ -223,7 +228,6 @@ theme_override_icons/grabber_highlight = ExtResource("3_glr2s")
 theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
 max_value = 4.0
-step = 1.0
 value = 2.0
 
 [node name="DifficultyValueLabel" type="Label" parent="OptionsContainer/DifficultyBox"]
@@ -275,14 +279,14 @@ custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_styles/separator = SubResource("StyleBoxFlat_88x8e")
 
-[node name="SaveButton" type="Button" parent="OptionsContainer"]
+[node name="CloseButton" type="Button" parent="OptionsContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_font_sizes/font_size = 50
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
-text = "Save and Close"
+text = "Close"
 icon_alignment = 1
 
 [connection signal="toggled" from="OptionsContainer/FullScreenContainer/FullScreenCheckbox" to="." method="_on_fullscreen_toggled"]

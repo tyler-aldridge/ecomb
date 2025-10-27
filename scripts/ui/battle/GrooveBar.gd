@@ -11,12 +11,14 @@ extends Control
 # - Tutorial message that pulses from center
 
 @onready var progress_bar: ProgressBar = $ProgressBar
-@onready var tutorial_message: Label = $TutorialMessage
 
 var current_percentage: float = 50.0
 var rainbow_time: float = 0.0
 var is_full: bool = false
 var pulse_time: float = 0.0
+var is_warning_active: bool = false
+var warning_color_tween: Tween = null
+var warning_scale_tween: Tween = null
 
 # Rainbow colors for full groove pulse
 var rainbow_colors = [
@@ -37,8 +39,6 @@ func _ready():
 	# Connect to BattleManager signals
 	if BattleManager:
 		BattleManager.groove_changed.connect(_on_groove_changed)
-		BattleManager.show_groove_tutorial.connect(show_tutorial_message)
-		BattleManager.hide_groove_tutorial.connect(hide_tutorial_message)
 
 	# Initialize progress bar
 	if progress_bar:
@@ -63,12 +63,6 @@ func _process(delta):
 				var t = rainbow_time - floor(rainbow_time)
 				fill_style.bg_color = rainbow_colors[color_index].lerp(rainbow_colors[next_index], t)
 
-	# Pulsing animation for tutorial message when visible
-	if tutorial_message and tutorial_message.visible:
-		pulse_time += delta * 2.0
-		var scale_value = 1.0 + sin(pulse_time) * 0.15  # Pulse between 0.85 and 1.15
-		tutorial_message.scale = Vector2(scale_value, scale_value)
-
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
 	if not progress_bar:
@@ -89,8 +83,11 @@ func _on_groove_changed(current_groove: float, max_groove: float):
 		update_bar_color(percentage)
 
 	# Play warning animation if low
-	if percentage < 25.0:
-		play_low_groove_warning()
+	if percentage < 30.0:
+		if not is_warning_active:
+			play_low_groove_warning()
+	else:
+		stop_low_groove_warning()
 
 func update_bar_color(percentage: float):
 	"""Update bar fill color: yellow for ≤49%, green for ≥50%, smooth transition."""
@@ -111,24 +108,40 @@ func update_bar_color(percentage: float):
 				fill_style.bg_color = green_color
 
 func play_low_groove_warning():
-	"""Play warning animation when groove is low."""
-	# Create a pulsing effect
-	var tween = create_tween()
-	tween.set_loops(2)
-	tween.tween_property(self, "modulate:a", 0.7, 0.2)
-	tween.tween_property(self, "modulate:a", 1.0, 0.2)
+	"""Play warning animation when groove is low - red pulse (loops indefinitely)."""
+	if is_warning_active:
+		return  # Already playing
+	
+	is_warning_active = true
+	
+	# Flash red and pulse scale - INFINITE LOOPS
+	warning_color_tween = create_tween()
+	warning_color_tween.set_loops(0)  # 0 = infinite loops
+	warning_color_tween.tween_property(self, "modulate", Color(1, 0.2, 0.2, 1), 0.3)
+	warning_color_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.3)
+	
+	# Scale pulse at the same time
+	warning_scale_tween = create_tween()
+	warning_scale_tween.set_loops(0)  # 0 = infinite loops
+	warning_scale_tween.tween_property(self, "scale", Vector2(1.05, 1.05), 0.3)
+	warning_scale_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.3)
 
-func show_tutorial_message():
-	"""Show the tutorial message with fade in animation."""
-	if tutorial_message:
-		tutorial_message.visible = true
-		tutorial_message.modulate.a = 0.0
-		var tween = create_tween()
-		tween.tween_property(tutorial_message, "modulate:a", 1.0, 0.5)
-
-func hide_tutorial_message():
-	"""Hide the tutorial message with fade out animation."""
-	if tutorial_message:
-		var tween = create_tween()
-		tween.tween_property(tutorial_message, "modulate:a", 0.0, 0.5)
-		tween.tween_callback(func(): tutorial_message.visible = false)
+func stop_low_groove_warning():
+	"""Stop the warning animation when groove recovers."""
+	if not is_warning_active:
+		return
+	
+	is_warning_active = false
+	
+	# Kill ONLY the warning tweens, not all tweens
+	if warning_color_tween and is_instance_valid(warning_color_tween):
+		warning_color_tween.kill()
+		warning_color_tween = null
+	
+	if warning_scale_tween and is_instance_valid(warning_scale_tween):
+		warning_scale_tween.kill()
+		warning_scale_tween = null
+	
+	# Reset to normal appearance
+	modulate = Color(1, 1, 1, 1)
+	scale = Vector2(1.0, 1.0)
