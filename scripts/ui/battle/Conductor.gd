@@ -19,6 +19,10 @@ var latency_cache_timer: float = 0.0
 var start_timer: Timer
 
 func _ready() -> void:
+	# CRITICAL: Make Conductor immune to pause so it stays in sync when options menu opens
+	# Without this, audio continues but beat tracking stops = massive desync
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	# Validate BPM to prevent division by zero
 	if bpm <= 0:
 		push_error("Invalid BPM: " + str(bpm) + ". Defaulting to 120.")
@@ -45,7 +49,17 @@ func _physics_process(delta: float) -> void:
 				cached_output_latency = 0.0
 			latency_cache_timer = 0.0
 
-		song_position = get_playback_position() + AudioServer.get_time_since_last_mix()
+		# Get audio playback position
+		# NOTE: On web, get_playback_position() can drift significantly
+		# get_time_since_last_mix() adds additional offset that may accumulate errors
+		var playback_pos = get_playback_position()
+		var time_since_mix = AudioServer.get_time_since_last_mix()
+
+		# On web, limit time_since_mix to prevent wild jumps (max 0.1s = 6 frames at 60fps)
+		if OS.has_feature("web"):
+			time_since_mix = min(time_since_mix, 0.1)
+
+		song_position = playback_pos + time_since_mix
 		song_position -= cached_output_latency
 		# Apply user-configurable timing offset for audio latency compensation
 		song_position += GameManager.get_timing_offset()
