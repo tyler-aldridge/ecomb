@@ -50,18 +50,28 @@ func _ready():
 
 func _process(delta):
 	if is_full:
-		# Rainbow pulse animation on bar when full
+		# Liquid rainbow flow animation on bar when full
+		# Creates a flowing effect by sampling multiple colors and blending them
 		if progress_bar:
-			rainbow_time += delta * 4.0
+			rainbow_time += delta * 2.0  # Flow speed
 			if rainbow_time >= rainbow_colors.size():
 				rainbow_time = 0.0
 
 			var fill_style = progress_bar.get_theme_stylebox("fill")
 			if fill_style and fill_style is StyleBoxFlat:
-				var color_index = int(rainbow_time)
-				var next_index = (color_index + 1) % rainbow_colors.size()
-				var t = rainbow_time - floor(rainbow_time)
-				fill_style.bg_color = rainbow_colors[color_index].lerp(rainbow_colors[next_index], t)
+				# Create flowing liquid effect by blending 3 adjacent colors
+				var offset = rainbow_time
+				var color1_index = int(offset) % rainbow_colors.size()
+				var color2_index = (color1_index + 1) % rainbow_colors.size()
+				var color3_index = (color1_index + 2) % rainbow_colors.size()
+
+				var t = offset - floor(offset)  # 0.0 to 1.0 interpolation
+
+				# Blend the colors to create a flowing liquid appearance
+				# Use quadratic blending for smoother transitions
+				var blend1 = rainbow_colors[color1_index].lerp(rainbow_colors[color2_index], t)
+				var blend2 = rainbow_colors[color2_index].lerp(rainbow_colors[color3_index], t * 0.5)
+				fill_style.bg_color = blend1.lerp(blend2, 0.3 + sin(rainbow_time * 2) * 0.2)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
