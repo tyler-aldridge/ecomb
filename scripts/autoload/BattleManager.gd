@@ -633,8 +633,8 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 			var speed = 200 + (distance_from_center * 2.0)
 			var target_offset = direction * speed
 
-			# Create tween for this piece
-			var piece_tween = piece.create_tween()
+			# Create tween on parent (not piece) to avoid lambda capture errors
+			var piece_tween = parent.create_tween()
 			piece_tween.set_parallel(true)
 
 			# Move outward
@@ -650,18 +650,12 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 			# Scale down slightly
 			piece_tween.tween_property(piece, "scale", Vector2(0.5, 0.5), explosion_duration)
 
-			# Clean up piece after animation
-			piece_tween.chain().tween_callback(func():
-				if is_instance_valid(piece):
-					piece.queue_free()
-			)
+			# Clean up piece after animation (no need to capture, just queue_free directly)
+			piece_tween.chain().tween_callback(piece.queue_free)
 
 	# Clean up original note after a short delay
-	var cleanup_tween = note.create_tween()
-	cleanup_tween.tween_callback(func():
-		if is_instance_valid(note):
-			note.queue_free()
-	).set_delay(explosion_duration)
+	var cleanup_tween = parent.create_tween()
+	cleanup_tween.tween_callback(note.queue_free).set_delay(explosion_duration)
 
 	return cleanup_tween
 
