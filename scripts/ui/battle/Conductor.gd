@@ -64,12 +64,17 @@ func _physics_process(delta: float) -> void:
 		var playback_pos = get_playback_position()
 		var time_since_mix = AudioServer.get_time_since_last_mix()
 
-		# On web, limit time_since_mix to prevent wild jumps (max 0.1s = 6 frames at 60fps)
+		# CRITICAL WEB FIX: On web, audio buffering causes massive position drift
+		# The browser buffers audio ahead, so playback_pos reports buffer position, not output
+		# Using time_since_mix on web causes notes to spawn ~1 second too early
+		# Solution: Only use playback_pos on web, ignore time_since_mix
 		if OS.has_feature("web"):
-			time_since_mix = min(time_since_mix, 0.1)
+			song_position = playback_pos  # Use ONLY playback position on web
+		else:
+			# Desktop: use accurate timing with mix offset
+			song_position = playback_pos + time_since_mix
+			song_position -= cached_output_latency
 
-		song_position = playback_pos + time_since_mix
-		song_position -= cached_output_latency
 		# Apply user-configurable timing offset for audio latency compensation
 		song_position += GameManager.get_timing_offset()
 		song_position_in_beats = int((song_position / seconds_per_beat) * 2) - 8
@@ -100,10 +105,6 @@ func _emit_fake_beat() -> void:
 		start_timer.start()
 	else:
 		start_timer.queue_free()
-		# Fade in music volume to mask any web audio skip
-		volume_db = -10.0  # Start quieter
 		play()
-		var fade_tween = create_tween()
-		fade_tween.tween_property(self, "volume_db", 0.0, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 		
 		

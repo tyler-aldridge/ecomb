@@ -96,11 +96,9 @@ func _ready():
 	# Apply web-specific timing compensation BEFORE other settings
 	if OS.has_feature("web"):
 		# Web audio timing is complex: browser latency + buffer delays + async processing
-		# If no custom timing offset is saved, use web-optimized default
-		# NEGATIVE offset = notes arrive earlier (compensates for web audio delays)
-		# User reported notes arriving 1-2 bars too late on itch.io, needs large negative offset
-		if not settings.has("rhythm_timing_offset") or settings["rhythm_timing_offset"] == 0:
-			settings["rhythm_timing_offset"] = -300  # -300ms makes notes arrive earlier (adjustable in settings)
+		# Default to 0 and let user calibrate (Conductor now uses simplified web timing)
+		if not settings.has("rhythm_timing_offset"):
+			settings["rhythm_timing_offset"] = 0  # Start neutral, user can adjust in settings
 
 	apply_audio_settings()
 	apply_display_settings()
