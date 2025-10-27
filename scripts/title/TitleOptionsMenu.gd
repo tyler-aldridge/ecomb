@@ -106,8 +106,8 @@ func _on_framerate_toggled(checked):
 
 func _on_close_pressed():
 	success_sound.play()
-	# Wait for sound to start before closing
-	await get_tree().create_timer(0.1).timeout
+	# Wait for sound to complete before closing
+	await get_tree().create_timer(0.3).timeout
 	emit_signal("closed")
 
 
