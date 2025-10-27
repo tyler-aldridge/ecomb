@@ -22,6 +22,10 @@ func _ready() -> void:
 	# Add to group so BattleOptionsMenu can find and pause us
 	add_to_group("conductor")
 
+	# CRITICAL: Use PROCESS_MODE_ALWAYS so we can control pause via stream_paused
+	# Without this, tree pause will pause the Conductor node itself, breaking audio pause/resume
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	# Validate BPM to prevent division by zero
 	if bpm <= 0:
 		push_error("Invalid BPM: " + str(bpm) + ". Defaulting to 120.")
@@ -38,6 +42,11 @@ func _ready() -> void:
 		cached_output_latency = 0.0
 
 func _physics_process(delta: float) -> void:
+	# CRITICAL: Skip beat processing when stream is paused (options menu open)
+	# This prevents Conductor from advancing song_position while audio is paused
+	if stream_paused:
+		return
+
 	if playing:
 		# Refresh latency cache every second (not every frame)
 		latency_cache_timer += delta
