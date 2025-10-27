@@ -140,7 +140,6 @@ func set_difficulty(difficulty: String):
 	"""
 	if DIFFICULTY_PRESETS.has(difficulty):
 		current_difficulty = difficulty
-		print("Hit detection difficulty set to: ", difficulty)
 	else:
 		push_error("Invalid difficulty: " + difficulty)
 

@@ -83,7 +83,6 @@ signal level_up(new_level: int)
 var fps_label: Label = null
 
 func _ready():
-	print("GameManager loading...")
 	# Create saves directory if it doesn't exist
 	var dir = DirAccess.open("user://")
 	if dir == null:
@@ -91,20 +90,18 @@ func _ready():
 		dir = DirAccess.open("user://")
 	if dir and not dir.dir_exists("saves"):
 		dir.make_dir("saves")
-	
+
 	load_settings()
 	apply_audio_settings()
 	apply_display_settings()
-	
+
 	# Create FPS display overlay
 	create_fps_display()
-	
+
 	if OS.has_feature("web"):
 		Engine.time_scale = 1.0
 		# Increase audio buffer size for web
 		AudioServer.set_bus_effect_enabled(0, 0, true)
-	
-	print("GameManager loaded successfully")
 
 # ===== NEW: Player Data Management =====
 func set_player_name(player_name: String):
@@ -301,17 +298,15 @@ func _process(_delta):
 func apply_audio_settings():
 	# Apply volume settings to AudioServer
 	var master_vol = get_setting("master_volume", 100) / 100.0
-	var music_vol = get_setting("music_volume", 100) / 100.0  
+	var music_vol = get_setting("music_volume", 100) / 100.0
 	var sound_vol = get_setting("sound_volume", 100) / 100.0
-	
+
 	# Convert to decibels (AudioServer uses dB, not linear values)
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(master_vol))
 	if AudioServer.get_bus_index("Music") != -1:
 		AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"), linear_to_db(music_vol))
 	if AudioServer.get_bus_index("SFX") != -1:
 		AudioServer.set_bus_volume_db(AudioServer.get_bus_index("SFX"), linear_to_db(sound_vol))
-	
-	print("Audio settings applied - Master: ", master_vol, " Music: ", music_vol, " SFX: ", sound_vol)
 
 # ===== DISPLAY SETTINGS =====
 func apply_display_settings():
@@ -321,18 +316,16 @@ func apply_display_settings():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-	
+
 	# Apply FPS display setting
 	var show_fps = get_setting("show_fps", false)
 	if fps_label and fps_label.get_parent():
 		fps_label.get_parent().visible = show_fps  # Show/hide the panel
-	
+
 	if show_fps:
 		Engine.max_fps = 0  # Unlimited FPS
 	else:
 		Engine.max_fps = 60  # Cap at 60 FPS
-	
-	print("Display settings applied - Fullscreen: ", is_fullscreen, " Show FPS: ", show_fps)
 
 # ===== SETTINGS MANAGEMENT =====
 func get_setting(key: String, default_value = null):
@@ -353,9 +346,6 @@ func save_settings():
 	if file:
 		file.store_string(JSON.stringify(settings))
 		file.close()
-		print("Settings saved: ", settings)
-	else:
-		print("Failed to save settings")
 
 func load_settings():
 	if FileAccess.file_exists(SETTINGS_FILE):
@@ -363,7 +353,7 @@ func load_settings():
 		if file:
 			var json_string = file.get_as_text()
 			file.close()
-			
+
 			var json = JSON.new()
 			var parse_result = json.parse(json_string)
 			if parse_result == OK:
@@ -372,15 +362,6 @@ func load_settings():
 					# Merge loaded settings with defaults
 					for key in loaded_settings:
 						settings[key] = loaded_settings[key]
-					print("Settings loaded: ", settings)
-				else:
-					print("Invalid settings file format")
-			else:
-				print("Failed to parse settings JSON")
-		else:
-			print("Failed to open settings file")
-	else:
-		print("No settings file found, using defaults")
 
 # ===== GAME SAVE/LOAD =====
 func save_to_slot(slot: int) -> bool:

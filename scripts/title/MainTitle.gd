@@ -322,17 +322,15 @@ func _fade_to_black() -> void:
 
 # --- Game Flow Functions ---
 func _start_opening_cutscene() -> void:
-	print("→ Starting opening cutscene")
 	get_tree().change_scene_to_file("res://scenes/battle/Lesson1Battle.tscn")
 
 func _fade_to_loaded_game(save_id: String) -> void:
-	print("→ Loading save:", save_id)
+	pass
 
 func _save_option(opt_name: String, value: Variant) -> void:
-	print("→ Saving option:", opt_name, "=", value)
+	pass
 
 func _delete_save_file(save_id: String) -> void:
-	print("→ Deleting save file:", save_id)
 	var save_path = "user://saves/" + save_id + ".dat"
 	if FileAccess.file_exists(save_path):
 		DirAccess.remove_absolute(save_path)
