@@ -119,12 +119,12 @@ func show_results():
 		title_label.text = "YOU DID IT!"
 		title_label.modulate = Color.GREEN
 
-	# Update stats - show "Earned X of Y" where Y is max possible
-	var strength_awarded = battle_results.get("strength_awarded", 0)
+	# Update stats - show "Earned X of Y" where X is total earned, Y is max possible
+	var strength_total = battle_results.get("strength_total", 0)
 	var strength_max_possible = battle_results.get("strength_max_possible", 0)
 
 	if strength_earned_label:
-		strength_earned_label.text = "Earned %d of %d Strength" % [strength_awarded, strength_max_possible]
+		strength_earned_label.text = "Earned %d of %d Strength" % [strength_total, strength_max_possible]
 
 	# Hide the redundant second label
 	if strength_awarded_label:
@@ -312,7 +312,7 @@ func _create_sunburst_ring(explosion_pos: Vector2, count: int, firework_color: C
 		fade_tween.tween_callback(particle.queue_free)
 
 func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
-	"""Create wide umbrella/jellyfish shaped explosion - dome spreads out then droops."""
+	"""Create upside-down U shaped explosion - particles arc up and out then fall."""
 	for i in range(count):
 		var particle = ColorRect.new()
 		particle.size = Vector2(6, 14) * size_mult  # Elongated for willow effect
@@ -321,19 +321,18 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firewo
 		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
 		fireworks_layer.add_child(particle)
 
-		# Create umbrella shape - particles spread out wide then droop
+		# Create upside-down U shape - strong upward velocity, moderate outward spread
 		var angle = (i / float(count)) * TAU + randf_range(-0.1, 0.1)
 
-		# Umbrella physics - strong outward spread with moderate upward arc
-		# More outward velocity = wider umbrella
-		var outward_spread = randf_range(350, 500) * size_mult  # MUCH wider spread
-		var upward_arc = randf_range(150, 250) * size_mult  # Moderate upward arc
+		# Upside-down U physics - strong upward velocity, moderate outward spread
+		var upward_velocity = randf_range(450, 650) * size_mult  # Strong upward launch
+		var outward_spread = randf_range(200, 350) * size_mult  # Moderate horizontal spread
 
-		# Calculate peak position - wide umbrella dome
-		var peak_time = 0.7
+		# Calculate peak position - upside-down U arc
+		var peak_time = 0.8
 		var peak_pos = explosion_pos + Vector2(
-			cos(angle) * outward_spread * peak_time,  # Wide horizontal spread
-			-upward_arc * peak_time * 0.6  # Moderate upward arc
+			cos(angle) * outward_spread * peak_time,  # Moderate horizontal spread
+			-upward_velocity * peak_time  # Strong upward arc (negative Y = up)
 		)
 
 		# Droop straight down from peak like umbrella edges

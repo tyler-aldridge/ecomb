@@ -137,13 +137,31 @@ func _ready():
 		else:
 			push_error("Failed to load audio file: " + audio_path)
 
-	# Calculate max possible strength (assuming all PERFECT hits)
-	# PERFECT = 30 strength per note (from BattleManager.HIT_VALUES)
+	# Calculate max possible strength (assuming all PERFECT hits with full combo)
+	# PERFECT base = 10, but with combo multipliers it scales up
 	var notes_array = level_data.get("notes", [])
 	if notes_array.size() == 0:
 		push_warning("No notes found in level data! Battle may not function correctly.")
 	var total_notes = notes_array.size()
-	var max_strength = total_notes * 30  # 30 is PERFECT strength value
+
+	# Calculate max strength accounting for combo multipliers:
+	# 0-9 hits: 10 * 1.0 = 10 each
+	# 10-19 hits: 10 * 1.5 = 15 each
+	# 20-29 hits: 10 * 2.0 = 20 each
+	# 30-39 hits: 10 * 2.5 = 25 each
+	# 40+ hits: 10 * 3.0 = 30 each
+	var max_strength = 0
+	for i in range(total_notes):
+		if i < 10:
+			max_strength += 10  # 1.0x multiplier
+		elif i < 20:
+			max_strength += 15  # 1.5x multiplier
+		elif i < 30:
+			max_strength += 20  # 2.0x multiplier
+		elif i < 40:
+			max_strength += 25  # 2.5x multiplier
+		else:
+			max_strength += 30  # 3.0x multiplier (max)
 
 	# Start battle with BattleManager
 	var battle_data = {

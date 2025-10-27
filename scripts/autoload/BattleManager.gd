@@ -1030,32 +1030,27 @@ func explode_note_at_position(note: Node, color_type: String, intensity: int, ex
 
 		effects_layer.add_child(particle)
 
-		# Capture particle in local variable for lambda
-		var p = particle
 		var tween = scene_root.create_tween()
 		tween.set_parallel(true)
 
-		# Original explosion behavior: larger radius, good duration
 		var explosion_radius = 600 if color_type == "rainbow" else 450
 		var random_direction = Vector2(randf_range(-explosion_radius, explosion_radius), randf_range(-explosion_radius, explosion_radius))
-		var duration = randf_range(0.7, 1.1)  # Particle explosion duration
+		var duration = randf_range(0.7, 1.1)
 
-		tween.tween_property(p, "position", p.position + random_direction, duration)
-		tween.tween_property(p, "rotation", p.rotation + randf_range(-TAU * 2, TAU * 2), duration)
+		tween.tween_property(particle, "position", particle.position + random_direction, duration)
+		tween.tween_property(particle, "rotation", particle.rotation + randf_range(-TAU * 2, TAU * 2), duration)
 
-		# For PERFECT, delay fade so color transition is visible
 		if color_type == "rainbow":
-			tween.tween_property(p, "modulate:a", 0.0, duration * 0.6).set_delay(duration * 0.4)
-			# Transition color from note color to rainbow over 60% of duration
-			tween.tween_property(p, "color", target_color, duration * 0.6)
+			tween.tween_property(particle, "modulate:a", 0.0, duration * 0.6).set_delay(duration * 0.4)
+			tween.tween_property(particle, "color", target_color, duration * 0.6)
 		else:
-			tween.tween_property(p, "modulate:a", 0.0, duration)
+			tween.tween_property(particle, "modulate:a", 0.0, duration)
 
-		tween.tween_property(p, "scale", Vector2(3.0, 3.0), duration * 0.2)
-		tween.tween_property(p, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
+		tween.tween_property(particle, "scale", Vector2(3.0, 3.0), duration * 0.2)
+		tween.tween_property(particle, "scale", Vector2(0.0, 0.0), duration * 0.8).set_delay(duration * 0.2)
 
-		# Clean up particle (no lambda to avoid capture errors)
-		tween.tween_callback(p.queue_free).set_delay(duration)
+		# Clean up particle - use chain() to avoid lambda capture errors
+		tween.chain().tween_callback(particle.queue_free)
 
 func show_feedback_at_position(text: String, note_pos: Vector2, flash_screen: bool, effects_layer: Node2D, scene_root: Node):
 	"""Show floating feedback text at note position.
