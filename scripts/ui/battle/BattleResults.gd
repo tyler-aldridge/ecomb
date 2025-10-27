@@ -85,10 +85,10 @@ func _ready():
 	# Connect buttons
 	if continue_button:
 		continue_button.pressed.connect(_on_continue_pressed)
-		continue_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		continue_button.mouse_entered.connect(_on_button_hover)
 	if restart_button:
 		restart_button.pressed.connect(_on_restart_pressed)
-		restart_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		restart_button.mouse_entered.connect(_on_button_hover)
 
 func _exit_tree():
 	"""Clean up when scene is freed."""
@@ -119,12 +119,12 @@ func show_results():
 		title_label.text = "YOU DID IT!"
 		title_label.modulate = Color.GREEN
 
-	# Update stats - show "Earned X of Y" where Y is max possible
-	var strength_awarded = battle_results.get("strength_awarded", 0)
+	# Update stats - show "Earned X of Y" where X is total earned, Y is max possible
+	var strength_total = battle_results.get("strength_total", 0)
 	var strength_max_possible = battle_results.get("strength_max_possible", 0)
 
 	if strength_earned_label:
-		strength_earned_label.text = "Earned %d of %d Strength" % [strength_awarded, strength_max_possible]
+		strength_earned_label.text = "Earned %d of %d Strength" % [strength_total, strength_max_possible]
 
 	# Hide the redundant second label
 	if strength_awarded_label:
@@ -209,8 +209,8 @@ func _spawn_firework():
 	var target_y = randf_range(viewport_size.y * 0.15, viewport_size.y * 0.65)
 	var target_pos = Vector2(target_x, target_y)
 
-	# Choose explosion type (3 types) and color FIRST so trail can match
-	var explosion_type = randi() % 3  # 0=sunburst, 1=weeping willow, 2=chaos
+	# Choose explosion type (2 types) and color FIRST so trail can match
+	var explosion_type = randi() % 2  # 0=sunburst, 1=chaos
 	var use_rainbow = randf() > 0.93  # Rainbow is rare - about 1 in 14 fireworks
 
 	# Pick ONE solid color for the firework (cyan, yellow, or magenta) OR rainbow
@@ -238,25 +238,26 @@ func _spawn_firework():
 	# This ensures fireworks ALWAYS explode at the right time
 	tween.tween_callback(_create_firework_explosion.bind(target_pos, explosion_type, firework_color, use_rainbow))
 
-	# Fade out trail after explosion triggered
-	tween.tween_property(trail, "modulate:a", 0.0, 0.1)
-	tween.tween_callback(trail.queue_free)
+	# Fade out trail after explosion triggered - capture to avoid lambda issues
+	var t = trail
+	tween.tween_property(t, "modulate:a", 0.0, 0.1)
+	tween.chain().tween_callback(func():
+		if is_instance_valid(t):
+			t.queue_free()
+	)
 
 func _create_firework_explosion(explosion_pos: Vector2, explosion_type: int, firework_color: Color, is_rainbow: bool):
 	"""Create an explosion of particles at the given position with gravity."""
 	# Vary size - some explosions are bigger than others
 	var size_multiplier = randf_range(0.8, 1.5)
 
-	# Number of particles varies by explosion type
+	# Number of particles varies by explosion type (only 2 types now: sunburst and chaos)
 	var particle_count = 0
 	match explosion_type:
 		0:  # Sunburst (perfectly even circular explosion)
 			particle_count = int(60 * size_multiplier)
 			_create_sunburst_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
-		1:  # Weeping Willow (drooping arms like the tree)
-			particle_count = int(50 * size_multiplier)
-			_create_weeping_willow_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
-		2:  # Chaos (varied length arms, mostly circular but irregular)
+		_:  # Chaos (varied length arms, mostly circular but irregular) - default for type 1
 			particle_count = int(70 * size_multiplier)
 			_create_chaos_explosion(explosion_pos, particle_count, firework_color, is_rainbow, size_multiplier)
 
@@ -297,22 +298,27 @@ func _create_sunburst_ring(explosion_pos: Vector2, count: int, firework_color: C
 		var fall_distance = gravity * explosion_time * 0.5
 		var end_point = Vector2(mid_point.x, mid_point.y + fall_distance)
 
+		# Capture particle BEFORE creating any tweens to avoid lambda issues in loop
+		var p = particle
 		var tween = create_tween()
 		# Delay for ring timing
 		if delay > 0:
 			tween.tween_interval(delay)
 		# Explode outward
-		tween.tween_property(particle, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
+		tween.tween_property(p, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
 		# Fall with gravity
-		tween.tween_property(particle, "position", end_point, 1.0).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(p, "position", end_point, 1.0).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
 		# Fade while falling
 		var fade_tween = create_tween()
-		fade_tween.tween_property(particle, "modulate:a", 0.0, 0.8).set_delay(explosion_time + delay + 0.2)
-		fade_tween.tween_callback(particle.queue_free)
+		fade_tween.tween_property(p, "modulate:a", 0.0, 0.8).set_delay(explosion_time + delay + 0.2)
+		fade_tween.chain().tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		)
 
 func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
-	"""Create wide umbrella/jellyfish shaped explosion - dome spreads out then droops."""
+	"""Create upside-down U shaped explosion - particles arc up and out then fall."""
 	for i in range(count):
 		var particle = ColorRect.new()
 		particle.size = Vector2(6, 14) * size_mult  # Elongated for willow effect
@@ -321,19 +327,18 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firewo
 		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
 		fireworks_layer.add_child(particle)
 
-		# Create umbrella shape - particles spread out wide then droop
+		# Create upside-down U shape - strong upward velocity, moderate outward spread
 		var angle = (i / float(count)) * TAU + randf_range(-0.1, 0.1)
 
-		# Umbrella physics - strong outward spread with moderate upward arc
-		# More outward velocity = wider umbrella
-		var outward_spread = randf_range(350, 500) * size_mult  # MUCH wider spread
-		var upward_arc = randf_range(150, 250) * size_mult  # Moderate upward arc
+		# Upside-down U physics - strong upward velocity, moderate outward spread
+		var upward_velocity = randf_range(450, 650) * size_mult  # Strong upward launch
+		var outward_spread = randf_range(200, 350) * size_mult  # Moderate horizontal spread
 
-		# Calculate peak position - wide umbrella dome
-		var peak_time = 0.7
+		# Calculate peak position - upside-down U arc
+		var peak_time = 0.8
 		var peak_pos = explosion_pos + Vector2(
-			cos(angle) * outward_spread * peak_time,  # Wide horizontal spread
-			-upward_arc * peak_time * 0.6  # Moderate upward arc
+			cos(angle) * outward_spread * peak_time,  # Moderate horizontal spread
+			-upward_velocity * peak_time  # Strong upward arc (negative Y = up)
 		)
 
 		# Droop straight down from peak like umbrella edges
@@ -341,16 +346,21 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firewo
 		var droop_distance = randf_range(450, 750) * size_mult  # Long drooping tendrils
 		var end_pos = Vector2(peak_pos.x, peak_pos.y + droop_distance)
 
+		# Capture particle BEFORE creating any tweens to avoid lambda issues in loop
+		var p = particle
 		var tween = create_tween()
 		# Rise to dome peak with ease out for natural arc
-		tween.tween_property(particle, "position", peak_pos, peak_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(p, "position", peak_pos, peak_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 		# Droop down like umbrella edges/jellyfish tendrils
-		tween.tween_property(particle, "position", end_pos, droop_time).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
+		tween.tween_property(p, "position", end_pos, droop_time).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 
 		# Fade while drooping
 		var fade_tween = create_tween()
-		fade_tween.tween_property(particle, "modulate:a", 0.0, 1.3).set_delay(peak_time + 0.3)
-		fade_tween.tween_callback(particle.queue_free)
+		fade_tween.tween_property(p, "modulate:a", 0.0, 1.3).set_delay(peak_time + 0.3)
+		fade_tween.chain().tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		)
 
 func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
 	"""Create realistic chaotic explosion with varied arm lengths - mostly circular but irregular."""
@@ -375,18 +385,23 @@ func _create_chaos_explosion(explosion_pos: Vector2, count: int, firework_color:
 		var fall_distance = gravity * randf_range(0.8, 1.2)  # Varied fall adds chaos
 		var end_point = Vector2(mid_point.x, mid_point.y + fall_distance)
 
+		# Capture particle BEFORE creating any tweens to avoid lambda issues in loop
+		var p = particle
 		var tween = create_tween()
 		# Explode with chaos
-		tween.tween_property(particle, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
+		tween.tween_property(p, "position", mid_point, explosion_time).set_ease(Tween.EASE_OUT)
 		# Fall with gravity
-		tween.tween_property(particle, "position", end_point, 1.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(p, "position", end_point, 1.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
 		# Fade while falling (starts during fall, varied timing for chaos)
 		var fade_tween = create_tween()
 		var fade_delay = explosion_time + randf_range(0.1, 0.4)
 		var fade_duration = randf_range(0.7, 1.0)
-		fade_tween.tween_property(particle, "modulate:a", 0.0, fade_duration).set_delay(fade_delay)
-		fade_tween.tween_callback(particle.queue_free)
+		fade_tween.tween_property(p, "modulate:a", 0.0, fade_duration).set_delay(fade_delay)
+		fade_tween.chain().tween_callback(func():
+			if is_instance_valid(p):
+				p.queue_free()
+		)
 
 func _fade_to_black():
 	"""Fade overlay to black for scene transition."""
@@ -398,3 +413,8 @@ func _fade_to_black():
 	fade_rect.modulate.a = 0.0
 	var tween = create_tween()
 	tween.tween_property(fade_rect, "modulate:a", 1.0, 1.5)
+
+func _on_button_hover():
+	"""Play hover sound when mouse enters button."""
+	if button_hover_sound:
+		button_hover_sound.play()

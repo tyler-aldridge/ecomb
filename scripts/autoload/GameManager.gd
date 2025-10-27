@@ -264,29 +264,6 @@ func get_timing_offset() -> float:
 	var offset_ms = get_setting("rhythm_timing_offset", 0)
 	return offset_ms / 1000.0
 
-func get_hit_window_multiplier() -> float:
-	# Based on difficulty setting and groove stat
-	var base_multiplier = 1.0
-	var difficulty = get_setting("difficulty", "normal")
-	
-	match difficulty:
-		"easy":
-			base_multiplier = 1.5
-		"normal":
-			base_multiplier = 1.0
-		"hard":
-			base_multiplier = 0.7
-	
-	# Groove stat provides additional leniency
-	var groove_bonus = player_data.get("groove", 10) * 0.02  # 2% per groove point
-	return base_multiplier + groove_bonus
-
-func calculate_health_loss(base_damage: int) -> int:
-	# Strength reduces health loss
-	var strength = player_data.get("strength", 10)
-	var reduction = strength * 0.1  # 10% reduction per strength point
-	return max(1, int(base_damage * (1.0 - reduction)))
-
 func create_fps_display():
 	# Create a CanvasLayer to overlay on top of everything
 	var canvas_layer = CanvasLayer.new()
@@ -454,9 +431,7 @@ func load_from_slot(slot: int) -> bool:
 		"selected_character": "",
 		"hp": 100,
 		"max_hp": 100,
-		"strength": 10,
-		"groove": 10,
-		"xp": 0,
+		"strength": 0,
 		"level": 1,
 		"inventory": [],
 		"position": Vector2.ZERO,

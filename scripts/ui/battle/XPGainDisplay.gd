@@ -62,6 +62,14 @@ func _process(_delta):
 	# No color cycling - always white
 	pass
 
+func _reset_display():
+	"""Reset display state - called by tween callback."""
+	if is_instance_valid(self):
+		position = BASE_OFFSET
+		scale = Vector2(0.5, 0.5)
+		modulate.a = 0.0
+		active_tween = null
+
 func play_popup_animation():
 	"""Animate the popup: scale in, float up, fade out - ALWAYS resets to BASE_OFFSET."""
 	# Kill any existing tween to prevent overlap
@@ -95,11 +103,4 @@ func play_popup_animation():
 	active_tween.tween_property(self, "modulate:a", 0.0, 0.5).set_delay(0.3)
 
 	# Reset to BASE_OFFSET (not whatever position was before)
-	active_tween.chain()
-	active_tween.tween_callback(func():
-		if is_instance_valid(self):
-			position = BASE_OFFSET  # ALWAYS reset to constant base offset
-			scale = Vector2(0.5, 0.5)
-			modulate.a = 0.0
-			active_tween = null
-	)
+	active_tween.chain().tween_callback(_reset_display)

@@ -106,11 +106,16 @@ func _connect_dialog_button_sounds():
 
 	# Connect hover sounds
 	if ok_btn and button_hover_sound:
-		ok_btn.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		ok_btn.mouse_entered.connect(_on_button_hover)
 	if cancel_btn and button_hover_sound:
-		cancel_btn.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		cancel_btn.mouse_entered.connect(_on_button_hover)
 
 	# Keep separation between the two buttons
 	if ok_btn and ok_btn.get_parent() is HBoxContainer:
 		var button_container = ok_btn.get_parent() as HBoxContainer
 		button_container.add_theme_constant_override("separation", 50)
+
+func _on_button_hover():
+	"""Play hover sound when mouse enters button."""
+	if button_hover_sound:
+		button_hover_sound.play()

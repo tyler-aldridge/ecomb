@@ -16,12 +16,9 @@ var current_percentage: float = 50.0
 var rainbow_time: float = 0.0
 var scanline_offset: float = 0.0
 var is_full: bool = false
-var pulse_time: float = 0.0
 var is_warning_active: bool = false
 var warning_color_tween: Tween = null
 var warning_scale_tween: Tween = null
-var full_groove_pulse_tween: Tween = null
-var full_groove_glow_tween: Tween = null
 var scanline_overlay: ColorRect = null
 
 # Rainbow colors for full groove pulse
@@ -126,34 +123,33 @@ void fragment() {
 	scanline_overlay.anchor_bottom = 1.0
 
 func _process(delta):
-	if is_full:
-		# Calculate BPM-based animation speeds
-		var bpm = BattleManager.current_bpm if BattleManager else 120.0
-		var half_bpm_rate = (bpm / 60.0) / 2.0  # Half the BPM in beats per second
+	if not is_full:
+		return
 
-		# Rainbow animation on bar when full (tied to half BPM)
-		if progress_bar:
-			rainbow_time += delta * half_bpm_rate
-			if rainbow_time >= rainbow_colors.size():
-				rainbow_time = 0.0
+	# Calculate BPM-based animation speeds
+	var bpm = BattleManager.current_bpm if BattleManager else 120.0
+	var half_bpm_rate = (bpm / 60.0) / 2.0
 
-			var fill_style = progress_bar.get_theme_stylebox("fill")
-			if fill_style and fill_style is StyleBoxFlat:
-				# Cycle through rainbow colors with clear transitions
-				var current_index = int(rainbow_time) % rainbow_colors.size()
-				var next_index = (current_index + 1) % rainbow_colors.size()
-				var t = rainbow_time - floor(rainbow_time)
+	# Rainbow animation on bar when full (tied to half BPM)
+	if progress_bar:
+		rainbow_time += delta * half_bpm_rate
+		if rainbow_time >= rainbow_colors.size():
+			rainbow_time = 0.0
 
-				# Simple lerp for clean color transitions
-				fill_style.bg_color = rainbow_colors[current_index].lerp(rainbow_colors[next_index], t)
+		var fill_style = progress_bar.get_theme_stylebox("fill")
+		if fill_style and fill_style is StyleBoxFlat:
+			var current_index = int(rainbow_time) % rainbow_colors.size()
+			var next_index = (current_index + 1) % rainbow_colors.size()
+			var t = rainbow_time - floor(rainbow_time)
+			fill_style.bg_color = rainbow_colors[current_index].lerp(rainbow_colors[next_index], t)
 
-		# Animate VHS scanlines scrolling and vertical distortion wave (tied to half BPM)
-		if scanline_overlay and scanline_overlay.material:
-			scanline_offset += delta * half_bpm_rate
-			if scanline_offset > 1.0:
-				scanline_offset -= 1.0
-			scanline_overlay.material.set_shader_parameter("offset", scanline_offset)
-			scanline_overlay.material.set_shader_parameter("distortion_offset", rainbow_time * 2.0)
+	# Animate VHS scanlines scrolling and vertical distortion wave (tied to half BPM)
+	if scanline_overlay and scanline_overlay.material:
+		scanline_offset += delta * half_bpm_rate
+		if scanline_offset > 1.0:
+			scanline_offset -= 1.0
+		scanline_overlay.material.set_shader_parameter("offset", scanline_offset)
+		scanline_overlay.material.set_shader_parameter("distortion_offset", rainbow_time * 2.0)
 
 func _on_groove_changed(current_groove: float, max_groove: float):
 	"""Update groove bar display when groove changes."""
@@ -259,3 +255,8 @@ func stop_full_groove_celebration():
 	# Hide VHS scanline overlay
 	if scanline_overlay:
 		scanline_overlay.visible = false
+
+func _exit_tree():
+	"""Ensure all infinite loop tweens are properly cleaned up when node is removed."""
+	stop_low_groove_warning()
+	stop_full_groove_celebration()

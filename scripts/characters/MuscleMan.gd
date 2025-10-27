@@ -13,10 +13,7 @@ func _ready():
 	# Move him into frame
 	var tween = create_tween()
 	tween.tween_property(self, "position:x", 925, 5.0)
-	tween.tween_callback(func():
-		if is_instance_valid(self):
-			play("idle")
-	)
+	tween.tween_callback(_on_move_complete)
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -55,5 +52,10 @@ func _input(event):
 			
 			play("idle")
 			is_flexing = false
-			
+
 			get_viewport().set_input_as_handled()
+
+func _on_move_complete():
+	"""Play idle animation when movement completes."""
+	if is_instance_valid(self):
+		play("idle")
