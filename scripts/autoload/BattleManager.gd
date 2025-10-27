@@ -102,6 +102,7 @@ var battle_active: bool = false
 var battle_id: String = ""
 var battle_level: int = 1
 var battle_type: String = "story"  # "story", "lesson", or "random"
+var player_quit_to_title: bool = false  # Set to true when player quits to title from battle
 
 # Groove bar (health system)
 var groove_current: float = 0.0
@@ -171,6 +172,7 @@ func start_battle(battle_data: Dictionary):
 	battle_id = battle_data.get("battle_id", "")
 	battle_level = battle_data.get("battle_level", 1)
 	battle_type = battle_data.get("battle_type", "story")
+	player_quit_to_title = false  # Reset quit flag for new battle
 
 	# Groove settings
 	groove_start = battle_data.get("groove_start", 50.0)
