@@ -43,10 +43,10 @@ func _ready():
 	# Connect buttons
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)
-		close_button.mouse_entered.connect(func(): button_hover_sound.play())
+		close_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 	if exit_button:
 		exit_button.pressed.connect(_on_exit_pressed)
-		exit_button.mouse_entered.connect(func(): button_hover_sound.play())
+		exit_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 
 	# Connect dialog
 	if exit_dialog:

@@ -164,6 +164,9 @@ const DIFFICULTY_PRESETS = {
 # Current difficulty setting (persists across battles)
 var current_difficulty: String = "gymbro"
 
+# Current BPM (set by battle scene, used for UI animations)
+var current_bpm: float = 120.0
+
 # ============================================================================
 # BATTLE STATE
 # ============================================================================
@@ -257,6 +260,7 @@ func start_battle(battle_data: Dictionary):
 	strength_total = 0
 	strength_max_possible = battle_data.get("max_strength", 0)
 	hit_counts = {"PERFECT": 0, "GOOD": 0, "OKAY": 0, "MISS": 0}
+	recent_note_spawns.clear()  # Clear lane overlap tracking from previous battle
 
 	# Emit initial state
 	groove_changed.emit(groove_current, groove_max)
@@ -294,6 +298,9 @@ func end_battle() -> Dictionary:
 		"battle_completed": battle_completed_successfully,
 		"groove_final": groove_current
 	}
+
+	# Clean up lane overlap tracking
+	recent_note_spawns.clear()
 
 	battle_active = false
 	battle_completed.emit(results)
@@ -498,7 +505,7 @@ func get_hit_counts() -> Dictionary:
 # UNIVERSAL BATTLE MECHANICS - Hit Detection & Lane Selection
 # ============================================================================
 
-func get_hit_quality_for_note(_distance: float, note: Node, hit_zone_y: float) -> String:
+func get_hit_quality_for_note(note: Node, hit_zone_y: float) -> String:
 	"""
 	Edge-based hit detection: Check how much of the HitZone is COVERED by the note.
 
@@ -1271,9 +1278,6 @@ func animate_player_hit(player_sprite: AnimatedSprite2D, player_original_pos: Ve
 					CONNECT_ONE_SHOT
 				)
 
-func _on_player_pecs_finished():
-	"""Callback stub for animation_finished signal."""
-	pass
 
 func _execute_jump_animation(sprite: AnimatedSprite2D, original_pos: Vector2, scene_root: Node):
 	"""Execute universal jump tween animation.

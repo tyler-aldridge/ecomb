@@ -312,7 +312,7 @@ func _create_sunburst_ring(explosion_pos: Vector2, count: int, firework_color: C
 		fade_tween.tween_callback(particle.queue_free)
 
 func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firework_color: Color, is_rainbow: bool, size_mult: float):
-	"""Create umbrella/jellyfish shaped explosion - dome at top with drooping tendrils."""
+	"""Create wide umbrella/jellyfish shaped explosion - dome spreads out then droops."""
 	for i in range(count):
 		var particle = ColorRect.new()
 		particle.size = Vector2(6, 14) * size_mult  # Elongated for willow effect
@@ -321,34 +321,30 @@ func _create_weeping_willow_explosion(explosion_pos: Vector2, count: int, firewo
 		particle.color = rainbow_colors[randi() % rainbow_colors.size()] if is_rainbow else firework_color
 		fireworks_layer.add_child(particle)
 
-		# Create umbrella/jellyfish shape - particles form dome then droop
+		# Create umbrella shape - particles spread out wide then droop
 		var angle = (i / float(count)) * TAU + randf_range(-0.1, 0.1)
 
-		# Dome formation - more particles at top, spreading outward and downward
-		# Use sine to create dome (upward=less spread, sides=more spread)
-		var dome_factor = abs(sin(angle))  # 0 at top/bottom, 1 at sides
-		var upward_velocity = -randf_range(250, 400) * size_mult  # Strong upward push
-		var outward_velocity = randf_range(100, 250) * size_mult * dome_factor  # Outward based on angle
+		# Umbrella physics - strong outward spread with moderate upward arc
+		# More outward velocity = wider umbrella
+		var outward_spread = randf_range(350, 500) * size_mult  # MUCH wider spread
+		var upward_arc = randf_range(150, 250) * size_mult  # Moderate upward arc
 
-		var direction = Vector2(cos(angle) * dome_factor, -1.0 + dome_factor * 0.5)  # Dome shape
-		direction = direction.normalized()
-
-		# Calculate dome peak position
-		var peak_time = 0.6
+		# Calculate peak position - wide umbrella dome
+		var peak_time = 0.7
 		var peak_pos = explosion_pos + Vector2(
-			cos(angle) * outward_velocity * peak_time * dome_factor,
-			upward_velocity * peak_time * 0.5  # Arc to peak
+			cos(angle) * outward_spread * peak_time,  # Wide horizontal spread
+			-upward_arc * peak_time * 0.6  # Moderate upward arc
 		)
 
-		# Droop straight down from peak like jellyfish tendrils
+		# Droop straight down from peak like umbrella edges
 		var droop_time = 1.8
-		var droop_distance = randf_range(400, 700) * size_mult  # Long drooping tendrils
+		var droop_distance = randf_range(450, 750) * size_mult  # Long drooping tendrils
 		var end_pos = Vector2(peak_pos.x, peak_pos.y + droop_distance)
 
 		var tween = create_tween()
-		# Rise to dome peak
+		# Rise to dome peak with ease out for natural arc
 		tween.tween_property(particle, "position", peak_pos, peak_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-		# Droop down like jellyfish tendrils
+		# Droop down like umbrella edges/jellyfish tendrils
 		tween.tween_property(particle, "position", end_pos, droop_time).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 
 		# Fade while drooping

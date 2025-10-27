@@ -97,8 +97,9 @@ func play_popup_animation():
 	# Reset to BASE_OFFSET (not whatever position was before)
 	active_tween.chain()
 	active_tween.tween_callback(func():
-		position = BASE_OFFSET  # ALWAYS reset to constant base offset
-		scale = Vector2(0.5, 0.5)
-		modulate.a = 0.0
-		active_tween = null
+		if is_instance_valid(self):
+			position = BASE_OFFSET  # ALWAYS reset to constant base offset
+			scale = Vector2(0.5, 0.5)
+			modulate.a = 0.0
+			active_tween = null
 	)

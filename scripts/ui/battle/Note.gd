@@ -24,10 +24,6 @@ func setup(key: String, start_pos: Vector2, target_position: float):
 		"3":
 			color_rect.color = Color.YELLOW
 
-func set_travel_time(time: float):
-	travel_time = time
-	speed = spawn_height / travel_time
-
 func set_travel_time_and_distance(time: float, distance: float):
 	travel_time = time
 	speed = distance / travel_time

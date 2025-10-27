@@ -127,9 +127,13 @@ void fragment() {
 
 func _process(delta):
 	if is_full:
-		# Fast horizontal flowing rainbow animation on bar when full
+		# Calculate BPM-based animation speeds
+		var bpm = BattleManager.current_bpm if BattleManager else 120.0
+		var half_bpm_rate = (bpm / 60.0) / 2.0  # Half the BPM in beats per second
+
+		# Rainbow animation on bar when full (tied to half BPM)
 		if progress_bar:
-			rainbow_time += delta * 3.5  # Faster flow speed for more visible effect
+			rainbow_time += delta * half_bpm_rate
 			if rainbow_time >= rainbow_colors.size():
 				rainbow_time = 0.0
 
@@ -143,9 +147,9 @@ func _process(delta):
 				# Simple lerp for clean color transitions
 				fill_style.bg_color = rainbow_colors[current_index].lerp(rainbow_colors[next_index], t)
 
-		# Animate VHS scanlines scrolling and vertical distortion wave
+		# Animate VHS scanlines scrolling and vertical distortion wave (tied to half BPM)
 		if scanline_overlay and scanline_overlay.material:
-			scanline_offset += delta * 2.0  # Scroll speed
+			scanline_offset += delta * half_bpm_rate
 			if scanline_offset > 1.0:
 				scanline_offset -= 1.0
 			scanline_overlay.material.set_shader_parameter("offset", scanline_offset)

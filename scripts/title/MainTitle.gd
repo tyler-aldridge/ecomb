@@ -146,11 +146,11 @@ func _on_new_button_pressed() -> void:
 	var cancel_button = ui.get_node_or_null("CenterContainer/VBoxContainer/ButtonContainer/CancelButton")
 	
 	if start_button:
-		start_button.mouse_entered.connect(func(): button_hover_sound.play())
-		start_button.pressed.connect(func(): success_sound.play())
+		start_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		start_button.pressed.connect(func(): if success_sound: success_sound.play())
 	if cancel_button:
-		cancel_button.mouse_entered.connect(func(): button_hover_sound.play())
-		cancel_button.pressed.connect(func(): cancel_sound.play())
+		cancel_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		cancel_button.pressed.connect(func(): if cancel_sound: cancel_sound.play())
 	
 	# Connect signals if they exist
 	if ui.has_signal("closed"):
@@ -184,14 +184,14 @@ func _on_load_button_pressed() -> void:
 	var close_button = ui.get_node_or_null("VBoxContainer/ButtonContainer/CloseButton")
 	
 	if load_button:
-		load_button.mouse_entered.connect(func(): button_hover_sound.play())
-		load_button.pressed.connect(func(): success_sound.play())
+		load_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		load_button.pressed.connect(func(): if success_sound: success_sound.play())
 	if delete_button:
-		delete_button.mouse_entered.connect(func(): button_hover_sound.play())
-		delete_button.pressed.connect(func(): warning_confirm_sound.play())
+		delete_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		delete_button.pressed.connect(func(): if warning_confirm_sound: warning_confirm_sound.play())
 	if close_button:
-		close_button.mouse_entered.connect(func(): button_hover_sound.play())
-		close_button.pressed.connect(func(): cancel_sound.play())
+		close_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		close_button.pressed.connect(func(): if cancel_sound: cancel_sound.play())
 	
 	# Connect basic signals
 	if ui.has_signal("closed"):
@@ -227,10 +227,10 @@ func _on_options_button_pressed() -> void:
 	
 	# Connect hover and click sounds for OptionsMenu
 	var save_button = ui.get_node_or_null("OptionsContainer/SaveButton")
-	
+
 	if save_button:
-		save_button.mouse_entered.connect(func(): button_hover_sound.play())
-		save_button.pressed.connect(func(): success_sound.play())
+		save_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
+		save_button.pressed.connect(func(): if success_sound: success_sound.play())
 	
 	if ui.has_signal("closed"):
 		ui.closed.connect(_close_modal)

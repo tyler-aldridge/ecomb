@@ -36,7 +36,7 @@ func _ready():
 	# Connect close button
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)
-		close_button.mouse_entered.connect(func(): button_hover_sound.play())
+		close_button.mouse_entered.connect(func(): if button_hover_sound: button_hover_sound.play())
 
 	# Load saved settings
 	load_settings()
