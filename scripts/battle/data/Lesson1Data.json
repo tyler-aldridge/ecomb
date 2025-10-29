@@ -15,7 +15,8 @@
 "dialogue": [
 {"beat_position": -35, "text": "Yo chump! Open them ears, this only gets said once!", "character": "opponent", "duration": 3.0, "triggers": "create_hit_zone_indicators"},
 {"beat_position": -16, "text": "Hit 1, 2, or 3 on your keyboard with the beat! Miss it, and you might as well pack it up, cupcake!", "character": "opponent", "duration": 4.0},
-{"beat_position": 70, "text": "Feelin' the pump yet, sweaty palms? Don't get gassed! Watch your groove meter on the top.", "character": "opponent", "duration": 4.0},
+{"beat_position": 70, "text": "Feelin' the pump yet, sweaty palms? Don't get gassed! Watch your groove meter on the top.", "character": "opponent", "duration": 3.5},
+{"beat_position": 105, "text": "Timing feels off, buttercup? Smash that ESC key and slide that offset. You're welcome!", "character": "opponent", "duration": 3.0},
 {"beat_position": 140, "text": "Alright, tough guy, let's see if you can handle the real grind. That was just the warmup!", "character": "opponent", "duration": 3.0},
 {"beat_position": 388, "text": "Hope you stretched, chump! Time for a curveball!", "character": "opponent", "duration": 3.0},
 {"beat_position": 472, "text": "BWAHAHA! Gotcha scared for a sec, huh?", "character": "opponent", "duration": 2.5},
