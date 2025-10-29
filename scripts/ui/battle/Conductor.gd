@@ -16,6 +16,11 @@ var current_measure: int = 1
 var cached_output_latency: float = 0.0
 var latency_cache_timer: float = 0.0
 
+# Pause sync safety: Store position when pausing to prevent drift
+var paused_song_position: float = 0.0
+var paused_playback_position: float = 0.0
+var was_stream_paused: bool = false
+
 var start_timer: Timer
 
 func _ready() -> void:
@@ -42,10 +47,29 @@ func _ready() -> void:
 		cached_output_latency = 0.0
 
 func _physics_process(delta: float) -> void:
-	# CRITICAL: Skip beat processing when stream is paused (options menu open)
-	# This prevents Conductor from advancing song_position while audio is paused
-	if stream_paused:
+	# CRITICAL: Detect pause state transitions to prevent timing drift
+	if stream_paused and not was_stream_paused:
+		# Entering paused state - capture current positions to restore later
+		paused_song_position = song_position
+		paused_playback_position = get_playback_position()
+		was_stream_paused = true
 		return
+	elif stream_paused and was_stream_paused:
+		# Already paused - keep song_position frozen at paused value
+		song_position = paused_song_position
+		return
+	elif not stream_paused and was_stream_paused:
+		# Exiting paused state - restore position and compensate for any drift
+		was_stream_paused = false
+		# Calculate drift: if playback position changed during pause, we need to compensate
+		var current_playback_pos = get_playback_position()
+		var drift = current_playback_pos - paused_playback_position
+		# If drift is unreasonably large (>100ms), ignore it (web browser weirdness)
+		if abs(drift) > 0.1:
+			drift = 0.0
+		# Resume from paused position, accounting for minimal drift
+		song_position = paused_song_position + drift
+		# Continue to normal processing below
 
 	if playing:
 		# Refresh latency cache every second (not every frame)
