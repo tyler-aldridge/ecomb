@@ -20,12 +20,6 @@ var latency_cache_timer: float = 0.0
 # Controls how Conductor converts beats to ticks (eighth notes vs triplets)
 var subdivision: int = 2
 
-# Pause sync safety: Track playback position drift during pause
-var paused_song_position: float = 0.0
-var paused_playback_position: float = 0.0
-var was_stream_paused: bool = false
-var pause_drift_offset: float = 0.0  # Accumulated drift to compensate for web audio buffer advancing during pause
-
 var start_timer: Timer
 
 func _ready() -> void:
@@ -52,29 +46,8 @@ func _ready() -> void:
 		cached_output_latency = 0.0
 
 func _physics_process(delta: float) -> void:
-	# CRITICAL: Detect pause state transitions to prevent timing drift
-	if stream_paused and not was_stream_paused:
-		# Entering paused state - capture positions to detect drift on unpause
-		paused_song_position = song_position
-		paused_playback_position = get_playback_position()
-		was_stream_paused = true
-		return
-	elif stream_paused:
-		# Already paused - keep song_position frozen
-		song_position = paused_song_position
-		return
-	elif not stream_paused and was_stream_paused:
-		# Exiting paused state - calculate drift and store as persistent offset
-		was_stream_paused = false
-		var current_playback_pos = get_playback_position()
-		var drift = current_playback_pos - paused_playback_position
-		# Accumulate drift to compensate in all future get_playback_position() calls
-		# This prevents beat grid from shifting after pause/unpause
-		pause_drift_offset += drift
-		# CRITICAL: Restore song_position to exactly where it was when paused
-		# Also recalculate song_position_in_beats to keep beat signals in sync
-		song_position = paused_song_position
-		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision) - (4 * subdivision)
+	# Suspend all processing while paused
+	if stream_paused:
 		return
 
 	if playing:
@@ -87,11 +60,10 @@ func _physics_process(delta: float) -> void:
 				cached_output_latency = 0.0
 			latency_cache_timer = 0.0
 
-		# Get audio playback position and apply pause drift compensation
+		# Get audio playback position
 		# NOTE: On web, browser audio buffering causes get_playback_position() to report
 		# the stream decode position, which is ~0.5-1.0s BEHIND actual speaker output
-		# Additionally, get_playback_position() may advance during pause, so we subtract accumulated drift
-		var playback_pos = get_playback_position() - pause_drift_offset
+		var playback_pos = get_playback_position()
 		var time_since_mix = AudioServer.get_time_since_last_mix()
 
 		# Web timing strategy: Use both playback_pos AND time_since_mix, plus buffer compensation
