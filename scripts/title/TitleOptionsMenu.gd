@@ -10,8 +10,8 @@ signal closed
 @onready var difficulty_value_label: Label = $OptionsContainer/DifficultyBox/DifficultyValueLabel
 @onready var fullscreen_checkbox: CheckBox = $OptionsContainer/FullScreenContainer/FullScreenCheckbox
 @onready var framerate_checkbox: CheckBox = $OptionsContainer/FramerateContainer/FramerateCheckbox
-@onready var close_button: Button = $OptionsContainer/CloseButton
-@onready var reset_button: Button = $OptionsContainer/ResetButton
+@onready var close_button: Button = $OptionsContainer/ButtonsContainer/CloseButton
+@onready var reset_button: Button = $OptionsContainer/ButtonsContainer/ResetButton
 
 # Audio players
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
