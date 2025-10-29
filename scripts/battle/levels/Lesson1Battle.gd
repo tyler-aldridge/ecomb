@@ -91,8 +91,8 @@ func get_time_signature_info() -> Dictionary:
 	Returns:
 		Dictionary with "beats_per_bar" and "subdivision" keys
 	"""
-	var numerator = level_data.get("time_signature_numerator", 4)
-	var denominator = level_data.get("time_signature_denominator", 4)
+	var numerator = int(level_data.get("time_signature_numerator", 4))
+	var denominator = int(level_data.get("time_signature_denominator", 4))
 
 	# Detect compound meters: 6/8, 9/8, 12/8 (divisible by 3, denominator 8, >= 6)
 	var is_compound = (numerator % 3 == 0) and (denominator == 8) and (numerator >= 6)
