@@ -97,10 +97,9 @@ func get_time_signature_info() -> Dictionary:
 	# Detect compound meters: 6/8, 9/8, 12/8 (divisible by 3, denominator 8, >= 6)
 	var is_compound = (numerator % 3 == 0) and (denominator == 8) and (numerator >= 6)
 
-	# Integer division for compound meters: 6//3=2, 9//3=3, 12//3=4
 	if is_compound:
 		return {
-			"beats_per_bar": numerator // 3,
+			"beats_per_bar": int(numerator / 3),
 			"subdivision": 3
 		}
 	else:
