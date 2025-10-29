@@ -74,18 +74,25 @@ var battle_failure: Control
 func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	"""Convert Bar/Beat notation to beat_position (HIT time).
 
-	Formula: beat_position = (bar - 1) * 8 + (beat - 1) * 2 - 8
+	Formula: beat_position = (bar - 1) * half_beats_per_bar + (beat - 1) * 2 - half_beats_per_bar
+
+	The formula works for any time signature (4/4, 3/4, 5/4, etc.):
+	- half_beats_per_bar = beats_per_bar * 2 (conductor counts in half-beats)
+	- Final -half_beats_per_bar offsets by one bar (for countdown/lead-in)
+
+	For 4/4 time: half_beats_per_bar = 8, so formula becomes:
+	  beat_position = (bar - 1) * 8 + (beat - 1) * 2 - 8
 
 	Args:
 		bar: Bar number (e.g., 91)
 		beat: Beat number or string with 'a' for AND (e.g., 3, "1a", 2.5)
-			  Numeric beats: 1, 2, 3, 4
+			  Numeric beats: 1, 2, 3, 4 (or 1, 2, 3 for 3/4 time, etc.)
 			  AND beats: "1a", "2a", "3a", "4a" (or 1.5, 2.5, 3.5, 4.5)
 
 	Returns:
 		beat_position as integer
 
-	Examples:
+	Examples (4/4 time):
 		bar_beat_to_position(91, 3) → 716 (Bar 91 Beat 3)
 		bar_beat_to_position(92, "1a") → 721 (Bar 92 Beat 1 AND)
 		bar_beat_to_position(92, 1.5) → 721 (same as above)
@@ -103,8 +110,10 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	else:
 		beat_num = float(beat)
 
-	# Calculate beat position
-	var base_pos = (bar - 1) * 8 + (int(beat_num) - 1) * 2 - 8
+	# Calculate beat position using time signature from level data
+	# Conductor counts in half-beats, so multiply beats_per_bar by 2
+	var half_beats_per_bar = level_data.get("beats_per_bar", 4) * 2
+	var base_pos = (bar - 1) * half_beats_per_bar + (int(beat_num) - 1) * 2 - half_beats_per_bar
 
 	# Add 1 for AND notes (half-beat offset)
 	if beat_num != int(beat_num):  # Has decimal (e.g., 1.5)
