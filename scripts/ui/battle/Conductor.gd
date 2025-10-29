@@ -22,7 +22,6 @@ var subdivision: int = 2
 
 # Pause drift compensation: On web, get_playback_position() advances during pause
 var pause_playback_snapshot: float = 0.0
-var cumulative_pause_drift: float = 0.0
 
 var start_timer: Timer
 
@@ -57,9 +56,9 @@ func _physics_process(delta: float) -> void:
 			pause_playback_snapshot = get_playback_position()
 		return
 	elif pause_playback_snapshot > 0.0:
-		# Just unpaused - calculate and accumulate drift
-		var current_pos = get_playback_position()
-		cumulative_pause_drift += (current_pos - pause_playback_snapshot)
+		# Just unpaused - SEEK audio back to where it was when paused
+		# This fixes web bug where playback position drifts during pause
+		seek(pause_playback_snapshot)
 		pause_playback_snapshot = 0.0
 
 	if playing:
@@ -72,11 +71,10 @@ func _physics_process(delta: float) -> void:
 				cached_output_latency = 0.0
 			latency_cache_timer = 0.0
 
-		# Get audio playback position with pause drift compensation
+		# Get audio playback position
 		# NOTE: On web, browser audio buffering causes get_playback_position() to report
 		# the stream decode position, which is ~0.5-1.0s BEHIND actual speaker output
-		# Also on web, get_playback_position() advances during pause, so subtract accumulated drift
-		var playback_pos = get_playback_position() - cumulative_pause_drift
+		var playback_pos = get_playback_position()
 		var time_since_mix = AudioServer.get_time_since_last_mix()
 
 		# Web timing strategy: Use both playback_pos AND time_since_mix, plus buffer compensation
