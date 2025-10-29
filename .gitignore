@@ -50,3 +50,4 @@ dist/
 .vscode/
 .idea/
 .tmp.driveupload/*
+builds/
