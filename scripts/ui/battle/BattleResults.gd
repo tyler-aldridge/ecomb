@@ -124,7 +124,7 @@ func show_results():
 	var strength_max_possible = battle_results.get("strength_max_possible", 0)
 
 	if strength_earned_label:
-		strength_earned_label.text = "Earned %d of %d Strength" % [strength_total, strength_max_possible]
+		strength_earned_label.text = "Earned %d of %d XP" % [strength_total, strength_max_possible]
 
 	# Hide the redundant second label
 	if strength_awarded_label:
