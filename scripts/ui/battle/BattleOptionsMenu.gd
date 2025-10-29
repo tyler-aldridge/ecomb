@@ -12,6 +12,7 @@ signal closed
 @onready var framerate_checkbox: CheckBox = $GameOptionsContainer/FramerateContainer/FramerateCheckbox
 @onready var close_button: Button = $GameOptionsContainer/ButtonsContainer/CloseButton
 @onready var exit_button: Button = $GameOptionsContainer/ButtonsContainer/ExitButton
+@onready var reset_button: Button = $GameOptionsContainer/ResetButton
 
 # Dialog and overlay
 @onready var exit_dialog: ConfirmationDialog = $ExitDialog
@@ -51,6 +52,9 @@ func _ready():
 	if exit_button:
 		exit_button.pressed.connect(_on_exit_pressed)
 		exit_button.mouse_entered.connect(_on_button_hover)
+	if reset_button:
+		reset_button.pressed.connect(_on_reset_pressed)
+		reset_button.mouse_entered.connect(_on_button_hover)
 
 	# Connect dialog
 	if exit_dialog:
@@ -160,6 +164,24 @@ func _on_close_pressed():
 	success_sound.play()
 	GameManager.save_settings()
 	hide_menu()
+
+func _on_reset_pressed():
+	"""Reset all settings to default values."""
+	success_sound.play()
+	# Reset all settings to defaults
+	GameManager.set_setting("master_volume", 85)
+	GameManager.set_setting("music_volume", 75)
+	GameManager.set_setting("sound_volume", 65)
+	GameManager.set_setting("rhythm_timing_offset", 0)
+	GameManager.set_setting("difficulty", "gymbro")
+	GameManager.set_setting("fullscreen", false)
+	GameManager.set_setting("show_fps", false)
+	# Clear pending timing
+	has_pending_timing = false
+	pending_rhythm_timing = 0.0
+	# Reload UI to reflect defaults
+	load_settings()
+	GameManager.save_settings()
 
 func _on_exit_pressed():
 	# Show confirmation dialog
