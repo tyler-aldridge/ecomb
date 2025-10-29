@@ -41,8 +41,9 @@ Icon$'\r'
 # Team docs managed via Google Drive - DO NOT SYNC
 docs/
 
-# Build outputs
+# Build outputs - these are generated, don't track
 build/
+builds/
 dist/
 *.tmp
 
