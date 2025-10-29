@@ -71,36 +71,72 @@ var battle_failure: Control
 # BAR/BEAT SYSTEM (Level-specific timing calculations)
 # ============================================================================
 
+func get_time_signature_info() -> Dictionary:
+	"""Derive beats_per_bar and subdivision from standard time signature notation.
+
+	Reads time_signature_numerator and time_signature_denominator from level_data.
+
+	Rules:
+	- Compound meters (6/8, 9/8, 12/8): numerator divisible by 3, denominator = 8, numerator >= 6
+	  → beats_per_bar = numerator / 3, subdivision = 3
+	- Simple meters (4/4, 3/4, 7/8, 5/4, etc.): everything else
+	  → beats_per_bar = numerator, subdivision = 2
+
+	Examples:
+	- 4/4: beats_per_bar = 4, subdivision = 2 (simple)
+	- 6/8: beats_per_bar = 2, subdivision = 3 (compound, felt as 2 dotted-quarter beats)
+	- 7/8: beats_per_bar = 7, subdivision = 2 (simple, odd meter)
+	- 12/8: beats_per_bar = 4, subdivision = 3 (compound, felt as 4 dotted-quarter beats)
+
+	Returns:
+		Dictionary with "beats_per_bar" and "subdivision" keys
+	"""
+	var numerator = level_data.get("time_signature_numerator", 4)
+	var denominator = level_data.get("time_signature_denominator", 4)
+
+	# Detect compound meters: 6/8, 9/8, 12/8 (divisible by 3, denominator 8, >= 6)
+	var is_compound = (numerator % 3 == 0) and (denominator == 8) and (numerator >= 6)
+
+	if is_compound:
+		return {
+			"beats_per_bar": numerator / 3,
+			"subdivision": 3
+		}
+	else:
+		return {
+			"beats_per_bar": numerator,
+			"subdivision": 2
+		}
+
 func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	"""Convert Bar/Beat notation to beat_position (HIT time).
 
+	Uses standard music time signature notation (numerator/denominator) from JSON.
+	System automatically detects compound meters and calculates subdivision.
+
 	Formula: beat_position = (bar - 1) * ticks_per_bar + (beat - 1) * subdivision - ticks_per_bar
 
-	The formula works for any time signature:
-	- subdivision = 2 for simple meters (4/4, 3/4, 7/4), 3 for compound meters (6/8, 9/8, 12/8)
-	- ticks_per_bar = beats_per_bar * subdivision
-	- Final -ticks_per_bar offsets by one bar (for countdown/lead-in)
-
-	Examples:
-	- 4/4 time (simple): ticks_per_bar = 4 * 2 = 8
-	  beat_position = (bar - 1) * 8 + (beat - 1) * 2 - 8
-	- 6/8 time (compound, 2 beats): ticks_per_bar = 2 * 3 = 6
-	  beat_position = (bar - 1) * 6 + (beat - 1) * 3 - 6
+	Time Signature Examples:
+	- 4/4: beats_per_bar=4, subdivision=2, ticks_per_bar=8
+	- 6/8: beats_per_bar=2, subdivision=3, ticks_per_bar=6 (compound: 2 dotted-quarter beats)
+	- 7/8: beats_per_bar=7, subdivision=2, ticks_per_bar=14 (odd meter)
+	- 12/8: beats_per_bar=4, subdivision=3, ticks_per_bar=12 (compound: 4 dotted-quarter beats)
 
 	Args:
 		bar: Bar number (e.g., 91)
 		beat: Beat number or string with 'a' for AND (e.g., 3, "1a", 2.5)
-			  Numeric beats: 1, 2, 3, 4 (or 1, 2, 3 for 3/4 time, 1, 2 for 6/8 time, etc.)
-			  AND beats: "1a", "2a", "3a", "4a" (or 1.5, 2.5, 3.5, 4.5)
-			  For compound meter, AND = +1 tick (triplet subdivision)
+			  For 4/4: beats 1, 2, 3, 4
+			  For 6/8: beats 1, 2 (two dotted-quarter beats)
+			  For 7/8: beats 1, 2, 3, 4, 5, 6, 7
+			  AND notes: "1a", "2a" or 1.5, 2.5 (adds +1 tick)
 
 	Returns:
 		beat_position as integer
 
-	Examples (4/4 simple time):
-		bar_beat_to_position(91, 3) → 716 (Bar 91 Beat 3)
-		bar_beat_to_position(92, "1a") → 721 (Bar 92 Beat 1 AND)
-		bar_beat_to_position(92, 1.5) → 721 (same as above)
+	Examples:
+		4/4, Bar 91 Beat 3 → 716
+		4/4, Bar 92 Beat "1a" → 721 (AND note)
+		6/8, Bar 10 Beat 2 → 51
 	"""
 	var beat_num: float
 
@@ -115,10 +151,10 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	else:
 		beat_num = float(beat)
 
-	# Get time signature info from level data
-	var time_signature_type = level_data.get("time_signature_type", "simple")
-	var subdivision = 3 if time_signature_type == "compound" else 2
-	var beats_per_bar = level_data.get("beats_per_bar", 4)
+	# Get time signature info (automatically detects simple vs compound from numerator/denominator)
+	var ts_info = get_time_signature_info()
+	var beats_per_bar = ts_info["beats_per_bar"]
+	var subdivision = ts_info["subdivision"]
 	var ticks_per_bar = beats_per_bar * subdivision
 
 	# Calculate beat position using time signature subdivision
@@ -148,9 +184,10 @@ func _ready():
 	if level_data.has("beats_before_start"):
 		conductor.beats_before_start = int(level_data["beats_before_start"])
 
-	# Configure time signature subdivision: 2 for simple (4/4, 3/4, 7/4), 3 for compound (6/8, 9/8, 12/8)
-	var time_signature_type = level_data.get("time_signature_type", "simple")
-	conductor.subdivision = 3 if time_signature_type == "compound" else 2
+	# Configure time signature subdivision from standard notation (e.g., 4/4, 6/8, 7/8)
+	# Automatically detects simple vs compound meters
+	var ts_info = get_time_signature_info()
+	conductor.subdivision = ts_info["subdivision"]
 
 	if level_data.has("audio_file"):
 		var audio_path = level_data["audio_file"]
