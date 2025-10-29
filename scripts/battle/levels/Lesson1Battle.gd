@@ -74,25 +74,30 @@ var battle_failure: Control
 func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	"""Convert Bar/Beat notation to beat_position (HIT time).
 
-	Formula: beat_position = (bar - 1) * half_beats_per_bar + (beat - 1) * 2 - half_beats_per_bar
+	Formula: beat_position = (bar - 1) * ticks_per_bar + (beat - 1) * subdivision - ticks_per_bar
 
-	The formula works for any time signature (4/4, 3/4, 5/4, etc.):
-	- half_beats_per_bar = beats_per_bar * 2 (conductor counts in half-beats)
-	- Final -half_beats_per_bar offsets by one bar (for countdown/lead-in)
+	The formula works for any time signature:
+	- subdivision = 2 for simple meters (4/4, 3/4, 7/4), 3 for compound meters (6/8, 9/8, 12/8)
+	- ticks_per_bar = beats_per_bar * subdivision
+	- Final -ticks_per_bar offsets by one bar (for countdown/lead-in)
 
-	For 4/4 time: half_beats_per_bar = 8, so formula becomes:
+	Examples:
+	- 4/4 time (simple): ticks_per_bar = 4 * 2 = 8
 	  beat_position = (bar - 1) * 8 + (beat - 1) * 2 - 8
+	- 6/8 time (compound, 2 beats): ticks_per_bar = 2 * 3 = 6
+	  beat_position = (bar - 1) * 6 + (beat - 1) * 3 - 6
 
 	Args:
 		bar: Bar number (e.g., 91)
 		beat: Beat number or string with 'a' for AND (e.g., 3, "1a", 2.5)
-			  Numeric beats: 1, 2, 3, 4 (or 1, 2, 3 for 3/4 time, etc.)
+			  Numeric beats: 1, 2, 3, 4 (or 1, 2, 3 for 3/4 time, 1, 2 for 6/8 time, etc.)
 			  AND beats: "1a", "2a", "3a", "4a" (or 1.5, 2.5, 3.5, 4.5)
+			  For compound meter, AND = +1 tick (triplet subdivision)
 
 	Returns:
 		beat_position as integer
 
-	Examples (4/4 time):
+	Examples (4/4 simple time):
 		bar_beat_to_position(91, 3) → 716 (Bar 91 Beat 3)
 		bar_beat_to_position(92, "1a") → 721 (Bar 92 Beat 1 AND)
 		bar_beat_to_position(92, 1.5) → 721 (same as above)
@@ -110,12 +115,16 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	else:
 		beat_num = float(beat)
 
-	# Calculate beat position using time signature from level data
-	# Conductor counts in half-beats, so multiply beats_per_bar by 2
-	var half_beats_per_bar = level_data.get("beats_per_bar", 4) * 2
-	var base_pos = (bar - 1) * half_beats_per_bar + (int(beat_num) - 1) * 2 - half_beats_per_bar
+	# Get time signature info from level data
+	var time_signature_type = level_data.get("time_signature_type", "simple")
+	var subdivision = 3 if time_signature_type == "compound" else 2
+	var beats_per_bar = level_data.get("beats_per_bar", 4)
+	var ticks_per_bar = beats_per_bar * subdivision
 
-	# Add 1 for AND notes (half-beat offset)
+	# Calculate beat position using time signature subdivision
+	var base_pos = (bar - 1) * ticks_per_bar + (int(beat_num) - 1) * subdivision - ticks_per_bar
+
+	# Add 1 tick for AND notes (subdivision offset)
 	if beat_num != int(beat_num):  # Has decimal (e.g., 1.5)
 		base_pos += 1
 
@@ -138,6 +147,11 @@ func _ready():
 		BattleManager.current_bpm = conductor.bpm
 	if level_data.has("beats_before_start"):
 		conductor.beats_before_start = int(level_data["beats_before_start"])
+
+	# Configure time signature subdivision: 2 for simple (4/4, 3/4, 7/4), 3 for compound (6/8, 9/8, 12/8)
+	var time_signature_type = level_data.get("time_signature_type", "simple")
+	conductor.subdivision = 3 if time_signature_type == "compound" else 2
+
 	if level_data.has("audio_file"):
 		var audio_path = level_data["audio_file"]
 		# Use MusicManager for instant, preloaded music (no web stuttering!)

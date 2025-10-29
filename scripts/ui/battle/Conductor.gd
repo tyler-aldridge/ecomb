@@ -16,6 +16,10 @@ var current_measure: int = 1
 var cached_output_latency: float = 0.0
 var latency_cache_timer: float = 0.0
 
+# Time signature subdivision: 2 for simple meters (4/4, 3/4, 7/4), 3 for compound meters (6/8, 9/8, 12/8)
+# Controls how Conductor converts beats to ticks (eighth notes vs triplets)
+var subdivision: int = 2
+
 # Pause sync safety: Track playback position drift during pause
 var paused_song_position: float = 0.0
 var paused_playback_position: float = 0.0
@@ -99,7 +103,11 @@ func _physics_process(delta: float) -> void:
 
 		# Apply user-configurable timing offset for audio latency compensation
 		song_position += GameManager.get_timing_offset()
-		song_position_in_beats = int((song_position / seconds_per_beat) * 2) - 8
+
+		# Convert song_position to ticks using time signature subdivision
+		# subdivision = 2 for simple meters (quarter to eighth), 3 for compound (dotted quarter to triplet eighth)
+		# Offset by 4 beats (4 * subdivision ticks) to align with countdown system
+		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision) - (4 * subdivision)
 		_report_beat()
 
 func _report_beat() -> void:
@@ -115,15 +123,17 @@ func _report_beat() -> void:
 func play_with_beat_offset() -> void:
 	last_reported_beat = -beats_before_start
 	start_timer = Timer.new()
-	start_timer.wait_time = seconds_per_beat / 2.0  # Half-beat intervals
+	# Subdivision determines tick rate: 2 for simple (half-beat), 3 for compound (triplet)
+	start_timer.wait_time = seconds_per_beat / float(subdivision)
 	start_timer.timeout.connect(_emit_fake_beat)
 	add_child(start_timer)
 	start_timer.start()
 
 func _emit_fake_beat() -> void:
-	last_reported_beat += 1  # Increment by 1 for each half-beat
+	last_reported_beat += 1  # Increment by 1 for each tick
 	emit_signal("beat", last_reported_beat)
-	if last_reported_beat < -8:
+	# Stop countdown at 4 beats before music starts (4 * subdivision ticks)
+	if last_reported_beat < -(4 * subdivision):
 		start_timer.start()
 	else:
 		start_timer.queue_free()
