@@ -60,6 +60,9 @@ func _physics_process(delta: float) -> void:
 		# This fixes web bug where playback position drifts during pause
 		seek(pause_playback_snapshot)
 		pause_playback_snapshot = 0.0
+		# Return immediately - don't recalculate song_position this frame
+		# Let the audio stream settle and recalculate on next frame
+		return
 
 	if playing:
 		# Refresh latency cache every second (not every frame)
