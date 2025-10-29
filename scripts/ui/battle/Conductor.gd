@@ -23,6 +23,7 @@ var subdivision: int = 2
 # Pause drift compensation: On web, get_playback_position() advances during pause
 var pause_playback_snapshot: float = 0.0
 var pause_song_position_snapshot: float = 0.0
+var frames_since_unpause: int = 0  # Lock restored position for a few frames after unpause
 
 var start_timer: Timer
 
@@ -72,6 +73,16 @@ func _physics_process(delta: float) -> void:
 
 		pause_playback_snapshot = 0.0
 		pause_song_position_snapshot = 0.0
+		frames_since_unpause = 0  # Start frame counter
+		return
+
+	# After unpause, lock restored position for 5 frames to let audio stream catch up to seek
+	if frames_since_unpause < 5:
+		frames_since_unpause += 1
+		# Continue using restored position, just advance by delta
+		song_position += delta
+		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision) - (4 * subdivision)
+		_report_beat()
 		return
 
 	if playing:
