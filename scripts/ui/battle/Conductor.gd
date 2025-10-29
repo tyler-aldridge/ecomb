@@ -71,6 +71,10 @@ func _physics_process(delta: float) -> void:
 		# Accumulate drift to compensate in all future get_playback_position() calls
 		# This prevents beat grid from shifting after pause/unpause
 		pause_drift_offset += drift
+		# CRITICAL: Restore song_position to exactly where it was when paused
+		# Don't recalculate this frame - time_since_mix and other values may be stale
+		song_position = paused_song_position
+		return
 
 	if playing:
 		# Refresh latency cache every second (not every frame)
