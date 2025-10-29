@@ -66,6 +66,10 @@ func _physics_process(delta: float) -> void:
 		song_position = pause_song_position_snapshot
 		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision) - (4 * subdivision)
 
+		# CRITICAL: Reset last_reported_beat so beat signals can fire again
+		# Otherwise beats won't fire because last_reported_beat is ahead of restored position
+		last_reported_beat = song_position_in_beats - 1
+
 		pause_playback_snapshot = 0.0
 		pause_song_position_snapshot = 0.0
 		return
