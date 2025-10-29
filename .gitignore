@@ -1,3 +1,7 @@
+# Godot generated files
+.godot/
+.godot/*
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -26,8 +30,13 @@ Temporary Items
 desktop.ini
 
 # macOS custom folder icons (caused git corruption issues)
+# These invisible files corrupt git repos
 Icon?
 Icon
+**/Icon?
+**/Icon
+Icon$'\r'
+**/Icon$'\r'
 
 # Team docs managed via Google Drive - DO NOT SYNC
 docs/
