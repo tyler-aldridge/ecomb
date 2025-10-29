@@ -22,6 +22,7 @@ var subdivision: int = 2
 
 # Pause drift compensation: On web, get_playback_position() advances during pause
 var pause_playback_snapshot: float = 0.0
+var pause_song_position_snapshot: float = 0.0
 
 var start_timer: Timer
 
@@ -54,24 +55,19 @@ func _physics_process(delta: float) -> void:
 		# Take snapshot on first paused frame
 		if pause_playback_snapshot == 0.0:
 			pause_playback_snapshot = get_playback_position()
+			pause_song_position_snapshot = song_position
 		return
 	elif pause_playback_snapshot > 0.0:
-		# Just unpaused - SEEK audio back to where it was when paused
-		# This fixes web bug where playback position drifts during pause
-		var target_position = pause_playback_snapshot
-		seek(target_position)
+		# Just unpaused - SEEK audio back to where it was, and restore song_position
+		seek(pause_playback_snapshot)
 
-		# CRITICAL: Manually recalculate song_position to match the seeked position
-		# Don't wait for get_playback_position() to update - it lags behind seek()
-		song_position = target_position
-		if OS.has_feature("web"):
-			song_position += 0.8  # Re-apply web buffer compensation
-		song_position += GameManager.get_timing_offset()
-
-		# Recalculate beat position to keep spawner in sync
+		# Restore song_position to exactly what it was when paused
+		# Don't recalculate - just restore the frozen value
+		song_position = pause_song_position_snapshot
 		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision) - (4 * subdivision)
 
 		pause_playback_snapshot = 0.0
+		pause_song_position_snapshot = 0.0
 		return
 
 	if playing:
