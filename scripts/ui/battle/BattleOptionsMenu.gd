@@ -12,7 +12,7 @@ signal closed
 @onready var framerate_checkbox: CheckBox = $GameOptionsContainer/FramerateContainer/FramerateCheckbox
 @onready var close_button: Button = $GameOptionsContainer/ButtonsContainer/CloseButton
 @onready var exit_button: Button = $GameOptionsContainer/ButtonsContainer/ExitButton
-@onready var reset_button: Button = $GameOptionsContainer/ResetButton
+@onready var reset_button: Button = $GameOptionsContainer/ButtonsContainer/ResetButton
 
 # Dialog and overlay
 @onready var exit_dialog: ConfirmationDialog = $ExitDialog
