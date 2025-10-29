@@ -282,7 +282,11 @@ custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_styles/separator = SubResource("StyleBoxFlat_88x8e")
 
-[node name="CloseButton" type="Button" parent="OptionsContainer"]
+[node name="ButtonsContainer" type="HBoxContainer" parent="OptionsContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="CloseButton" type="Button" parent="OptionsContainer/ButtonsContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -290,6 +294,20 @@ theme_override_font_sizes/font_size = 50
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
 text = "Close"
+icon_alignment = 1
+
+[node name="ButtonSpacer" type="Control" parent="OptionsContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+[node name="ResetButton" type="Button" parent="OptionsContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 50
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
+text = "Reset to Default"
 icon_alignment = 1
 
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]

@@ -464,7 +464,8 @@ func _on_beat(beat_position: int):
 		var note_spawn = int(note_data.get("spawn_position", 0))
 		if note_spawn > beat_position:
 			break
-		if note_spawn == beat_position:
+		# Spawn if at or past spawn beat (catches up if beats were skipped)
+		if note_spawn <= beat_position:
 			var note_type = note_data.get("note", "quarter")
 			var lane = note_data.get("lane", "random")
 			spawn_note_by_type(note_type, lane, note_spawn)

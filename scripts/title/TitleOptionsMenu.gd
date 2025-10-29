@@ -10,7 +10,8 @@ signal closed
 @onready var difficulty_value_label: Label = $OptionsContainer/DifficultyBox/DifficultyValueLabel
 @onready var fullscreen_checkbox: CheckBox = $OptionsContainer/FullScreenContainer/FullScreenCheckbox
 @onready var framerate_checkbox: CheckBox = $OptionsContainer/FramerateContainer/FramerateCheckbox
-@onready var close_button: Button = $OptionsContainer/CloseButton
+@onready var close_button: Button = $OptionsContainer/ButtonsContainer/CloseButton
+@onready var reset_button: Button = $OptionsContainer/ButtonsContainer/ResetButton
 
 # Audio players
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
@@ -37,6 +38,11 @@ func _ready():
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)
 		close_button.mouse_entered.connect(_on_button_hover)
+
+	# Connect reset button
+	if reset_button:
+		reset_button.pressed.connect(_on_reset_pressed)
+		reset_button.mouse_entered.connect(_on_button_hover)
 
 	# Load saved settings
 	load_settings()
@@ -97,6 +103,20 @@ func _on_close_pressed():
 	await get_tree().create_timer(0.3).timeout
 	emit_signal("closed")
 
+func _on_reset_pressed():
+	"""Reset all settings to default values."""
+	success_sound.play()
+	# Reset all settings to defaults
+	GameManager.set_setting("master_volume", 85)
+	GameManager.set_setting("music_volume", 75)
+	GameManager.set_setting("sound_volume", 65)
+	GameManager.set_setting("rhythm_timing_offset", 0)
+	GameManager.set_setting("difficulty", "gymbro")
+	GameManager.set_setting("fullscreen", false)
+	GameManager.set_setting("show_fps", false)
+	# Reload UI to reflect defaults
+	load_settings()
+	GameManager.save_settings()
 
 func load_settings():
 	if master_volume_slider:

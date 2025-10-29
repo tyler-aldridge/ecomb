@@ -290,7 +290,7 @@ theme_override_styles/separator = SubResource("StyleBoxFlat_88x8e")
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_constants/separation = 250
+theme_override_constants/separation = 50
 
 [node name="CloseButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
 layout_mode = 2
@@ -300,6 +300,16 @@ theme_override_font_sizes/font_size = 50
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
 text = "Close"
+icon_alignment = 1
+
+[node name="ResetButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 50
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
+text = "Reset to Default"
 icon_alignment = 1
 
 [node name="ExitButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
