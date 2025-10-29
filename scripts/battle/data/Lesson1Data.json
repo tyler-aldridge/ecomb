@@ -40,10 +40,10 @@
 ],
 
 "notes": [
-{"bar": 1, "beat": 1, "beat_position": 0, "note": "whole", "lane": "random"},
-{"bar": 8, "beat": 1, "beat_position": 52, "note": "whole", "lane": "random"},
-{"bar": 14, "beat": 1, "beat_position": 100, "note": "whole", "lane": "random"},
-{"bar": 19, "beat": 1, "beat_position": 140, "note": "whole", "lane": "random"},
+{"bar": 1, "beat": 1, "beat_position": -8, "note": "whole"},
+{"bar": 8, "beat": 1, "beat_position": 48, "note": "whole"},
+{"bar": 14, "beat": 1, "beat_position": 96, "note": "whole", "lane": "random"},
+{"bar": 19, "beat": 1, "beat_position": 136, "note": "whole", "lane": "random"},
 {"bar": 26, "beat": 1, "beat_position": 192, "note": "half", "lane": "random"},
 {"bar": 26, "beat": 3, "beat_position": 196, "note": "half", "lane": "random"},
 {"bar": 27, "beat": 1, "beat_position": 200, "note": "half", "lane": "random"},
