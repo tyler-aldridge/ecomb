@@ -74,6 +74,10 @@ func _physics_process(delta: float) -> void:
 		pause_playback_snapshot = 0.0
 		pause_song_position_snapshot = 0.0
 		frames_since_unpause = 0  # Start frame counter
+
+		# Fire beat signal for current position before returning
+		# This ensures we don't skip a beat that should fire on the unpause frame
+		_report_beat()
 		return
 
 	# After unpause, lock restored position for 5 frames to let audio stream catch up to seek
