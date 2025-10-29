@@ -72,8 +72,9 @@ func _physics_process(delta: float) -> void:
 		# This prevents beat grid from shifting after pause/unpause
 		pause_drift_offset += drift
 		# CRITICAL: Restore song_position to exactly where it was when paused
-		# Don't recalculate this frame - time_since_mix and other values may be stale
+		# Also recalculate song_position_in_beats to keep beat signals in sync
 		song_position = paused_song_position
+		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision) - (4 * subdivision)
 		return
 
 	if playing:
