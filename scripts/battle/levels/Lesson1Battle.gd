@@ -99,7 +99,7 @@ func get_time_signature_info() -> Dictionary:
 
 	if is_compound:
 		return {
-			"beats_per_bar": numerator / 3,
+			"beats_per_bar": numerator // 3,  # Integer division: 6//3=2, 9//3=3, 12//3=4
 			"subdivision": 3
 		}
 	else:
