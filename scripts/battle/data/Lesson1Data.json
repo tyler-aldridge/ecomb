@@ -7,9 +7,10 @@
 "song_name": "DivineFoxPlay-152BPM",
 "audio_file": "res://assets/audio/music/DivineFoxPlay-152BPM.ogg",
 "bpm": 152,
-"beats_per_bar": 4,
+"time_signature_numerator": 4,
+"time_signature_denominator": 4,
 "beats_before_start": 36,
-"_note": "beat_position values represent HIT times (when note should line up with HitZone for Perfect hit in Logic Pro Bar/Beat). Game automatically calculates spawn time by subtracting travel offset. Formula: Bar N Beat B = (N-1)*8 + (B-1)*2 - 8. AND notes add +1. Optional 'lane' parameter: 'random' (default), '1', '2', '3' for designated lanes.",
+"_note": "TIME SIGNATURE: Use standard music notation (numerator/denominator). Examples: 4/4, 3/4, 6/8, 7/8, 12/8. System automatically detects compound meters (6/8, 9/8, 12/8) and sets subdivision accordingly. BEAT POSITIONS: Values represent HIT times (when note should line up with HitZone). Game calculates spawn time by subtracting travel offset. Formula: Bar N Beat B = (N-1)*ticks_per_bar + (B-1)*subdivision - ticks_per_bar. For 4/4: (N-1)*8 + (B-1)*2 - 8. For 6/8: (N-1)*6 + (B-1)*3 - 6. AND notes add +1 tick. Optional 'lane' parameter: 'random' (default), '1', '2', '3' for designated lanes.",
 
 "dialogue": [
 {"beat_position": -35, "text": "Yo chump! Open them ears, this only gets said once!", "character": "opponent", "duration": 3.0, "triggers": "create_hit_zone_indicators"},
