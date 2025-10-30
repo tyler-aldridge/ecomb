@@ -1,0 +1,107 @@
+[gd_scene load_steps=8 format=3 uid="uid://b0ls4o1dgym8o"]
+
+[ext_resource type="Texture2D" uid="uid://cd1c0aa057108" path="res://assets/cutscenes/splash/splash-blue-gradient.png" id="1_5svwm"]
+[ext_resource type="Script" uid="uid://dw6ymjiosekxh" path="res://scripts/ui/title/Splash.gd" id="1_31efs"]
+[ext_resource type="Texture2D" uid="uid://sbit2h6xxq7v" path="res://assets/cutscenes/splash/splash-cs-logo.png" id="2_31efs"]
+[ext_resource type="AudioStream" uid="uid://cu3hp1fgpntku" path="res://assets/audio/sfx/intro-splash.ogg" id="3_c8158"]
+
+[sub_resource type="Animation" id="Animation_tbgi4"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("FadeRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_o6xl0"]
+length = 4.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CS-Logo:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.0011031223, 0.1261616, 0.26072678, 0.3554557),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(10, 9.656), Vector2(0.9, 0.869), Vector2(1.4, 1.352), Vector2(0.9, 0.869)]
+}
+tracks/1/type = "audio"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("SplashSound")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"clips": [{
+"end_offset": 0.7026607,
+"start_offset": 0.0,
+"stream": ExtResource("3_c8158")
+}],
+"times": PackedFloat32Array(0)
+}
+tracks/1/use_blend = true
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("FadeRect:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(2.2045863, 4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0, 0, 0, 0), Color(0, 0, 0, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_tipki"]
+_data = {
+&"RESET": SubResource("Animation_tbgi4"),
+&"splash": SubResource("Animation_o6xl0")
+}
+
+[node name="Splash" type="Node2D"]
+script = ExtResource("1_31efs")
+
+[node name="Gradient" type="Sprite2D" parent="."]
+position = Vector2(960, 540)
+texture = ExtResource("1_5svwm")
+
+[node name="CS-Logo" type="Sprite2D" parent="."]
+position = Vector2(960, 540)
+scale = Vector2(10, 9.656)
+texture = ExtResource("2_31efs")
+
+[node name="SplashAnimation" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_tipki")
+}
+
+[node name="SplashText" type="Label" parent="."]
+offset_right = 841.0
+offset_bottom = 50.0
+scale = Vector2(3, 3)
+pivot_offset = Vector2(140.75, 15.33)
+theme_override_font_sizes/font_size = 25
+text = "an open collab indie game studio"
+horizontal_alignment = 1
+
+[node name="SplashSound" type="AudioStreamPlayer" parent="."]
+
+[node name="FadeRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1917.0
+offset_bottom = 1084.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

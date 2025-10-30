@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4p1r7k5m8bxq"]
+
+[ext_resource type="Script" path="res://scripts/ui/battles/ComboDisplay.gd" id="1_combo"]
+
+[node name="ComboDisplay" type="Label"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -958.0
+offset_top = 97.0
+offset_right = -558.0
+offset_bottom = 147.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(200, 25)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 75
+text = "Combo: 0x"
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("1_combo")

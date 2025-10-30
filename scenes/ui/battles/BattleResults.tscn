@@ -1,0 +1,177 @@
+[gd_scene load_steps=6 format=3 uid="uid://cr2mx8n5qbv7k"]
+
+[ext_resource type="Script" path="res://scripts/ui/battles/BattleResults.gd" id="1_results"]
+[ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="2_hover"]
+[ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="3_success"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="4_hurt"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0, 0, 0, 0.85)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="BattleResults" type="Control"]
+visible = false
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_results")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+visible = false
+layer = 100
+
+[node name="Panel" type="Panel" parent="CanvasLayer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -500.0
+offset_top = -400.0
+offset_right = 500.0
+offset_bottom = 400.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 120
+text = "BATTLE COMPLETE!"
+horizontal_alignment = 1
+
+[node name="StatsContainer" type="VBoxContainer" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StrengthEarnedLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 54
+text = "Strength Earned: 3990"
+horizontal_alignment = 1
+
+[node name="StrengthAwardedLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.3, 1)
+theme_override_font_sizes/font_size = 54
+text = "Strength Awarded: 3990"
+horizontal_alignment = 1
+
+[node name="MaxComboLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 54
+text = "Max Combo: 149"
+horizontal_alignment = 1
+
+[node name="HitBreakdown" type="VBoxContainer" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="BreakdownTitle" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 42
+text = "HIT BREAKDOWN"
+horizontal_alignment = 1
+
+[node name="PerfectLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.3, 1)
+theme_override_font_sizes/font_size = 36
+text = "PERFECT: 149"
+horizontal_alignment = 1
+
+[node name="GoodLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0.3, 1)
+theme_override_font_sizes/font_size = 36
+text = "GOOD: 0"
+horizontal_alignment = 1
+
+[node name="OkayLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.3, 1)
+theme_override_font_sizes/font_size = 36
+text = "OKAY: 0"
+horizontal_alignment = 1
+
+[node name="MissLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer/HitBreakdown"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 36
+text = "MISS: 0"
+horizontal_alignment = 1
+
+[node name="LevelUpLabel" type="Label" parent="CanvasLayer/Panel/VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 72
+text = "LEVEL UP! Now Level 2!"
+horizontal_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="RestartButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(150, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Restart"
+
+[node name="ContinueButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(150, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Continue"
+
+[node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_hover")
+bus = &"SFX"
+
+[node name="SuccessSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_success")
+bus = &"SFX"
+
+[node name="RestartSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_hurt")
+bus = &"SFX"
+
+[node name="ContinueSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_success")
+bus = &"SFX"

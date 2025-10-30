@@ -34,7 +34,9 @@ var settings = {
 	"rhythm_timing_offset": 0,  # For audio latency compensation (milliseconds, positive = notes spawn later/arrive later)
 	"fullscreen": false,
 	"show_fps": false,
-	"difficulty": "gymbro"  # wimpy, casual, gymbro, meathead, gigachad
+	"difficulty": "gymbro",  # wimpy, casual, gymbro, meathead, gigachad
+	"has_seen_tutorial": false,  # Track if player has seen tutorial explanation
+	"has_calibrated": false  # Track if player has completed calibration
 }
 
 # File paths
@@ -262,6 +264,27 @@ func get_player_max_hp() -> int:
 
 func is_tutorial_completed() -> bool:
 	return player_data.get("tutorial_completed", false)
+
+# ===== TUTORIAL & NARRATIVE FLOW HELPERS =====
+func has_seen_tutorial() -> bool:
+	"""Check if player has seen the tutorial explanation."""
+	return get_setting("has_seen_tutorial", false)
+
+func mark_tutorial_seen():
+	"""Mark tutorial explanation as seen."""
+	set_setting("has_seen_tutorial", true)
+
+func has_calibrated() -> bool:
+	"""Check if player has completed calibration."""
+	return get_setting("has_calibrated", false)
+
+func mark_calibrated():
+	"""Mark calibration as complete."""
+	set_setting("has_calibrated", true)
+
+func should_skip_narrative_intro() -> bool:
+	"""Check if player should skip narrative intro (returning player)."""
+	return has_seen_tutorial() or is_tutorial_completed()
 
 # ===== RHYTHM GAME HELPERS =====
 func get_timing_offset() -> float:
