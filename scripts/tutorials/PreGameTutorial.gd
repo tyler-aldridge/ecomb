@@ -109,13 +109,13 @@ func setup_battle_ui():
 
 	ui_layer.add_child(groove_bar)
 
-	# Fade in the groove bar
+	# Fade in the groove bar (longer duration, no delay)
 	var groove_fade = create_tween()
-	groove_fade.tween_property(groove_bar, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_OUT).set_delay(0.2)
+	groove_fade.tween_property(groove_bar, "modulate:a", 1.0, 1.5).set_ease(Tween.EASE_OUT).set_delay(0.5)
 
-	# Fade in the player sprite
+	# Fade in the player sprite (longer duration, no delay)
 	var sprite_fade = create_tween()
-	sprite_fade.tween_property(player_sprite, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_OUT).set_delay(0.2)
+	sprite_fade.tween_property(player_sprite, "modulate:a", 1.0, 1.5).set_ease(Tween.EASE_OUT).set_delay(0.5)
 
 	# Set groove bar to tutorial starting value (50%)
 	if groove_bar.has_method("set_groove"):
@@ -128,12 +128,12 @@ func setup_battle_ui():
 	xp_gain_display = displays.get("xp_display")
 	hit_zones = displays.get("hitzones", [])
 
-	# Fade in hit zones
+	# Fade in hit zones (longer duration, visible fade)
 	for zone in hit_zones:
 		if zone and is_instance_valid(zone):
 			zone.modulate.a = 0.0
 			var zone_fade = create_tween()
-			zone_fade.tween_property(zone, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_OUT).set_delay(0.2)
+			zone_fade.tween_property(zone, "modulate:a", 1.0, 1.5).set_ease(Tween.EASE_OUT).set_delay(0.5)
 
 func create_fade_overlay():
 	"""Create black fade overlay for scene transitions."""
@@ -189,14 +189,15 @@ func show_tutorial_step(step_index: int):
 			if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
 				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
-			var rect = Rect2(player_sprite.position - Vector2(100, 100), Vector2(200, 200))
+			# Create yellow border around player sprite using global position
+			var rect = Rect2(player_sprite.global_position - Vector2(100, 100), Vector2(200, 200))
 			current_border = create_flashing_border(rect, 15)
 		"hit_zones":
 			# Create borders for all hit zones
 			for zone in hit_zones:
 				if zone and is_instance_valid(zone):
 					var zone_pos = zone.global_position
-					var zone_size = zone.size if zone.has("size") else Vector2(200, 200)
+					var zone_size = zone.size  # Panel/Control always has .size property
 					var border = create_flashing_border(Rect2(zone_pos, zone_size), 15)
 					add_child(border)
 
@@ -220,6 +221,16 @@ func show_message(step: Dictionary, message_index: int):
 	current_message_index = message_index
 	var message = step["messages"][message_index]
 
+	# Run simulation IMMEDIATELY for first message of certain steps
+	if message_index == 0 and step.has("simulate"):
+		match step["simulate"]:
+			"xp_gains":
+				_simulate_xp_gains()
+			"hit_zone_notes":
+				_simulate_hit_zone_notes()
+			"combo":
+				_simulate_combo()
+
 	# Show centered dialog with rainbow border (48px font, auto-sized)
 	# Using "center" character positions dialog in center of screen
 	DialogManager.show_dialog(message, "center", 5.0)
@@ -232,16 +243,6 @@ func show_message(step: Dictionary, message_index: int):
 	if not is_transitioning and current_message_index == message_index:
 		_on_advance_requested()
 	auto_advance_timer = null
-
-	# Run simulation for first message of certain steps
-	if message_index == 0 and step.has("simulate"):
-		match step["simulate"]:
-			"xp_gains":
-				_simulate_xp_gains()
-			"hit_zone_notes":
-				_simulate_hit_zone_notes()
-			"combo":
-				_simulate_combo()
 
 func create_flashing_border(rect: Rect2, padding: float) -> Control:
 	"""Create a flashing yellow border around a UI element."""
