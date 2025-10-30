@@ -83,8 +83,15 @@ func _physics_process(delta):
 	var pixels_per_beat = BattleManager.get_pixels_per_beat(conductor.bpm)
 	var distance_from_hitzone = beats_until_hit * pixels_per_beat
 
-	# Set Y position (row) - recalculated every frame from audio time
-	position.y = hitzone_y - distance_from_hitzone
+	# Get note height dynamically
+	var note_height = $NoteTemplate.size.y if has_node("NoteTemplate") else 200.0
+
+	# Set Y position with CENTER alignment
+	# At beat_position (beats_until_hit = 0): center of note aligns with center of hitzone
+	# Formula: position.y = hitzone_center_y - note_center_offset - distance
+	var hitzone_center_y = hitzone_y + BattleManager.HITZONE_HEIGHT / 2.0
+	var note_center_offset = note_height / 2.0
+	position.y = hitzone_center_y - note_center_offset - distance_from_hitzone
 
 	# Visibility and despawn based on grid position
 	if beats_until_hit > BattleManager.SPAWN_AHEAD_BEATS:

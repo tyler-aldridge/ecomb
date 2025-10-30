@@ -40,19 +40,16 @@ const COMBO_THRESHOLDS = {
 
 const MAX_COMBO_MULTIPLIER = 3.0
 
-# Note type configuration: scene, spawn_offset (half-beats before hit time)
+# Note type configuration: scene paths only (grid system handles all timing)
 const NOTE_TYPE_CONFIG = {
 	"whole": {
-		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),
-		"spawn_offset": 16
+		"scene": preload("res://scenes/ui/battle/WholeNote.tscn")
 	},
 	"half": {
-		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),
-		"spawn_offset": 12
+		"scene": preload("res://scenes/ui/battle/HalfNote.tscn")
 	},
 	"quarter": {
-		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),
-		"spawn_offset": 12
+		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn")
 	}
 }
 
@@ -76,9 +73,7 @@ const HIT_ZONE_POSITIONS = {
 const BASE_PIXELS_PER_BEAT = 30.0  # At 120 BPM reference
 const SPAWN_AHEAD_BEATS = 20  # How many beats ahead to show notes (affects screen visibility)
 const DESPAWN_BEHIND_BEATS = 5  # How many beats past hitzone before removing note
-
-const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0  # Deprecated - grid system calculates this dynamically
-const OVERLAP_PREVENTION_WINDOW = 6
+const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}
 const MISS_WINDOW = 150.0
 const FADE_FROM_BLACK_DURATION = 2.5  # Longer fade hides sprite positioning adjustments
