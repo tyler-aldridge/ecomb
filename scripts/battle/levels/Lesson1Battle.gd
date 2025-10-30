@@ -402,7 +402,7 @@ func initialize_note_pool():
 
 	print("Note pool initialized: ", POOL_SIZE, " instances for ", note_queue.size(), " notes")
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	"""Update note pool - activate notes when ready, return them when done."""
 	if not conductor or not conductor.playing:
 		return

@@ -70,7 +70,7 @@ func deactivate():
 	beat_position = 0
 	conductor = null
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	if not is_active or not conductor:
 		return
 
@@ -115,10 +115,10 @@ func is_past_despawn_threshold() -> bool:
 	return beats_until_hit < -BattleManager.DESPAWN_BEHIND_BEATS
 
 # Legacy compatibility (battle scenes may still call these)
-func setup(key: String, start_pos: Vector2, target_position: float):
+func setup(_key: String, _start_pos: Vector2, _target_position: float):
 	pass  # Deprecated - use setup_grid instead
 
-func set_travel_time_and_distance(time: float, distance: float):
+func set_travel_time_and_distance(_time: float, _distance: float):
 	pass  # Deprecated - grid system calculates this automatically
 
 func stop_movement():

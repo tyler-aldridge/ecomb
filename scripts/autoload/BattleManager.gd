@@ -833,15 +833,15 @@ func get_note_height(note: Node) -> float:
 		return note.get_node("NoteTemplate").size.y
 	return 200.0  # Default fallback
 
-func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node) -> Array:
+func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node, lanes: Array = ["1", "2", "3"]) -> Array:
 	"""
-	Universal function to create yellow tutorial indicators (borders and numbers) on all hit zones.
+	Universal function to create yellow tutorial indicators (borders and numbers) on hit zones.
 	Displays lane numbers with pulsing animation and yellow borders.
-	Scales automatically with HIT_ZONE_POSITIONS - works for 3, 4, 5+ lanes.
 
 	Args:
 		ui_layer: The CanvasLayer to add indicator nodes to
 		tween_parent: The node to create tweens on (prevents lambda capture errors)
+		lanes: Array of lane keys to show indicators for (default: ["1", "2", "3"] for tutorial)
 
 	Returns:
 		Array of indicator nodes (borders and labels) that can be cleaned up later
@@ -851,8 +851,8 @@ func create_hit_zone_indicators(ui_layer: CanvasLayer, tween_parent: Node) -> Ar
 	# Show groove bar tutorial message
 	show_groove_tutorial.emit()
 
-	# Create indicators for each lane dynamically
-	for lane_key in HIT_ZONE_POSITIONS.keys():
+	# Create indicators for specified lanes only
+	for lane_key in lanes:
 		var pos = HIT_ZONE_POSITIONS[lane_key]
 
 		# Create yellow border
