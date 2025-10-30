@@ -43,13 +43,13 @@ const MAX_COMBO_MULTIPLIER = 3.0
 # Note type configuration: scene paths only (grid system handles all timing)
 const NOTE_TYPE_CONFIG = {
 	"whole": {
-		"scene": preload("res://scenes/ui/battle/WholeNote.tscn")
+		"scene": preload("res://scenes/ui/battles/WholeNote.tscn")
 	},
 	"half": {
-		"scene": preload("res://scenes/ui/battle/HalfNote.tscn")
+		"scene": preload("res://scenes/ui/battles/HalfNote.tscn")
 	},
 	"quarter": {
-		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn")
+		"scene": preload("res://scenes/ui/battles/QuarterNote.tscn")
 	}
 }
 
@@ -765,7 +765,7 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 	var displays = {}
 
 	# Combo Display - centered between HitZones and bottom edge
-	var combo_display_scene = preload("res://scenes/ui/battle/ComboDisplay.tscn")
+	var combo_display_scene = preload("res://scenes/ui/battles/ComboDisplay.tscn")
 	var combo_display = combo_display_scene.instantiate()
 
 	# Add to UI layer (not player sprite)
@@ -811,7 +811,7 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 
 	# XP Gain Display - on top of Player sprite
 	if player_sprite:
-		var xp_display_scene = preload("res://scenes/ui/battle/XPGainDisplay.tscn")
+		var xp_display_scene = preload("res://scenes/ui/battles/XPGainDisplay.tscn")
 		var xp_display = xp_display_scene.instantiate()
 
 		# Attach as child so it follows player (including jumps)
