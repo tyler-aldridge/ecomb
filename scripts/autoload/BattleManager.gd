@@ -40,19 +40,16 @@ const COMBO_THRESHOLDS = {
 
 const MAX_COMBO_MULTIPLIER = 3.0
 
-# Note type configuration: scene, spawn_offset (half-beats before hit time)
+# Note type configuration: scene paths only (grid system handles all timing)
 const NOTE_TYPE_CONFIG = {
 	"whole": {
-		"scene": preload("res://scenes/ui/battle/WholeNote.tscn"),
-		"spawn_offset": 16
+		"scene": preload("res://scenes/ui/battle/WholeNote.tscn")
 	},
 	"half": {
-		"scene": preload("res://scenes/ui/battle/HalfNote.tscn"),
-		"spawn_offset": 12
+		"scene": preload("res://scenes/ui/battle/HalfNote.tscn")
 	},
 	"quarter": {
-		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn"),
-		"spawn_offset": 12
+		"scene": preload("res://scenes/ui/battle/QuarterNote.tscn")
 	}
 }
 
@@ -60,14 +57,23 @@ const NOTE_TYPE_CONFIG = {
 const OPPONENT_INVERT_SHADER = preload("res://assets/shaders/color_invert.gdshader")
 
 const HITZONE_HEIGHT = 200.0
+
+# Lane positions - supports 3-lane (tutorial) and 5-lane (advanced) battles
+# Battle scenes can choose how many lanes to use
 const HIT_ZONE_POSITIONS = {
 	"1": Vector2(610.0, 650.0),
 	"2": Vector2(860.0, 650.0),
-	"3": Vector2(1110.0, 650.0)
+	"3": Vector2(1110.0, 650.0),
+	"4": Vector2(485.0, 650.0),   # Left of lane 1 (for 5-lane mode)
+	"5": Vector2(1235.0, 650.0)   # Right of lane 3 (for 5-lane mode)
 }
 
-const SPAWN_HEIGHT_ABOVE_TARGET = 1000.0
-const OVERLAP_PREVENTION_WINDOW = 6
+# Grid system constants for note positioning
+# Notes calculate their Y position based on how many beats until they should be hit
+const BASE_PIXELS_PER_BEAT = 30.0  # At 120 BPM reference
+const SPAWN_AHEAD_BEATS = 20  # How many beats ahead to show notes (affects screen visibility)
+const DESPAWN_BEHIND_BEATS = 5  # How many beats past hitzone before removing note
+const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}
 const MISS_WINDOW = 150.0
 const FADE_FROM_BLACK_DURATION = 2.5  # Longer fade hides sprite positioning adjustments
@@ -94,8 +100,28 @@ const DIFFICULTY_PRESETS = {
 # Current difficulty setting (persists across battles)
 var current_difficulty: String = "gymbro"
 
-# Current BPM (set by battle scene, used for UI animations)
+# Current BPM (set by battle scene, used for UI animations and note positioning)
 var current_bpm: float = 120.0
+
+# ============================================================================
+# GRID SYSTEM HELPERS
+# ============================================================================
+
+func get_pixels_per_beat(bpm: float = 0.0) -> float:
+	"""Calculate pixels per beat for visual fall speed.
+
+	Slower BPM = slower visual fall (more pixels per beat)
+	Faster BPM = faster visual fall (fewer pixels per beat)
+
+	Args:
+		bpm: Beats per minute (uses current_bpm if not specified)
+
+	Returns:
+		Pixels per beat for note positioning
+	"""
+	var target_bpm = bpm if bpm > 0 else current_bpm
+	# Inverse relationship: slower songs = notes move slower visually
+	return BASE_PIXELS_PER_BEAT * (120.0 / target_bpm)
 
 # ============================================================================
 # BATTLE STATE
