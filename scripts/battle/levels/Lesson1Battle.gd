@@ -11,12 +11,11 @@ var hit_zones = []
 @export var level_data_path: String = "res://scripts/battle/data/Lesson1Data.json"
 var level_data: Dictionary = {}
 
-# Pre-sorted event arrays for fast lookups (avoids iterating all events every beat)
-var sorted_notes: Array = []
+# Pre-sorted event arrays for dialogue/countdown/trigger handling in _on_beat()
+# Note: Notes handled by grid system in _physics_process(), not beat-based spawning
 var sorted_dialogues: Array = []
 var sorted_countdowns: Array = []
 var sorted_triggers: Array = []
-var next_note_index: int = 0
 var next_dialogue_index: int = 0
 var next_countdown_index: int = 0
 var next_trigger_index: int = 0
@@ -118,7 +117,8 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	Uses standard music time signature notation (numerator/denominator) from JSON.
 	System automatically detects compound meters and calculates subdivision.
 
-	Formula: beat_position = (bar - 1) * ticks_per_bar + (beat - 1) * subdivision - ticks_per_bar
+	NEW FORMULA (Audio position 0.0 = beat 0):
+	beat_position = (bar - 1) * ticks_per_bar + (beat - 1) * subdivision
 
 	Time Signature Examples:
 	- 4/4: beats_per_bar=4, subdivision=2, ticks_per_bar=8
@@ -127,7 +127,7 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	- 12/8: beats_per_bar=4, subdivision=3, ticks_per_bar=12 (compound: 4 dotted-quarter beats)
 
 	Args:
-		bar: Bar number (e.g., 91)
+		bar: Bar number (e.g., 1, 8, 91)
 		beat: Beat number or string with 'a' for AND (e.g., 3, "1a", 2.5)
 			  For 4/4: beats 1, 2, 3, 4
 			  For 6/8: beats 1, 2 (two dotted-quarter beats)
@@ -137,10 +137,11 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	Returns:
 		beat_position as integer
 
-	Examples:
-		4/4, Bar 91 Beat 3 → 716
-		4/4, Bar 92 Beat "1a" → 721 (AND note)
-		6/8, Bar 10 Beat 2 → 51
+	Examples (NEW FORMULA):
+		4/4, Bar 1 Beat 1 → 0 (audio position 0.0 = beat 0)
+		4/4, Bar 8 Beat 1 → 56
+		4/4, Bar 91 Beat 3 → 724
+		4/4, Bar 92 Beat "1a" → 729 (AND note)
 	"""
 	var beat_num: float
 
@@ -161,8 +162,9 @@ func bar_beat_to_position(bar: int, beat: Variant) -> int:
 	var subdivision = ts_info["subdivision"]
 	var ticks_per_bar = beats_per_bar * subdivision
 
-	# Calculate beat position using time signature subdivision
-	var base_pos = (bar - 1) * ticks_per_bar + (int(beat_num) - 1) * subdivision - ticks_per_bar
+	# Calculate beat position using NEW formula (no -8 offset)
+	# Audio position 0.0 = beat 0 (Bar 1 Beat 1)
+	var base_pos = (bar - 1) * ticks_per_bar + (int(beat_num) - 1) * subdivision
 
 	# Add 1 tick for AND notes (subdivision offset)
 	if beat_num != int(beat_num):  # Has decimal (e.g., 1.5)
@@ -318,59 +320,23 @@ func load_level_data():
 		if parse_result == OK:
 			level_data = json.data
 
-			# Convert Bar/Beat notation to beat_position and calculate spawn times
-			convert_bar_beat_to_spawn_positions()
+			# Pre-sort event arrays by beat_position for _on_beat() handler
+			# Note: Note sorting handled by initialize_note_pool() in grid system
+			if level_data.has("dialogue"):
+				sorted_dialogues = level_data["dialogue"].duplicate()
+				sorted_dialogues.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
+
+			if level_data.has("countdowns"):
+				sorted_countdowns = level_data["countdowns"].duplicate()
+				sorted_countdowns.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
+
+			if level_data.has("triggers"):
+				sorted_triggers = level_data["triggers"].duplicate()
+				sorted_triggers.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
 		else:
 			push_error("Failed to parse level data JSON: " + json.get_error_message())
 	else:
 		push_error("Failed to load level data from: " + level_data_path)
-
-func convert_bar_beat_to_spawn_positions():
-	"""Converts Bar/Beat notation to beat_position and calculates spawn times.
-	JSON can include:
-	  - bar/beat: Auto-calculates beat_position using formula
-	  - beat_position: Use this value directly (allows manual override)
-	Then subtracts spawn_offset to get spawn time."""
-
-	# Convert all notes from Bar/Beat to spawn_position
-	if level_data.has("notes"):
-		for note_data in level_data["notes"]:
-			var note_type = note_data.get("note", "quarter")
-			var hit_position: int
-
-			# Check if beat_position is provided in JSON
-			if note_data.has("beat_position"):
-				# Use the provided beat_position (allows manual override)
-				hit_position = int(note_data["beat_position"])
-			else:
-				# Calculate from bar/beat notation
-				var bar = int(note_data.get("bar", 1))
-				var beat = note_data.get("beat", 1)
-				hit_position = bar_beat_to_position(bar, beat)
-
-			# Get spawn_offset from config (fixed per note type)
-			var spawn_offset = BattleManager.NOTE_TYPE_CONFIG[note_type]["spawn_offset"] if BattleManager.NOTE_TYPE_CONFIG.has(note_type) else 8
-			var spawn_position = hit_position - spawn_offset
-
-			# Store spawn position for use in _on_beat
-			note_data["spawn_position"] = spawn_position
-
-	# Pre-sort all event arrays by beat_position for fast sequential lookups
-	if level_data.has("notes"):
-		sorted_notes = level_data["notes"].duplicate()
-		sorted_notes.sort_custom(func(a, b): return a.get("spawn_position", 0) < b.get("spawn_position", 0))
-
-	if level_data.has("dialogue"):
-		sorted_dialogues = level_data["dialogue"].duplicate()
-		sorted_dialogues.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
-
-	if level_data.has("countdowns"):
-		sorted_countdowns = level_data["countdowns"].duplicate()
-		sorted_countdowns.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
-
-	if level_data.has("triggers"):
-		sorted_triggers = level_data["triggers"].duplicate()
-		sorted_triggers.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
 
 func create_fade_overlay():
 	fade_overlay = ColorRect.new()
@@ -545,20 +511,8 @@ func _on_beat(beat_position: int):
 			handle_trigger(trigger_name)
 		next_trigger_index += 1
 
-	# Process notes (optimized: check only next pending notes)
-	while next_note_index < sorted_notes.size():
-		var note_data = sorted_notes[next_note_index]
-		var note_spawn = int(note_data.get("spawn_position", 0))
-		if note_spawn > beat_position:
-			break
-		# Spawn if at or past spawn beat (catches up if beats were skipped)
-		# Check if already spawned to prevent duplicates on pause/unpause
-		if note_spawn <= beat_position and not note_data.get("_spawned", false):
-			var note_type = note_data.get("note", "quarter")
-			var lane = note_data.get("lane", "random")
-			spawn_note_by_type(note_type, lane, note_spawn)
-			note_data["_spawned"] = true  # Mark as spawned to prevent duplicates
-		next_note_index += 1
+	# NOTE: Note spawning removed - handled by grid system in _physics_process()
+	# Notes activate from object pool based on beat proximity, not beat signals
 
 func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""
@@ -573,56 +527,8 @@ func handle_trigger(trigger_name: String):
 		"fade_to_title":
 			fade_to_title()
 
-func spawn_note_by_type(note_type: String, lane: String = "random", spawn_beat_position: int = 0):
-	"""Unified note spawning function that uses BattleManager.NOTE_TYPE_CONFIG for scalability
-
-	Args:
-		note_type: Type of note (whole, half, quarter, eighth, etc.)
-		lane: Lane designation - "random", "1", "2", "3", etc. Defaults to "random"
-		spawn_beat_position: Beat position for overlap detection (from JSON spawn_position)
-	"""
-	if not BattleManager.NOTE_TYPE_CONFIG.has(note_type):
-		push_warning("Unknown note type '" + note_type + "', defaulting to 'quarter'")
-		note_type = "quarter"
-
-	var config = BattleManager.NOTE_TYPE_CONFIG[note_type]
-
-	# Choose lane: use designated lane if valid, otherwise use smart random selection
-	var chosen_track: String
-	if lane != "random" and BattleManager.HIT_ZONE_POSITIONS.has(lane):
-		chosen_track = lane  # Use designated lane from note data
-	else:
-		chosen_track = BattleManager.choose_lane_avoiding_overlap(spawn_beat_position)  # Smart random with overlap prevention
-
-	var target_pos = BattleManager.HIT_ZONE_POSITIONS[chosen_track]
-
-	# Instantiate note from config
-	var note = config["scene"].instantiate()
-	add_child(note)
-
-	# Get note's actual height dynamically using universal helper
-	var note_height = BattleManager.get_note_height(note)
-
-	# Calculate spawn position: center-align all notes with HitZone
-	# Adjust spawn position so note's CENTER aligns with HitZone center (not top/bottom edge)
-	var center_offset = (note_height - 200.0) / 2.0
-	var spawn_pos = Vector2(target_pos.x, target_pos.y - BattleManager.SPAWN_HEIGHT_ABOVE_TARGET - center_offset - 200)
-
-
-	note.z_index = 50
-	note.setup(chosen_track, spawn_pos, target_pos.y)
-
-	# Calculate travel_time from spawn_offset and BPM
-	# This makes notes fall faster for fast songs, slower for slow songs
-	var spawn_offset = config["spawn_offset"]
-	var travel_time = spawn_offset * 30.0 / conductor.bpm
-
-	# Pass the actual distance the note needs to travel
-	var actual_distance = target_pos.y - spawn_pos.y
-	note.set_travel_time_and_distance(travel_time, actual_distance)
-
-	note.set_meta("note_type", note_type)  # Use note_type instead of is_ambient
-	active_notes.append(note)
+# NOTE: spawn_note_by_type() removed - deprecated by grid system
+# Notes now activate from object pool in _physics_process() based on beat proximity
 
 func fade_to_title():
 	# Hide battle UI elements (combo display and groove bar) before showing results
