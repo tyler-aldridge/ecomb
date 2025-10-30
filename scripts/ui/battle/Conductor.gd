@@ -8,7 +8,8 @@ signal measure(position: int)
 @export var measures: int = 4
 
 var song_position: float = 0.0
-var song_position_in_beats: int = 0
+var song_position_in_beats: int = 0  # Integer for beat signals
+var song_position_in_beats_float: float = 0.0  # Float for smooth visual motion
 var seconds_per_beat: float
 var last_reported_beat: int = 0
 var beats_before_start: int = 28
@@ -113,8 +114,9 @@ func _physics_process(delta: float) -> void:
 		# Convert song_position to beat ticks
 		# Audio position 0.0 = beat 0 (Bar 1 Beat 1)
 		# Formula: beat_position = (song_position / seconds_per_beat) * subdivision
-		# Example: position 0.0 → 0, position 0.395s (1 beat @ 152 BPM) → 2
-		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision)
+		# Keep both float (for smooth visual motion) and int (for beat signals)
+		song_position_in_beats_float = (song_position / seconds_per_beat) * subdivision
+		song_position_in_beats = int(song_position_in_beats_float)
 		_report_beat()
 
 func _report_beat() -> void:

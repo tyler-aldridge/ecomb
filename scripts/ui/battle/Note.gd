@@ -75,8 +75,8 @@ func _physics_process(_delta):
 		return
 
 	# Calculate position from grid coordinates (row)
-	# This is the ONLY place position is set - no accumulation!
-	var current_beat = conductor.song_position_in_beats
+	# Use float beats for SMOOTH visual motion (not choppy integer steps)
+	var current_beat = conductor.song_position_in_beats_float
 	var beats_until_hit = beat_position - current_beat
 
 	# Convert beats to pixels (BPM affects visual speed)
