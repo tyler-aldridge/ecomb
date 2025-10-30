@@ -70,7 +70,10 @@ const HIT_ZONE_POSITIONS = {
 
 # Velocity-based note movement constants (rhythm game standard)
 # Notes move at CONSTANT VELOCITY from spawn to hitzone
-const FALL_TIME = 2.0  # Seconds for note to travel from spawn to hitzone (good rhythm game feel)
+# Visual speed SCALES WITH BPM for proper rhythm game feel:
+# - Higher BPM (152) → shorter fall time → faster visual speed (energetic)
+# - Lower BPM (60) → longer fall time → slower visual speed (relaxed)
+const FALL_BEATS = 8.0  # Number of beats ahead to spawn notes (constant across all BPMs)
 const SPAWN_BUFFER = 100.0  # Extra space above screen top to ensure notes fully off-screen
 const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}

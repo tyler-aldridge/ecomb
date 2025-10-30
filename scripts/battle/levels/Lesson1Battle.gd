@@ -419,8 +419,10 @@ func start_character_animations():
 func spawn_notes_for_beat(current_beat: int):
 	"""Spawn notes that should appear at this beat (velocity-based spawning).
 
-	Notes spawn FALL_TIME seconds before they need to be hit.
-	We calculate spawn_ahead_beats from FALL_TIME and BPM.
+	Notes spawn FALL_BEATS beats ahead (constant across all BPMs).
+	Fall time varies with BPM to create proper visual rhythm:
+	- 152 BPM: 8 beats = 3.16s → fast visual speed (energetic)
+	- 60 BPM: 8 beats = 8.0s → slow visual speed (relaxed)
 
 	Args:
 		current_beat: Current beat position from Conductor
@@ -428,12 +430,14 @@ func spawn_notes_for_beat(current_beat: int):
 	if not conductor:
 		return
 
-	# Calculate how many beats ahead to spawn
-	# fall_time (seconds) / seconds_per_beat = beats_ahead
-	var spawn_ahead_beats = int(BattleManager.FALL_TIME / conductor.seconds_per_beat)
+	# Use constant beat distance (visual speed scales with BPM)
+	var spawn_ahead_beats = int(BattleManager.FALL_BEATS)
+
+	# Calculate fall time based on BPM (higher BPM = shorter time = faster visual)
+	var fall_time = BattleManager.FALL_BEATS * conductor.seconds_per_beat
 
 	# Spawn notes that should hit at (current_beat + spawn_ahead_beats)
-	# Example: If spawn_ahead = 5, and current_beat = 10, spawn notes for beat 15
+	# Example: If spawn_ahead = 8, and current_beat = 10, spawn notes for beat 18
 	var target_beat = current_beat + spawn_ahead_beats
 
 	# Check all pending notes and spawn those scheduled for target_beat
@@ -470,8 +474,8 @@ func spawn_notes_for_beat(current_beat: int):
 		var spawn_y = BattleManager.calculate_note_spawn_y(note_height)
 		var target_y = BattleManager.calculate_note_target_y(hitzone_y, note_height)
 
-		# Setup note with velocity-based movement
-		note.setup_velocity(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_TIME)
+		# Setup note with velocity-based movement (fall_time varies with BPM)
+		note.setup_velocity(lane, note_beat, note_type, conductor, spawn_y, target_y, fall_time)
 		active_notes.append(note)
 
 		next_note_index += 1
