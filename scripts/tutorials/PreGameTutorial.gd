@@ -238,6 +238,14 @@ func show_tutorial_step(step_index: int):
 		"hit_zones":
 			# Create keyboard indicators (1, 2, 3) with yellow flashing borders
 			hit_zone_indicators = BattleManager.create_hit_zone_indicators(ui_layer, self, ["1", "2", "3"])
+		"none":
+			# Combo section - create flashing border around combo display
+			if step.has("simulate") and step["simulate"] == "combo":
+				if combo_display:
+					var combo_pos = combo_display.global_position
+					var combo_size = combo_display.size
+					var rect = Rect2(combo_pos, combo_size)
+					current_border = create_flashing_border(rect, 50)
 
 	if current_border:
 		add_child(current_border)
@@ -506,9 +514,9 @@ func _spawn_notes_continuously():
 		note.z_index = 50  # Below dialogs (which are z_index 1000)
 		add_child(note)
 
-		# Animate note falling to perfect center (1.6s for full fall)
+		# Animate note falling to perfect center (2.0s for smooth, slower fall)
 		var tween = create_tween()
-		tween.tween_property(note, "position:y", note_target_y, 1.6).set_ease(Tween.EASE_IN)
+		tween.tween_property(note, "position:y", note_target_y, 2.0).set_ease(Tween.EASE_IN)
 
 		# After reaching center, show perfect feedback and explosion
 		tween.tween_callback(func():
@@ -535,5 +543,5 @@ func _spawn_notes_continuously():
 			note.queue_free()
 		)
 
-		# Wait before spawning next note (0.8s = continuous stream)
-		await get_tree().create_timer(0.8).timeout
+		# Wait before spawning next note (1.2s for smooth flow without bunching)
+		await get_tree().create_timer(1.2).timeout
