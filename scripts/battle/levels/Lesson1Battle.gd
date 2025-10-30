@@ -465,10 +465,12 @@ func _on_beat(beat_position: int):
 		if note_spawn > beat_position:
 			break
 		# Spawn if at or past spawn beat (catches up if beats were skipped)
-		if note_spawn <= beat_position:
+		# Check if already spawned to prevent duplicates on pause/unpause
+		if note_spawn <= beat_position and not note_data.get("_spawned", false):
 			var note_type = note_data.get("note", "quarter")
 			var lane = note_data.get("lane", "random")
 			spawn_note_by_type(note_type, lane, note_spawn)
+			note_data["_spawned"] = true  # Mark as spawned to prevent duplicates
 		next_note_index += 1
 
 func handle_trigger(trigger_name: String):
