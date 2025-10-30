@@ -460,10 +460,15 @@ func spawn_notes_for_beat(current_beat: int):
 		note.z_index = 50
 		add_child(note)
 
-		# Calculate spawn and target positions
+		# Read note height from NoteTemplate to calculate proper spawn/target positions
+		var note_height = 200.0  # Default
+		if note.has_node("NoteTemplate"):
+			note_height = note.get_node("NoteTemplate").size.y
+
+		# Calculate spawn and target positions based on note height
 		var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[lane].y
-		var spawn_y = BattleManager.calculate_note_spawn_y()
-		var target_y = BattleManager.calculate_note_target_y(hitzone_y)
+		var spawn_y = BattleManager.calculate_note_spawn_y(note_height)
+		var target_y = BattleManager.calculate_note_target_y(hitzone_y, note_height)
 
 		# Setup note with velocity-based movement
 		note.setup_velocity(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_TIME)

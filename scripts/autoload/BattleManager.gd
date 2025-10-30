@@ -71,8 +71,7 @@ const HIT_ZONE_POSITIONS = {
 # Velocity-based note movement constants (rhythm game standard)
 # Notes move at CONSTANT VELOCITY from spawn to hitzone
 const FALL_TIME = 2.0  # Seconds for note to travel from spawn to hitzone (good rhythm game feel)
-const SPAWN_Y = -200.0  # Y position to spawn notes (off-screen above)
-const TARGET_Y_OFFSET = 100.0  # Offset from hitzone top to center (HITZONE_HEIGHT / 2)
+const SPAWN_BUFFER = 100.0  # Extra space above screen top to ensure notes fully off-screen
 const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}
 const MISS_WINDOW = 150.0
@@ -107,38 +106,43 @@ var current_bpm: float = 120.0
 # VELOCITY SYSTEM HELPERS
 # ============================================================================
 
-func calculate_note_spawn_y() -> float:
+func calculate_note_spawn_y(note_height: float) -> float:
 	"""Calculate Y position to spawn notes (off-screen above).
 
-	Returns:
-		Y position for note spawn
-	"""
-	return SPAWN_Y
+	Notes spawn with their TOP-LEFT fully off-screen to avoid visual pop-in.
 
-func calculate_note_target_y(hitzone_y: float) -> float:
-	"""Calculate target Y position (hitzone center) for notes.
+	Args:
+		note_height: Height of the note in pixels
+
+	Returns:
+		Y position for note spawn (negative, off-screen)
+	"""
+	# Spawn above screen: 0 (screen top) - note_height - buffer
+	return 0.0 - note_height - SPAWN_BUFFER
+
+func calculate_note_target_y(hitzone_y: float, note_height: float) -> float:
+	"""Calculate target Y position for note's top-left for center alignment.
+
+	For note CENTER to align with hitzone CENTER:
+	- Hitzone center = hitzone_y + (HITZONE_HEIGHT / 2) = 650 + 100 = 750
+	- Note center = note.position.y + (note_height / 2)
+	- Therefore: note.position.y = hitzone_center - (note_height / 2)
+
+	Examples:
+	- Quarter note (200px): target = 750 - 100 = 650
+	- Half note (400px): target = 750 - 200 = 550
+	- Whole note (800px): target = 750 - 400 = 350
 
 	Args:
 		hitzone_y: Y position of hitzone top-left
+		note_height: Height of the note in pixels
 
 	Returns:
-		Y position of hitzone center
+		Y position where note's top-left should reach for center alignment
 	"""
-	return hitzone_y + TARGET_Y_OFFSET
-
-func calculate_note_speed(spawn_y: float, target_y: float, fall_time: float) -> float:
-	"""Calculate note fall speed (pixels per second).
-
-	Args:
-		spawn_y: Y position where note spawns
-		target_y: Y position where note should reach
-		fall_time: Time in seconds for note to reach target
-
-	Returns:
-		Speed in pixels per second
-	"""
-	var distance = target_y - spawn_y
-	return distance / fall_time
+	var hitzone_center_y = hitzone_y + (HITZONE_HEIGHT / 2.0)
+	var note_target_y = hitzone_center_y - (note_height / 2.0)
+	return note_target_y
 
 # ============================================================================
 # BATTLE STATE
