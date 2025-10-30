@@ -188,9 +188,9 @@ func show_tutorial_step(step_index: int):
 				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
 			# Create yellow border around player sprite extending vertically
-			# Top: 200px above sprite, Bottom: flush with screen bottom (raised 20px)
-			var sprite_top = player_sprite.global_position.y - 200
-			var sprite_bottom = 1060  # Raised 20px from screen height (1080) to be flush
+			# Top: 175px above sprite (reduced by 25px), Bottom: raised 25px total from screen
+			var sprite_top = player_sprite.global_position.y - 175  # Reduced from -200
+			var sprite_bottom = 1055  # Raised 25px total from screen height (1080)
 			var border_height = sprite_bottom - sprite_top
 			var rect = Rect2(
 				player_sprite.global_position.x - 125,  # Center horizontally around sprite
@@ -204,12 +204,19 @@ func show_tutorial_step(step_index: int):
 			hit_zone_indicators = BattleManager.create_hit_zone_indicators(ui_layer, self, ["1", "2", "3"])
 		"none":
 			# Combo section - create flashing border around combo display
+			# 50px left/right padding, 25px top/bottom padding
 			if step.has("simulate") and step["simulate"] == "combo":
 				if combo_display:
 					var combo_pos = combo_display.global_position
 					var combo_size = combo_display.size
-					var rect = Rect2(combo_pos, combo_size)
-					current_border = create_flashing_border(rect, 25)
+					# Manually apply different padding: 50px horizontal, 25px vertical
+					var rect = Rect2(
+						combo_pos.x - 50,  # Left padding
+						combo_pos.y - 25,  # Top padding
+						combo_size.x + 100,  # Width + left/right padding
+						combo_size.y + 50   # Height + top/bottom padding
+					)
+					current_border = create_flashing_border(rect, 0)  # No additional padding
 
 	if current_border:
 		add_child(current_border)
