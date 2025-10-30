@@ -10,11 +10,11 @@ func _ready():
 		fade_overlay = ColorRect.new()
 		fade_overlay.color = Color.BLACK
 		fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fade_overlay.z_index = 9999  # Highest z-index to cover everything
+		fade_overlay.z_index = 100  # High z-index within the layer
 
 		# Create CanvasLayer to ensure it's always on top
 		var canvas_layer = CanvasLayer.new()
-		canvas_layer.layer = 1000  # Very high layer
+		canvas_layer.layer = 1000  # Very high layer - this is what matters most
 		add_child(canvas_layer)
 		canvas_layer.add_child(fade_overlay)
 
