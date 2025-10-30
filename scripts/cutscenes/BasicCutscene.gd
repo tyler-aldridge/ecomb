@@ -105,17 +105,15 @@ func _show_next_message():
 	tween.tween_callback(func(): is_transitioning = false)
 
 func _transition_to_next_scene():
-	"""Fade to black and load next scene."""
+	"""Fade to black and load next scene using Router for persistent overlay."""
 	is_transitioning = true
 
-	# Fade to black
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 1.0, fade_duration).set_ease(Tween.EASE_IN)
-	tween.tween_callback(_load_next_scene)
-
-func _load_next_scene():
-	"""Load the next scene in the flow."""
+	# Use Router's persistent fade overlay to prevent flash during scene transition
 	if next_scene_path != "":
-		get_tree().change_scene_to_file(next_scene_path)
+		Router.goto_scene_with_fade(next_scene_path, fade_duration)
 	else:
 		push_error("BasicCutscene: next_scene_path not set!")
+
+func _load_next_scene():
+	"""Deprecated - now using Router.goto_scene_with_fade()."""
+	pass

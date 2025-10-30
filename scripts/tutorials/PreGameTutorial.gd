@@ -32,7 +32,6 @@ var groove_bar: Control
 var combo_display: Control
 var xp_gain_display: Control
 var hit_zones: Array = []
-var fade_overlay: ColorRect
 
 # Tutorial borders
 var current_border: Control
@@ -87,20 +86,18 @@ var tutorial_steps = [
 ]
 
 func _ready():
-	# Create fade overlay FIRST (fully opaque black) to cover everything immediately
-	create_fade_overlay()
-
 	# Set background to pure black
 	var background = $TutorialUI/Background
 	if background and background is ColorRect:
 		background.color = Color.BLACK
 		background.visible = true
 
-	# Setup battle UI components (will be hidden under fade)
+	# Setup battle UI components
+	# Router handles scene fade, so we start directly
 	setup_battle_ui()
 
-	# Start fade transition immediately (no frame waits to eliminate flash)
-	fade_from_black()
+	# Start first tutorial step
+	_start_first_step()
 
 func setup_battle_ui():
 	"""Create battle UI using REAL components (same as PreGameBattle)."""
@@ -146,34 +143,6 @@ func setup_battle_ui():
 			zone.modulate.a = 0.0
 			var zone_fade = create_tween()
 			zone_fade.tween_property(zone, "modulate:a", 1.0, 1.5).set_ease(Tween.EASE_OUT).set_delay(0.5)
-
-func create_fade_overlay():
-	"""Create black fade overlay for scene transitions."""
-	# Create a dedicated CanvasLayer for fade (highest layer to cover everything)
-	var fade_layer = CanvasLayer.new()
-	fade_layer.layer = 200  # Above all other layers
-	add_child(fade_layer)
-
-	fade_overlay = ColorRect.new()
-	fade_overlay.color = Color.BLACK  # Pure black
-	fade_overlay.modulate.a = 1.0  # Fully opaque immediately
-	fade_overlay.size = get_viewport().get_visible_rect().size
-	fade_overlay.position = Vector2.ZERO
-	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fade_overlay.z_index = 999  # Ensure it's on top
-	fade_overlay.visible = true  # Explicitly visible
-	fade_layer.add_child(fade_overlay)
-
-func fade_from_black():
-	"""Fade in from black overlay - longer duration for smooth entrance."""
-	# Ensure starting from pure black
-	fade_overlay.color = Color(0, 0, 0, 1)
-	fade_overlay.modulate.a = 1.0
-
-	# Longer fade (4 seconds instead of 3)
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 0.0, 4.0).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_callback(_start_first_step)
 
 func _start_first_step():
 	"""Start the first tutorial step."""
@@ -372,7 +341,7 @@ func _on_advance_requested():
 			_transition_to_next_scene()
 
 func _transition_to_next_scene():
-	"""Fade to black and load next scene."""
+	"""Fade to black and load next scene using Router."""
 	is_transitioning = true
 
 	# Stop all active simulations
@@ -392,17 +361,15 @@ func _transition_to_next_scene():
 	if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
 		groove_bar.set_tutorial_highlight(false)
 
-	# Fade to black
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 1.0, fade_duration).set_ease(Tween.EASE_IN)
-	tween.tween_callback(_load_next_scene)
-
-func _load_next_scene():
-	"""Load the next scene."""
+	# Use Router for scene transition with fade
 	if next_scene_path != "":
-		get_tree().change_scene_to_file(next_scene_path)
+		Router.goto_scene_with_fade(next_scene_path, fade_duration)
 	else:
 		push_error("PreGameTutorial: next_scene_path not set!")
+
+func _load_next_scene():
+	"""Deprecated - now using Router.goto_scene_with_fade()."""
+	pass
 
 # ============================================================================
 # TUTORIAL SIMULATIONS
