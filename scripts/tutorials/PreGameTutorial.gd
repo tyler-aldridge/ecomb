@@ -94,12 +94,15 @@ func _ready():
 
 	# Create fade overlay FIRST so it covers everything during initial setup
 	create_fade_overlay()
+
+	# Setup battle UI components
 	setup_battle_ui()
 
 	# Wait 2 frames to ensure everything is rendered before fading
 	await get_tree().process_frame
 	await get_tree().process_frame
 
+	# Start fade transition
 	fade_from_black()
 
 func setup_battle_ui():
