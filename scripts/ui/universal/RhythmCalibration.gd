@@ -245,14 +245,26 @@ func create_hit_zones() -> Array:
 	return zones
 
 func setup_conductor():
-	"""Create and configure conductor for 60 BPM."""
+	"""Create and configure conductor for 60 BPM with silent audio for timing."""
 	conductor = Conductor.new()
 	conductor.bpm = bpm
 	conductor.sec_per_beat = 60.0 / bpm
 	conductor.subdivision = 2
 	add_child(conductor)
 
-	# Start conductor playback
+	# Create a silent audio stream for the Conductor to track timing
+	# This ensures the Conductor applies the rhythm_timing_offset correctly
+	# Duration: 60 seconds at 60 BPM = 60 beats, plenty for calibration
+	var silent_stream = AudioStreamGenerator.new()
+	silent_stream.mix_rate = 44100
+	silent_stream.buffer_length = 60.0  # 60 seconds of silent audio
+
+	# Give the silent stream to the Conductor's music player
+	await get_tree().process_frame  # Wait for Conductor to be ready
+	if conductor.music_player:
+		conductor.music_player.stream = silent_stream
+
+	# Start conductor playback (will play silent audio)
 	conductor.play_with_beat_offset()
 
 func fade_from_black():
