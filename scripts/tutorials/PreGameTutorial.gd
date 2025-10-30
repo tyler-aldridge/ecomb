@@ -1,20 +1,21 @@
-extends Control
+extends Node2D
 
 ## ============================================================================
 ## PRE-GAME TUTORIAL
 ## ============================================================================
 ## Step-by-step tutorial explaining game mechanics with visual highlights.
-## First-time player tutorial before entering the main game.
+## Uses REAL battle UI components (GrooveBar, player sprite, hit zones) with
+## centered DialogBox displays (rainbow border, 48px font).
 ##
 ## Steps:
 ## 1. Groove Bar Explanation (yellow border around groove bar)
 ## 2. XP System Explanation (yellow border around player sprite)
 ## 3. Hit Zones Explanation (yellow indicators on hit zones)
-## 4. Combo System (visual demonstration with fake notes)
+## 4. Combo System (visual demonstration)
 ##
 ## Each step has:
 ## - Yellow flashing border around relevant UI element
-## - Centered typewriter text explanation
+## - Centered DialogBox with rainbow border
 ## - 5 second auto-advance or player input to skip
 ## ============================================================================
 
@@ -22,12 +23,16 @@ extends Control
 @export var next_scene_path: String = "res://scenes/ui/universal/RhythmCalibration.tscn"
 @export var fade_duration: float = 3.0
 
-# UI elements
-var background: ColorRect
+# Scene references
+@onready var player_sprite = $TutorialUI/Player
+@onready var opponent_sprite = $TutorialUI/Opponent
+
+# UI elements (created dynamically like PreGameBattle)
+var ui_layer: CanvasLayer
 var groove_bar: Control
-var player_sprite: AnimatedSprite2D
+var combo_display: Control
+var xp_gain_display: Control
 var hit_zones: Array = []
-var typewriter: TypewriterText
 var fade_overlay: ColorRect
 
 # Tutorial borders
@@ -36,6 +41,7 @@ var border_tween: Tween
 
 # State
 var current_step: int = 0
+var current_message_index: int = 0
 var is_transitioning: bool = false
 
 # Tutorial steps data
@@ -79,106 +85,42 @@ var tutorial_steps = [
 ]
 
 func _ready():
-	setup_ui()
+	setup_battle_ui()
+	create_fade_overlay()
 	fade_from_black()
 
-func setup_ui():
-	"""Create the tutorial UI elements."""
-	# Black background
-	background = ColorRect.new()
-	background.color = Color.BLACK
-	background.size = get_viewport().get_visible_rect().size
-	background.position = Vector2.ZERO
-	add_child(background)
+func setup_battle_ui():
+	"""Create battle UI using REAL components (same as PreGameBattle)."""
+	# Create UI layer for proper screen-space rendering
+	ui_layer = CanvasLayer.new()
+	ui_layer.layer = 100
+	add_child(ui_layer)
 
-	# Create groove bar (simplified version)
-	groove_bar = create_mock_groove_bar()
-	add_child(groove_bar)
+	# REAL Groove bar (full width at top)
+	var groove_bar_scene = preload("res://scenes/ui/battles/GrooveBar.tscn")
+	groove_bar = groove_bar_scene.instantiate()
+	ui_layer.add_child(groove_bar)
 
-	# Create player sprite placeholder
-	player_sprite = create_mock_player_sprite()
-	add_child(player_sprite)
+	# Set groove bar to tutorial starting value (50%)
+	if groove_bar.has_method("set_groove"):
+		groove_bar.set_groove(50.0)
 
-	# Create hit zones
-	hit_zones = create_mock_hit_zones()
-	for zone in hit_zones:
-		add_child(zone)
+	# Universal character displays (combo below groove bar, XP on player, hit zones)
+	# Uses BattleManager's universal setup for consistent positioning
+	var displays = BattleManager.setup_battle_character_displays(player_sprite, opponent_sprite, ui_layer)
+	combo_display = displays.get("combo_display")
+	xp_gain_display = displays.get("xp_display")
+	hit_zones = displays.get("hitzones", [])
 
-	# Create typewriter text
-	typewriter = TypewriterText.new()
-	typewriter.size = get_viewport().get_visible_rect().size
-	typewriter.auto_advance_delay = 5.0  # 5 seconds for tutorial
-	add_child(typewriter)
-
-	# Connect signals
-	typewriter.advance_requested.connect(_on_advance_requested)
-
-	# Create fade overlay
+func create_fade_overlay():
+	"""Create black fade overlay for scene transitions."""
 	fade_overlay = ColorRect.new()
 	fade_overlay.color = Color.BLACK
 	fade_overlay.size = get_viewport().get_visible_rect().size
 	fade_overlay.position = Vector2.ZERO
-	fade_overlay.z_index = 100
-	add_child(fade_overlay)
-
-func create_mock_groove_bar() -> Control:
-	"""Create simplified groove bar for tutorial."""
-	var container = Control.new()
-	container.position = Vector2(0, 20)
-	container.size = Vector2(1920, 60)
-
-	var bar_bg = ColorRect.new()
-	bar_bg.color = Color(0.2, 0.2, 0.2)
-	bar_bg.size = Vector2(1200, 40)
-	bar_bg.position = Vector2(360, 10)
-	container.add_child(bar_bg)
-
-	var bar_fill = ColorRect.new()
-	bar_fill.color = Color.CYAN
-	bar_fill.size = Vector2(600, 40)  # 50% filled
-	bar_fill.position = Vector2(360, 10)
-	container.add_child(bar_fill)
-
-	return container
-
-func create_mock_player_sprite() -> AnimatedSprite2D:
-	"""Create player sprite placeholder."""
-	var sprite = AnimatedSprite2D.new()
-	sprite.position = Vector2(300, 800)
-	# TODO: Load actual player sprite
-	return sprite
-
-func create_mock_hit_zones() -> Array:
-	"""Create hit zones matching Lesson1Battle layout."""
-	var zones = []
-
-	# Use same positions as BattleManager.HIT_ZONE_POSITIONS
-	var lane_positions = [
-		Vector2(610.0, 650.0),   # Lane 1
-		Vector2(860.0, 650.0),   # Lane 2
-		Vector2(1110.0, 650.0)   # Lane 3
-	]
-
-	for i in range(3):
-		var zone = ColorRect.new()
-		zone.color = Color(1, 1, 1, 0.1)  # Subtle white
-		zone.size = Vector2(200, 200)  # BattleManager.HITZONE_HEIGHT
-		zone.position = lane_positions[i]
-
-		# Add border
-		var border = Line2D.new()
-		border.width = 3.0
-		border.default_color = Color.WHITE
-		border.add_point(Vector2(0, 0))
-		border.add_point(Vector2(200, 0))
-		border.add_point(Vector2(200, 200))
-		border.add_point(Vector2(0, 200))
-		border.add_point(Vector2(0, 0))
-		zone.add_child(border)
-
-		zones.append(zone)
-
-	return zones
+	fade_overlay.z_index = 1000
+	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui_layer.add_child(fade_overlay)
 
 func fade_from_black():
 	"""Fade in from black overlay."""
@@ -192,11 +134,13 @@ func _start_first_step():
 	show_tutorial_step(0)
 
 func show_tutorial_step(step_index: int):
-	"""Show a tutorial step with highlighted element and text."""
+	"""Show a tutorial step with highlighted element and centered dialog."""
 	if step_index >= tutorial_steps.size():
 		_transition_to_next_scene()
 		return
 
+	current_step = step_index
+	current_message_index = 0
 	var step = tutorial_steps[step_index]
 
 	# Remove previous border
@@ -207,26 +151,55 @@ func show_tutorial_step(step_index: int):
 	# Create flashing border for highlighted element
 	match step["highlight"]:
 		"groove_bar":
-			current_border = create_flashing_border(groove_bar.get_rect(), 10)
+			var rect = Rect2(Vector2(360, 10), Vector2(1200, 60))
+			current_border = create_flashing_border(rect, 15)
 		"player_sprite":
 			var rect = Rect2(player_sprite.position - Vector2(100, 100), Vector2(200, 200))
-			current_border = create_flashing_border(rect, 100)
+			current_border = create_flashing_border(rect, 15)
 		"hit_zones":
-			# Use existing yellow indicator system
-			show_hit_zone_indicators()
+			# Create borders for all hit zones
+			for zone in hit_zones:
+				if zone and is_instance_valid(zone):
+					var zone_pos = zone.global_position
+					var zone_size = zone.size if zone.has("size") else Vector2(200, 200)
+					var border = create_flashing_border(Rect2(zone_pos, zone_size), 15)
+					add_child(border)
 
 	if current_border:
 		add_child(current_border)
 
-	# Show title and messages
-	var full_text = step["title"] + "\n\n" + "\n".join(step["messages"])
-	typewriter.set_text(full_text)
+	# Show first message
+	show_message(step, 0)
+
+func show_message(step: Dictionary, message_index: int):
+	"""Show a single message from the current step."""
+	if message_index >= step["messages"].size():
+		# Move to next step
+		current_step += 1
+		if current_step < tutorial_steps.size():
+			show_tutorial_step(current_step)
+		else:
+			_transition_to_next_scene()
+		return
+
+	current_message_index = message_index
+	var message = step["messages"][message_index]
+
+	# Add title to first message only
+	var full_text = message
+	if message_index == 0:
+		full_text = step["title"] + "\n\n" + message
+
+	# Show centered dialog with rainbow border (48px font, auto-sized)
+	# Using "center" character positions dialog in center of screen
+	DialogManager.show_dialog(full_text, "center", 5.0)
 
 func create_flashing_border(rect: Rect2, padding: float) -> Control:
 	"""Create a flashing yellow border around a UI element."""
 	var container = Control.new()
 	container.position = rect.position - Vector2(padding, padding)
 	container.size = rect.size + Vector2(padding * 2, padding * 2)
+	container.z_index = 900
 
 	# Create border lines
 	var border = Line2D.new()
@@ -253,28 +226,34 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 
 	return container
 
-func show_hit_zone_indicators():
-	"""Show yellow indicators on hit zones using BattleManager system."""
-	# Use existing BattleManager.create_hit_zone_indicators if available
-	# For now, create simple indicators
-	for i in range(hit_zones.size()):
-		var zone = hit_zones[i]
-		var indicator = create_flashing_border(Rect2(zone.position, zone.size), 10)
-		add_child(indicator)
-
-func _on_advance_requested():
-	"""Handle advance to next tutorial step."""
+func _input(event):
+	"""Handle player input to advance tutorial."""
 	if is_transitioning:
 		return
 
-	current_step += 1
+	if event is InputEventMouseButton and event.pressed:
+		_on_advance_requested()
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
+		_on_advance_requested()
 
-	if current_step < tutorial_steps.size():
-		# Next tutorial step
-		show_tutorial_step(current_step)
+func _on_advance_requested():
+	"""Handle advance to next message or step."""
+	if is_transitioning:
+		return
+
+	var step = tutorial_steps[current_step]
+	current_message_index += 1
+
+	if current_message_index < step["messages"].size():
+		# Show next message in current step
+		show_message(step, current_message_index)
 	else:
-		# Tutorial complete, go to calibration
-		_transition_to_next_scene()
+		# Move to next step
+		current_step += 1
+		if current_step < tutorial_steps.size():
+			show_tutorial_step(current_step)
+		else:
+			_transition_to_next_scene()
 
 func _transition_to_next_scene():
 	"""Fade to black and load next scene."""
@@ -294,4 +273,4 @@ func _load_next_scene():
 	if next_scene_path != "":
 		get_tree().change_scene_to_file(next_scene_path)
 	else:
-		push_error("TutorialExplanationScene: next_scene_path not set!")
+		push_error("PreGameTutorial: next_scene_path not set!")

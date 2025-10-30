@@ -1,12 +1,124 @@
-[gd_scene load_steps=2 format=3 uid="uid://pregametutorial"]
+[gd_scene load_steps=18 format=3 uid="uid://pregametutorial"]
 
 [ext_resource type="Script" path="res://scripts/tutorials/PreGameTutorial.gd" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://ctq8rm3n7ypse" path="res://scenes/ui/battles/BattleBackground.tscn" id="2_background"]
+[ext_resource type="Texture2D" uid="uid://cfvlcvrc6ylsq" path="res://assets/characters/muscle_man/RipJackson_idel2size.png" id="3_player"]
+[ext_resource type="Texture2D" uid="uid://bilktb84t5goh" path="res://assets/characters/muscle_man/RipJackson_peckflex2size.png" id="4_player_pecs"]
 
-[node name="PreGameTutorial" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle1"]
+atlas = ExtResource("3_player")
+region = Rect2(0, 0, 256, 280)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2"]
+atlas = ExtResource("3_player")
+region = Rect2(256, 0, 256, 280)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle3"]
+atlas = ExtResource("3_player")
+region = Rect2(512, 0, 256, 280)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle4"]
+atlas = ExtResource("3_player")
+region = Rect2(768, 0, 256, 280)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle5"]
+atlas = ExtResource("3_player")
+region = Rect2(1024, 0, 256, 280)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle6"]
+atlas = ExtResource("3_player")
+region = Rect2(1280, 0, 256, 280)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pecs1"]
+atlas = ExtResource("4_player_pecs")
+region = Rect2(0, 0, 256, 280)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pecs2"]
+atlas = ExtResource("4_player_pecs")
+region = Rect2(256, 0, 256, 280)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pecs1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pecs2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pecs1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pecs2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pecs1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pecs2")
+}],
+"loop": false,
+"name": &"pecs",
+"speed": 5.0
+}]
+
+[node name="PreGameTutorial" type="Node2D"]
 script = ExtResource("1_main")
+
+[node name="TutorialUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 963.0
+offset_top = 540.0
+offset_right = 963.0
+offset_bottom = 540.0
+
+[node name="Background" parent="TutorialUI" instance=ExtResource("2_background")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -960.0
+offset_top = -540.0
+offset_right = 960.0
+offset_bottom = 540.0
+
+[node name="Player" type="AnimatedSprite2D" parent="TutorialUI"]
+position = Vector2(-747, 363)
+scale = Vector2(1.2612306, 1.2612305)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="Opponent" type="AnimatedSprite2D" parent="TutorialUI"]
+position = Vector2(720, 310)
+scale = Vector2(1.65, 1.65)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+autoplay = "idle"

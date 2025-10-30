@@ -22,8 +22,8 @@ signal advance_requested
 @export var text_content: String = ""
 @export var typing_speed: float = 0.03  # Seconds per character
 @export var auto_advance_delay: float = 3.0  # Seconds after typing completes
-@export var max_width: int = 1000
-@export var font_size: int = 100  # Font size in pixels
+@export var max_width: int = 1500  # Cutscene container width
+@export var font_size: int = 100  # Font size in pixels (100px for cutscenes)
 
 # Audio configuration
 @export var enable_audio: bool = true
@@ -175,9 +175,9 @@ func _play_character_tone():
 	var increment = frequency / audio_generator.mix_rate
 
 	for i in range(sample_count):
-		# Generate sine wave sample
+		# Generate square wave sample (switches between -1 and 1)
 		var phase = i * increment
-		var sample = sin(phase * TAU)
+		var sample = 1.0 if fmod(phase, 1.0) < 0.5 else -1.0
 
 		# Apply envelope (fade out to prevent clicks)
 		var envelope = 1.0

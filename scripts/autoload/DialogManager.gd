@@ -106,8 +106,13 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 			top_y = 600.0 - current_dialog.size.y
 
 		dialog_pos = Vector2(center_x, top_y)
+	elif _character == "center":
+		# Center of screen (for tutorials)
+		var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
+		var center_y = (viewport_size.y - current_dialog.size.y) * 0.5
+		dialog_pos = Vector2(center_x, center_y)
 	else:
-		# Default: center at top
+		# Default: center horizontally at top
 		var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
 		var top_margin = 300.0
 		dialog_pos = Vector2(center_x, top_margin)
@@ -164,10 +169,21 @@ func _set_text(node: Node, value: String) -> void:
 		node.text = value
 
 func _type_text(node: Node, full_text: String) -> void:
+	# Get the DialogContainer to play audio
+	var dialog_container = null
+	if node and node.get_parent() and node.get_parent().has_method("play_character_tone"):
+		dialog_container = node.get_parent()
+
 	for i in range(full_text.length() + 1):
 		if not is_instance_valid(node):
 			return
 		_set_text(node, full_text.substr(0, i))
+
+		# Play audio for character (skip for first iteration when text is empty)
+		if i > 0 and dialog_container:
+			var is_last_char = (i >= full_text.length())
+			dialog_container.play_character_tone(is_last_char)
+
 		await get_tree().create_timer(0.02).timeout
 
 func _close_dialog_after_timer(dialog_ref: Control, expected_id: int):
