@@ -4,8 +4,6 @@ signal closed
 @onready var master_volume_slider: HSlider = $OptionsContainer/MasterVolumeBox/MasterVolumeSlider
 @onready var music_volume_slider: HSlider = $OptionsContainer/MusicVolumeBox/MusicVolumeSlider
 @onready var sound_volume_slider: HSlider = $OptionsContainer/SoundVolumeBox/SoundVolumeSlider
-@onready var rhythm_timing_slider: HSlider = $OptionsContainer/RhythmTiming/RhythmTimingSlider
-@onready var rhythm_timing_label: Label = $OptionsContainer/RhythmTiming/RhythmTimingValue
 @onready var difficulty_slider: HSlider = $OptionsContainer/DifficultyBox/DifficultySlider
 @onready var difficulty_value_label: Label = $OptionsContainer/DifficultyBox/DifficultyValueLabel
 @onready var fullscreen_checkbox: CheckBox = $OptionsContainer/FullScreenContainer/FullScreenCheckbox
@@ -25,10 +23,6 @@ func _ready():
 		music_volume_slider.value_changed.connect(_on_music_volume_changed)
 	if sound_volume_slider:
 		sound_volume_slider.value_changed.connect(_on_sound_volume_changed)
-
-	# Connect rhythm timing slider
-	if rhythm_timing_slider:
-		rhythm_timing_slider.value_changed.connect(_on_rhythm_timing_changed)
 
 	# Connect difficulty slider
 	if difficulty_slider:
@@ -60,10 +54,6 @@ func _on_music_volume_changed(value):
 
 func _on_sound_volume_changed(value):
 	GameManager.set_setting("sound_volume", value)
-
-func _on_rhythm_timing_changed(value):
-	GameManager.set_setting("rhythm_timing_offset", value)
-	rhythm_timing_label.text = str(int(value)) + " ms"
 
 func _on_difficulty_changed(value):
 	# Convert slider value (0-4) to difficulty string
@@ -110,7 +100,6 @@ func _on_reset_pressed():
 	GameManager.set_setting("master_volume", 85)
 	GameManager.set_setting("music_volume", 75)
 	GameManager.set_setting("sound_volume", 65)
-	GameManager.set_setting("rhythm_timing_offset", 0)
 	GameManager.set_setting("difficulty", "gymbro")
 	GameManager.set_setting("fullscreen", false)
 	GameManager.set_setting("show_fps", false)
@@ -125,11 +114,6 @@ func load_settings():
 		music_volume_slider.value = GameManager.get_setting("music_volume", 75)
 	if sound_volume_slider:
 		sound_volume_slider.value = GameManager.get_setting("sound_volume", 65)
-	if rhythm_timing_slider:
-		var timing_offset = GameManager.get_setting("rhythm_timing_offset", 0)
-		rhythm_timing_slider.value = timing_offset
-		if rhythm_timing_label:
-			rhythm_timing_label.text = str(int(timing_offset)) + " ms"
 	if difficulty_slider:
 		# Convert difficulty string to slider value (0-4)
 		var difficulty = GameManager.get_setting("difficulty", "gymbro")
