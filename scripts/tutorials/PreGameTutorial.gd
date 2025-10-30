@@ -46,40 +46,39 @@ var is_transitioning: bool = false
 # Tutorial steps data
 var tutorial_steps = [
 	{
-		"title": "THE GROOVE BAR",
 		"messages": [
-			"This shows your rhythm consistency.",
+			"The groove bar on the top shows your rhythm consistency and acts like your health bar.",
 			"Perfect timing fills the groove bar. Miss too many beats and it empties.",
-			"If it hits zero, you lose the battle!"
+			"Don't let it get to zero, or you lose the battle!"
 		],
 		"highlight": "groove_bar"
 	},
 	{
-		"title": "XP & PROGRESSION",
 		"messages": [
 			"Your XP gains will show here over your character.",
-			"Perfect hits = Maximum XP, Good hits = Decent XP, Okay hits = Some XP, Misses = Zero XP",
+			"Perfect hits give maximum XP, good hits give decent XP, okay hits give some XP, and misses give no XP.",
 			"Every battle has a maximum XP you can gain. The better your timing, the better your gains!"
 		],
-		"highlight": "player_sprite"
+		"highlight": "player_sprite",
+		"simulate": "xp_gains"
 	},
 	{
-		"title": "HIT ZONES",
 		"messages": [
-			"These are the note hit zones. Hit 1, 2, or 3 on your keyboard when notes reach the zone in time with the beat!",
-			"Perfect hits will line up exactly or dead center with these areas.",
+			"These are the note hit zones. Press 1, 2, or 3 on your keyboard when notes reach the zone in time with the beat!",
+			"Perfect hits will line up exactly on center with these areas.",
 			"Move to the groove of the song and you'll get some great gains!"
 		],
-		"highlight": "hit_zones"
+		"highlight": "hit_zones",
+		"simulate": "hit_zone_notes"
 	},
 	{
-		"title": "COMBO SYSTEM",
 		"messages": [
 			"Chain perfect hits for bonus XP! The longer your combos, the more XP rewards you'll receive.",
 			"Break the combo, and you're back to square one. Master the rhythm, master the rewards!",
-			"Now let's take a second to calibrate your system with the rhythm of the game."
+			"Now let's take a second to calibrate your system with the rhythm of the game..."
 		],
-		"highlight": "none"
+		"highlight": "none",
+		"simulate": "combo"
 	}
 ]
 
@@ -189,14 +188,19 @@ func show_message(step: Dictionary, message_index: int):
 	current_message_index = message_index
 	var message = step["messages"][message_index]
 
-	# Add title to first message only
-	var full_text = message
-	if message_index == 0:
-		full_text = step["title"] + "\n\n" + message
-
 	# Show centered dialog with rainbow border (48px font, auto-sized)
 	# Using "center" character positions dialog in center of screen
-	DialogManager.show_dialog(full_text, "center", 5.0)
+	DialogManager.show_dialog(message, "center", 5.0)
+
+	# Run simulation for first message of certain steps
+	if message_index == 0 and step.has("simulate"):
+		match step["simulate"]:
+			"xp_gains":
+				_simulate_xp_gains()
+			"hit_zone_notes":
+				_simulate_hit_zone_notes()
+			"combo":
+				_simulate_combo()
 
 func create_flashing_border(rect: Rect2, padding: float) -> Control:
 	"""Create a flashing yellow border around a UI element."""
@@ -282,3 +286,73 @@ func _load_next_scene():
 		get_tree().change_scene_to_file(next_scene_path)
 	else:
 		push_error("PreGameTutorial: next_scene_path not set!")
+
+# ============================================================================
+# TUTORIAL SIMULATIONS
+# ============================================================================
+
+func _simulate_xp_gains():
+	"""Simulate XP gain feedback over player sprite."""
+	# Show different quality XP gains in sequence
+	await get_tree().create_timer(0.5).timeout
+	BattleManager.show_xp_gain(10, "PERFECT", player_sprite.position)
+
+	await get_tree().create_timer(1.2).timeout
+	BattleManager.show_xp_gain(7, "GOOD", player_sprite.position)
+
+	await get_tree().create_timer(1.2).timeout
+	BattleManager.show_xp_gain(4, "OKAY", player_sprite.position)
+
+func _simulate_hit_zone_notes():
+	"""Simulate 6 random half notes hitting perfect center."""
+	# Start BattleManager temporarily for simulation
+	BattleManager.start_battle({
+		"battle_id": "tutorial_simulation",
+		"battle_level": 1,
+		"battle_type": "tutorial",
+		"groove_start": 50.0,
+		"groove_miss_penalty": 0.0,
+		"max_strength": 100
+	})
+
+	# Spawn 6 half notes in random lanes, staggered timing
+	for i in range(6):
+		await get_tree().create_timer(0.8).timeout
+
+		# Pick random lane (0, 1, or 2)
+		var lane = randi() % 3
+		var lane_x = hit_zones[lane].global_position.x + 100  # Center of hit zone
+		var hitzone_y = hit_zones[lane].global_position.y + 100
+
+		# Spawn note above hit zone
+		var note_scene = preload("res://scenes/ui/battles/HalfNote.tscn")
+		var note = note_scene.instantiate()
+		note.position = Vector2(lane_x, hitzone_y - 400)
+		note.z_index = 50
+		add_child(note)
+
+		# Animate note falling to perfect center
+		var tween = create_tween()
+		tween.tween_property(note, "position:y", hitzone_y, 0.6).set_ease(Tween.EASE_IN_OUT)
+
+		# After reaching center, show perfect feedback
+		tween.tween_callback(func():
+			# Show perfect hit feedback
+			BattleManager.process_hit("PERFECT", Vector2(lane_x, hitzone_y))
+
+			# Create shatter effect
+			var shatter_tween = BattleManager.create_fade_out_tween(note)
+			if shatter_tween:
+				await shatter_tween.finished
+			note.queue_free()
+		)
+
+func _simulate_combo():
+	"""Simulate combo display feedback."""
+	# Show combo building from the previous hit zone simulation
+	# The combo should already be at 6 from the hit zone step
+	# Just show the combo display updating
+	await get_tree().create_timer(0.5).timeout
+
+	if combo_display and combo_display.has_method("update_combo"):
+		combo_display.update_combo(6)
