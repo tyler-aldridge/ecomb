@@ -143,26 +143,26 @@
     {
       "bar": 1,
       "beat": 1,
-      "beat_position": 21,
+      "beat_position": 0,
       "note": "whole"
     },
     {
       "bar": 8,
       "beat": 1,
-      "beat_position": 77,
+      "beat_position": 56,
       "note": "whole"
     },
     {
       "bar": 14,
       "beat": 1,
-      "beat_position": 125,
+      "beat_position": 104,
       "note": "whole",
       "lane": "random"
     },
     {
       "bar": 19,
       "beat": 1,
-      "beat_position": 165,
+      "beat_position": 144,
       "note": "whole",
       "lane": "random"
     },

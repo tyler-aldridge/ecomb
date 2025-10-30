@@ -3,7 +3,9 @@
 Recalculate all beat_position values in Lesson1Data.json using Bar/Beat as source of truth.
 Formula: beat_position = (bar - 1) * ticks_per_bar + (beat - 1) * subdivision
 For 4/4: ticks_per_bar = 8, subdivision = 2
-For whole notes: add +12 offset so bottom touches hitzone top at original Bar/Beat time
+
+VELOCITY SYSTEM: No offsets needed! All notes use the same formula.
+Notes move at constant velocity and spawn at the correct time before their hit beat.
 """
 
 import json
@@ -41,12 +43,7 @@ def bar_beat_to_position(bar, beat):
 with open('/home/user/ecomb/scripts/battle/data/Lesson1Data.json', 'r') as f:
     data = json.load(f)
 
-# Recalculate all beat_positions
-# Correct offset calculation:
-# Note height: 800px, Hitzone: 200px, BPM: 152, pixels_per_beat: 23.684
-# Distance: 400px (note bottom to center) + 100px (hitzone top to center) = 500px
-# Beats: 500 / 23.684 = 21.11 beats
-whole_note_offset = 21  # +21 beats so bottom touches hitzone top at Bar/Beat time
+# Recalculate all beat_positions (velocity system - no offsets!)
 changes_count = 0
 
 for note in data['notes']:
@@ -54,15 +51,9 @@ for note in data['notes']:
     beat = note['beat']
     note_type = note.get('note', 'quarter')
 
-    # Calculate base position from Bar/Beat (source of truth)
-    base_position = bar_beat_to_position(bar, beat)
-
-    # Apply offset for whole notes (bottom-touch alignment)
-    # All other notes use center alignment (no offset)
-    if note_type == 'whole':
-        new_position = base_position + whole_note_offset
-    else:
-        new_position = base_position
+    # Calculate position from Bar/Beat (source of truth)
+    # ALL notes use the same formula - no offsets needed for velocity system
+    new_position = bar_beat_to_position(bar, beat)
 
     # Track changes
     old_position = note.get('beat_position', -1)
@@ -77,8 +68,7 @@ print(f"Total notes processed: {len(data['notes'])}")
 
 # Save with nice formatting
 with open('/home/user/ecomb/scripts/battle/data/Lesson1Data.json', 'w') as f:
-    json.dump(data, f)
+    json.dump(data, f, indent=2)
 
 print("\n✓ All beat_positions recalculated using Bar/Beat as source of truth")
-print("✓ Whole notes: +21 offset (bottom-touch alignment)")
-print("✓ All other notes: center alignment (no offset)")
+print("✓ Velocity system: All notes use the same formula (no offsets)")

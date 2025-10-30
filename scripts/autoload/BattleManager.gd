@@ -68,11 +68,11 @@ const HIT_ZONE_POSITIONS = {
 	"5": Vector2(1235.0, 650.0)   # Right of lane 3 (for 5-lane mode)
 }
 
-# Grid system constants for note positioning
-# Notes calculate their Y position based on how many beats until they should be hit
-const BASE_PIXELS_PER_BEAT = 30.0  # At 120 BPM reference
-const SPAWN_AHEAD_BEATS = 36  # How many beats ahead to show notes (notes appear from off-screen)
-const DESPAWN_BEHIND_BEATS = 5  # How many beats past hitzone before removing note
+# Velocity-based note movement constants (rhythm game standard)
+# Notes move at CONSTANT VELOCITY from spawn to hitzone
+const FALL_TIME = 2.0  # Seconds for note to travel from spawn to hitzone (good rhythm game feel)
+const SPAWN_Y = -200.0  # Y position to spawn notes (off-screen above)
+const TARGET_Y_OFFSET = 100.0  # Offset from hitzone top to center (HITZONE_HEIGHT / 2)
 const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}
 const MISS_WINDOW = 150.0
@@ -104,24 +104,41 @@ var current_difficulty: String = "gymbro"
 var current_bpm: float = 120.0
 
 # ============================================================================
-# GRID SYSTEM HELPERS
+# VELOCITY SYSTEM HELPERS
 # ============================================================================
 
-func get_pixels_per_beat(bpm: float = 0.0) -> float:
-	"""Calculate pixels per beat for visual fall speed.
-
-	Slower BPM = slower visual fall (more pixels per beat)
-	Faster BPM = faster visual fall (fewer pixels per beat)
-
-	Args:
-		bpm: Beats per minute (uses current_bpm if not specified)
+func calculate_note_spawn_y() -> float:
+	"""Calculate Y position to spawn notes (off-screen above).
 
 	Returns:
-		Pixels per beat for note positioning
+		Y position for note spawn
 	"""
-	var target_bpm = bpm if bpm > 0 else current_bpm
-	# Inverse relationship: slower songs = notes move slower visually
-	return BASE_PIXELS_PER_BEAT * (120.0 / target_bpm)
+	return SPAWN_Y
+
+func calculate_note_target_y(hitzone_y: float) -> float:
+	"""Calculate target Y position (hitzone center) for notes.
+
+	Args:
+		hitzone_y: Y position of hitzone top-left
+
+	Returns:
+		Y position of hitzone center
+	"""
+	return hitzone_y + TARGET_Y_OFFSET
+
+func calculate_note_speed(spawn_y: float, target_y: float, fall_time: float) -> float:
+	"""Calculate note fall speed (pixels per second).
+
+	Args:
+		spawn_y: Y position where note spawns
+		target_y: Y position where note should reach
+		fall_time: Time in seconds for note to reach target
+
+	Returns:
+		Speed in pixels per second
+	"""
+	var distance = target_y - spawn_y
+	return distance / fall_time
 
 # ============================================================================
 # BATTLE STATE
