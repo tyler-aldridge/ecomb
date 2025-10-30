@@ -25,7 +25,6 @@ extends Node2D
 
 # Scene references
 @onready var player_sprite = $TutorialUI/Player
-@onready var opponent_sprite = $TutorialUI/Opponent
 
 # UI elements (created dynamically like PreGameBattle)
 var ui_layer: CanvasLayer
@@ -107,7 +106,7 @@ func setup_battle_ui():
 
 	# Universal character displays (combo below groove bar, XP on player, hit zones)
 	# Uses BattleManager's universal setup for consistent positioning
-	var displays = BattleManager.setup_battle_character_displays(player_sprite, opponent_sprite, ui_layer)
+	var displays = BattleManager.setup_battle_character_displays(player_sprite, null, ui_layer)
 	combo_display = displays.get("combo_display")
 	xp_gain_display = displays.get("xp_display")
 	hit_zones = displays.get("hitzones", [])
@@ -143,16 +142,21 @@ func show_tutorial_step(step_index: int):
 	current_message_index = 0
 	var step = tutorial_steps[step_index]
 
-	# Remove previous border
+	# Remove previous highlighting
 	if current_border:
 		current_border.queue_free()
 		current_border = null
 
-	# Create flashing border for highlighted element
+	# Disable groove bar highlighting from previous steps
+	if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
+		groove_bar.set_tutorial_highlight(false)
+
+	# Enable highlighting for current element
 	match step["highlight"]:
 		"groove_bar":
-			var rect = Rect2(Vector2(360, 10), Vector2(1200, 60))
-			current_border = create_flashing_border(rect, 15)
+			# Use groove bar's built-in border highlighting
+			if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
+				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
 			var rect = Rect2(player_sprite.position - Vector2(100, 100), Vector2(200, 200))
 			current_border = create_flashing_border(rect, 15)
@@ -259,9 +263,13 @@ func _transition_to_next_scene():
 	"""Fade to black and load next scene."""
 	is_transitioning = true
 
-	# Remove borders
+	# Remove borders and highlighting
 	if current_border:
 		current_border.queue_free()
+
+	# Disable groove bar highlighting
+	if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
+		groove_bar.set_tutorial_highlight(false)
 
 	# Fade to black
 	var tween = create_tween()

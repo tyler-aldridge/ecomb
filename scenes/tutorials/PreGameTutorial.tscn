@@ -115,10 +115,3 @@ scale = Vector2(1.2612306, 1.2612305)
 sprite_frames = SubResource("SpriteFrames_player")
 animation = &"idle"
 autoplay = "idle"
-
-[node name="Opponent" type="AnimatedSprite2D" parent="TutorialUI"]
-position = Vector2(720, 310)
-scale = Vector2(1.65, 1.65)
-sprite_frames = SubResource("SpriteFrames_player")
-animation = &"idle"
-autoplay = "idle"

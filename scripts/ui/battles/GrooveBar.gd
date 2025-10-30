@@ -164,3 +164,36 @@ func stop_low_groove_warning():
 func _exit_tree():
 	"""Ensure all infinite loop tweens are properly cleaned up when node is removed."""
 	stop_low_groove_warning()
+
+func set_groove(percentage: float):
+	"""Manually set groove percentage (for tutorials)."""
+	if not progress_bar:
+		return
+	progress_bar.value = percentage
+	current_percentage = percentage
+	update_bar_color(percentage)
+
+func set_tutorial_highlight(enabled: bool):
+	"""Enable/disable yellow flashing border for tutorial."""
+	if not cached_fill_style:
+		return
+
+	if enabled:
+		# Set border to 10px and start yellow flashing
+		cached_fill_style.border_width_left = 10
+		cached_fill_style.border_width_top = 10
+		cached_fill_style.border_width_right = 10
+		cached_fill_style.border_width_bottom = 10
+
+		# Create flashing yellow animation
+		var tween = create_tween()
+		tween.set_loops()
+		tween.tween_property(cached_fill_style, "border_color", Color(1, 1, 0, 0.3), 0.5).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(cached_fill_style, "border_color", Color(1, 1, 0, 1.0), 0.5).set_ease(Tween.EASE_IN_OUT)
+	else:
+		# Reset border to default
+		cached_fill_style.border_width_left = 5
+		cached_fill_style.border_width_top = 5
+		cached_fill_style.border_width_right = 5
+		cached_fill_style.border_width_bottom = 5
+		cached_fill_style.border_color = Color(1, 1, 1, 1)
