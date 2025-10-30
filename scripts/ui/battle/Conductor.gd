@@ -145,5 +145,3 @@ func play_with_beat_offset() -> void:
 	# 3. Switch to audio-based timing after play()
 
 	# Audio will start at beat 0 where position 0.0 = beat 0 (Bar 1 Beat 1)
-		
-		

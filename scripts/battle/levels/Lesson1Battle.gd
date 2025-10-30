@@ -24,16 +24,16 @@ var next_trigger_index: int = 0
 # UNIVERSAL BATTLE MECHANICS - See BattleManager autoload
 # ============================================================================
 # The following are now universal across all battles (defined in BattleManager):
-# - NOTE_TYPE_CONFIG: Note scenes, travel times, spawn offsets
-# - HIT_ZONE_POSITIONS: Lane positions for all 3 tracks
-# - SPAWN_HEIGHT_ABOVE_TARGET: How far above screen notes spawn
-# - HITZONE_HEIGHT: HitZone height constant
-# - MISS_WINDOW: Automatic miss threshold
-# - OVERLAP_PREVENTION_WINDOW: Lane overlap prevention window
-# - UI_CONSTANTS: Fade durations, border widths, indicator properties
+# - NOTE_TYPE_CONFIG: Note scene paths for different note types
+# - HIT_ZONE_POSITIONS: Lane positions for 3-lane (tutorial) and 5-lane (advanced) modes
+# - HITZONE_HEIGHT: HitZone height constant (200px)
+# - MISS_WINDOW: Automatic miss threshold (150px below hitzone)
+# - OVERLAP_PREVENTION_WINDOW: Lane overlap prevention window (6 beats)
+# - BASE_PIXELS_PER_BEAT, SPAWN_AHEAD_BEATS, DESPAWN_BEHIND_BEATS: Grid system constants
 # - get_hit_quality_for_note(): Edge-based hit detection logic
 # - choose_lane_avoiding_overlap(): Lane selection with overlap prevention
-# - create_fade_out_tween(): Beat-based note fade animation
+# - create_fade_out_tween(): Shatter effect for hit notes
+# - create_miss_fade_tween(): Fast fade for missed notes
 # - get_note_height(): Dynamic note height helper
 # - create_hit_zone_indicators(): Universal yellow tutorial indicators
 # - stop_hit_zone_indicators(): Remove tutorial indicators
