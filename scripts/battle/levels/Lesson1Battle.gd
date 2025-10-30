@@ -267,10 +267,10 @@ func _ready():
 	setup_hit_zone_borders()
 	start_character_animations()
 
-	# Prepare notes for velocity-based spawning
+	# Prepare notes for spawning
 	prepare_notes()
 
-	conductor.beat.connect(_on_beat)
+	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
 	# Start with beat offset
 	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
@@ -388,8 +388,16 @@ func prepare_notes():
 	print("Notes prepared for spawning: ", sorted_notes.size(), " notes")
 
 func _physics_process(_delta):
-	"""Clean up notes that have gone off-screen."""
-	# Remove notes that have passed despawn threshold
+	"""Poll conductor and spawn notes based on beat position."""
+	# POLLING-BASED SPAWNING: Check conductor every frame
+	if conductor:
+		# Check for automatic misses
+		check_automatic_misses()
+
+		# Spawn notes using polling (not signals)
+		spawn_notes_polling()
+
+	# Clean up notes that have gone off-screen
 	var i = 0
 	while i < active_notes.size():
 		var note = active_notes[i]
@@ -416,6 +424,119 @@ func start_character_animations():
 		if opponent_sprite.sprite_frames and opponent_sprite.sprite_frames.has_animation("idle"):
 			opponent_sprite.play("idle")
 
+func spawn_notes_polling():
+	"""Spawn notes by polling conductor beat position (industry standard).
+
+	This function checks if notes should spawn based on the current beat position.
+	Uses while loop to catch up if frames were dropped.
+	"""
+	if not conductor:
+		return
+
+	# Get current beat position from conductor (DSP time)
+	var current_beat = conductor.song_pos_in_beats
+
+	# Spawn all notes that should be visible now
+	# Use while loop to catch up any missed spawns
+	while next_note_index < sorted_notes.size():
+		var note_data = sorted_notes[next_note_index]
+		var note_beat = float(note_data.get("beat_position", 0))
+
+		# Should this note be spawned? (within advance window)
+		if note_beat <= current_beat + BattleManager.FALL_BEATS:
+			spawn_note_interpolation(note_data)
+			next_note_index += 1
+		else:
+			break  # Notes are sorted, so we can stop checking
+
+	# Also handle dialogue, countdowns, and triggers (polling-based)
+	process_events_polling(current_beat)
+
+func process_events_polling(current_beat: float):
+	"""Process dialogue, countdown, and trigger events by polling."""
+	# Process dialogue events
+	while next_dialogue_index < sorted_dialogues.size():
+		var dialogue = sorted_dialogues[next_dialogue_index]
+		var dialogue_beat = float(dialogue.get("beat_position", 0))
+		if dialogue_beat > current_beat:
+			break
+		if dialogue_beat <= current_beat:
+			var text = dialogue.get("text", "")
+			var character = dialogue.get("character", "opponent")
+			var duration = dialogue.get("duration", 3.0)
+			DialogManager.show_dialog(text, character, duration)
+
+			# Handle triggers
+			if dialogue.has("triggers"):
+				handle_trigger(dialogue["triggers"])
+		next_dialogue_index += 1
+
+	# Process countdown events
+	while next_countdown_index < sorted_countdowns.size():
+		var countdown = sorted_countdowns[next_countdown_index]
+		var countdown_beat = float(countdown.get("beat_position", 0))
+		if countdown_beat > current_beat:
+			break
+		if countdown_beat <= current_beat:
+			var text = countdown.get("text", "")
+			var countdown_type = countdown.get("type", "single")
+			if countdown_type == "multi":
+				var values = countdown.get("values", [])
+				var interval = countdown.get("interval", 0.5)
+				var size = int(countdown.get("size", 500))
+				DialogManager.show_countdown(values, interval, size)
+			elif countdown_type == "single":
+				var duration = countdown.get("duration", 1.0)
+				var size = int(countdown.get("size", 500))
+				var color_str = countdown.get("color", "white")
+				var color = Color.WHITE
+				if color_str == "red":
+					color = Color.RED
+				DialogManager.show_countdown_number(text, duration, size, color)
+		next_countdown_index += 1
+
+	# Process trigger events
+	while next_trigger_index < sorted_triggers.size():
+		var trigger = sorted_triggers[next_trigger_index]
+		var trigger_beat = float(trigger.get("beat_position", 0))
+		if trigger_beat > current_beat:
+			break
+		if trigger_beat <= current_beat:
+			var trigger_name = trigger.get("trigger", "")
+			handle_trigger(trigger_name)
+		next_trigger_index += 1
+
+func spawn_note_interpolation(note_data: Dictionary):
+	"""Spawn a note using position interpolation system.
+
+	Args:
+		note_data: Dictionary containing note information
+	"""
+	var lane = note_data.get("lane", "1")
+	var note_beat = float(note_data.get("beat_position", 0))
+	var note_type = note_data.get("note", "quarter")
+
+	# Instantiate the correct note type
+	var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_type]["scene"]
+	var note = note_scene.instantiate()
+	note.z_index = 50
+	add_child(note)
+
+	# Read note height from NoteTemplate
+	var note_height = 200.0  # Default
+	if note.has_node("NoteTemplate"):
+		note_height = note.get_node("NoteTemplate").size.y
+
+	# Calculate spawn and target positions based on note height
+	var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[lane].y
+	var spawn_y = BattleManager.calculate_note_spawn_y(note_height)
+	var target_y = BattleManager.calculate_note_target_y(hitzone_y, note_height)
+
+	# Setup note with position interpolation (NEW SYSTEM)
+	note.setup_interpolation(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_BEATS)
+	active_notes.append(note)
+
+# DEPRECATED: Old velocity-based spawning (kept for reference, not called)
 func spawn_notes_for_beat(current_beat: int):
 	"""Spawn notes that should appear at this beat (velocity-based spawning).
 
@@ -481,63 +602,7 @@ func spawn_notes_for_beat(current_beat: int):
 
 		next_note_index += 1
 
-func _on_beat(beat_position: int):
-	check_automatic_misses()
-
-	# Spawn notes on beat signals (velocity-based system)
-	spawn_notes_for_beat(beat_position)
-
-	# Process dialogue events (optimized: check only next pending dialogue)
-	while next_dialogue_index < sorted_dialogues.size():
-		var dialogue = sorted_dialogues[next_dialogue_index]
-		var dialogue_beat = int(dialogue.get("beat_position", 0))
-		if dialogue_beat > beat_position:
-			break
-		if dialogue_beat == beat_position:
-			var text = dialogue.get("text", "")
-			var character = dialogue.get("character", "opponent")
-			var duration = dialogue.get("duration", 3.0)
-			DialogManager.show_dialog(text, character, duration)
-
-			# Handle triggers
-			if dialogue.has("triggers"):
-				handle_trigger(dialogue["triggers"])
-		next_dialogue_index += 1
-
-	# Process countdown events (optimized: check only next pending countdown)
-	while next_countdown_index < sorted_countdowns.size():
-		var countdown = sorted_countdowns[next_countdown_index]
-		var countdown_beat = int(countdown.get("beat_position", 0))
-		if countdown_beat > beat_position:
-			break
-		if countdown_beat == beat_position:
-			var text = countdown.get("text", "")
-			var countdown_type = countdown.get("type", "single")
-			if countdown_type == "multi":
-				var values = countdown.get("values", [])
-				var interval = countdown.get("interval", 0.5)
-				var size = int(countdown.get("size", 500))
-				DialogManager.show_countdown(values, interval, size)
-			elif countdown_type == "single":
-				var duration = countdown.get("duration", 1.0)
-				var size = int(countdown.get("size", 500))
-				var color_str = countdown.get("color", "white")
-				var color = Color.WHITE
-				if color_str == "red":
-					color = Color.RED
-				DialogManager.show_countdown_number(text, duration, size, color)
-		next_countdown_index += 1
-
-	# Process trigger events (optimized: check only next pending trigger)
-	while next_trigger_index < sorted_triggers.size():
-		var trigger = sorted_triggers[next_trigger_index]
-		var trigger_beat = int(trigger.get("beat_position", 0))
-		if trigger_beat > beat_position:
-			break
-		if trigger_beat == beat_position:
-			var trigger_name = trigger.get("trigger", "")
-			handle_trigger(trigger_name)
-		next_trigger_index += 1
+# DEPRECATED: _on_beat removed - we use polling instead of signals
 
 func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""

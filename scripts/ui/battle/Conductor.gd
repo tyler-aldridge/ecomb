@@ -1,42 +1,59 @@
-extends AudioStreamPlayer
+extends Node
 class_name Conductor
 
-signal beat(position: int)
-signal measure(position: int)
+## ============================================================================
+## DSP TIME-BASED CONDUCTOR - INDUSTRY STANDARD ARCHITECTURE
+## ============================================================================
+## Core Principle: DSP time is the single source of truth
+## - No beat signals (frame-rate dependent)
+## - Exposes song_pos_in_beats as variable for polling
+## - Position interpolation for notes (not velocity)
+## - Validates timing for web platform corruption
+## ============================================================================
 
+# Audio player (child node)
+@onready var music_player := AudioStreamPlayer.new()
+
+# Timing configuration
 @export var bpm: float = 152.0
 @export var measures: int = 4
+@export var time_signature_beats: int = 4
+@export var time_signature_division: int = 4
 
-var song_position: float = 0.0
-var song_position_in_beats: int = 0  # Integer for beat signals
-var song_position_in_beats_float: float = 0.0  # Float for smooth visual motion
-var seconds_per_beat: float
-var last_reported_beat: int = 0
+# Timing state (READ ONLY - do not modify externally)
+var song_position: float = 0.0  # Current audio time in seconds
+var song_pos_in_beats: float = 0.0  # Current position in beats (POLL THIS)
+var sec_per_beat: float = 0.0
+
+# Internal timing tracking
+var audio_start_dsp_time: float = 0.0
+var prev_audio_time: float = 0.0
 var beats_before_start: int = 28
-var current_measure: int = 1
-var cached_output_latency: float = 0.0
-var latency_cache_timer: float = 0.0
+
+# Time signature subdivision: 2 for simple meters (4/4, 3/4), 3 for compound meters (6/8, 9/8, 12/8)
+var subdivision: int = 2
 
 # Countdown phase tracking (before audio starts)
 var in_countdown: bool = false
 var countdown_time_elapsed: float = 0.0
 var countdown_duration: float = 0.0
 var countdown_tick_interval: float = 0.0
-var countdown_next_beat: int = 0
+var countdown_next_beat: float = 0.0
 
-# Time signature subdivision: 2 for simple meters (4/4, 3/4, 7/4), 3 for compound meters (6/8, 9/8, 12/8)
-# Controls how Conductor converts beats to ticks (eighth notes vs triplets)
-var subdivision: int = 2
+# Web platform validation
+var is_web: bool = OS.has_feature("web")
+var consecutive_invalid_frames: int = 0
+const MAX_INVALID_FRAMES: int = 5
 
-# Pause handling - simplified, no snapshots needed
-# AudioStreamPlayer.stream_paused handles everything automatically
+# Pause handling
+var is_paused: bool = false
+var pause_time: float = 0.0
 
 func _ready() -> void:
 	# Add to group so BattleOptionsMenu can find and pause us
 	add_to_group("conductor")
 
-	# CRITICAL: Use PROCESS_MODE_ALWAYS so we can control pause via stream_paused
-	# Without this, tree pause will pause the Conductor node itself, breaking audio pause/resume
+	# CRITICAL: Use PROCESS_MODE_ALWAYS so we can control pause
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	# Validate BPM to prevent division by zero
@@ -44,106 +61,164 @@ func _ready() -> void:
 		push_error("Invalid BPM: " + str(bpm) + ". Defaulting to 120.")
 		bpm = 120.0
 
-	seconds_per_beat = 60.0 / bpm
+	sec_per_beat = 60.0 / bpm
 
-	# Cache output latency once at start
-	cached_output_latency = AudioServer.get_output_latency()
+	# Create and add music player as child
+	add_child(music_player)
+	music_player.name = "MusicPlayer"
 
-	# Safety: Web browsers sometimes report unrealistic latency values
-	# If latency is suspiciously low (< 5ms), ignore it and rely on user timing offset
-	if OS.has_feature("web") and cached_output_latency < 0.005:
-		cached_output_latency = 0.0
-		print("Conductor: Web latency detection unreliable, using user timing offset only")
-
-func _physics_process(delta: float) -> void:
-	# Simple pause handling - stream_paused stops playback automatically
-	if stream_paused:
+func _process(delta: float) -> void:
+	# Pause handling
+	if is_paused:
 		return
 
 	# COUNTDOWN PHASE: Before audio starts (silent beat tracking)
 	if in_countdown:
 		countdown_time_elapsed += delta
 
-		# Fire beats at regular intervals until we reach beat 0
-		# For 4/4 with 36 beats before start: fires beats -36 to -1, stops before 0
-		while countdown_next_beat < 0:  # Stop BEFORE beat 0 (Bar 1 Beat 1)
-			var beat_time = (countdown_next_beat - (-beats_before_start)) * countdown_tick_interval
-			if countdown_time_elapsed >= beat_time:
-				emit_signal("beat", countdown_next_beat)
-				last_reported_beat = countdown_next_beat
-				countdown_next_beat += 1
-			else:
-				break
+		# Check if countdown is complete - start audio at beat 0
+		if countdown_time_elapsed >= countdown_duration:
+			in_countdown = false
+			music_player.play()
+			audio_start_dsp_time = AudioServer.get_time_since_last_mix()
+			song_pos_in_beats = 0.0
+			return
 
-		# Check if countdown is complete - start audio at beat 0 (Bar 1 Beat 1)
-		if countdown_next_beat >= 0:
-			var start_time = (countdown_next_beat - (-beats_before_start)) * countdown_tick_interval
-			if countdown_time_elapsed >= start_time:
-				in_countdown = false
-				play()  # Start audio NOW - position 0.0 = beat 0 (Bar 1 Beat 1)
-				# Audio-based timing will now take over and fire beat 0 and onwards
+		# Calculate countdown beat position (negative beats before start)
+		song_pos_in_beats = -beats_before_start + (countdown_time_elapsed / countdown_tick_interval)
+		return
+
+	# PLAYING PHASE: Audio is playing, use DSP time
+	if music_player.playing:
+		# CRITICAL: Query DSP time with validation
+		var playback_pos = music_player.get_playback_position()
+		var time_since_mix = AudioServer.get_time_since_last_mix()
+		var output_latency = AudioServer.get_output_latency()
+
+		# Clamp time_since_mix to prevent wild jumps
+		time_since_mix = clamp(time_since_mix, 0.0, 0.1)
+
+		# Calculate current audio time
+		var current_audio_time = playback_pos + time_since_mix - output_latency
+
+		# Web-specific validation (aggressive)
+		if is_web:
+			# Check for corruption
+			if current_audio_time < 0 or current_audio_time > 1000:
+				consecutive_invalid_frames += 1
+				if consecutive_invalid_frames > MAX_INVALID_FRAMES:
+					_attempt_audio_recovery()
 				return
 
-	# PLAYING PHASE: Audio is playing, use position for timing
-	if playing:
-		# Refresh latency cache every second (not every frame)
-		latency_cache_timer += delta
-		if latency_cache_timer >= 1.0:
-			cached_output_latency = AudioServer.get_output_latency()
-			# Safety check for web unrealistic values
-			if OS.has_feature("web") and cached_output_latency < 0.005:
-				cached_output_latency = 0.0
-			latency_cache_timer = 0.0
+			# Check for backwards time
+			if current_audio_time < prev_audio_time:
+				consecutive_invalid_frames += 1
+				return
 
-		# Get audio playback position using proper AudioServer timing (all platforms)
-		var playback_pos = get_playback_position()
-		var time_since_mix = AudioServer.get_time_since_last_mix()
+			# Check for unrealistic jumps
+			var time_delta = current_audio_time - prev_audio_time
+			if time_delta > 0.1:  # >100ms jump
+				consecutive_invalid_frames += 1
+				return
 
-		# Clamp time_since_mix to prevent wild jumps on any platform
-		time_since_mix = min(time_since_mix, 0.1)
-
-		# Standard timing calculation that works cross-platform
-		# playback_pos = stream decode position (starts at 0.0 when play() is called)
-		# time_since_mix = time since audio buffer sent to hardware
-		# cached_output_latency = hardware/driver speaker delay
-		song_position = playback_pos + time_since_mix - cached_output_latency
+		# Valid frame
+		consecutive_invalid_frames = 0
+		prev_audio_time = current_audio_time
 
 		# Apply user-configurable timing offset for manual calibration
-		song_position += GameManager.get_timing_offset()
+		song_position = current_audio_time + GameManager.get_timing_offset()
 
-		# Convert song_position to beat ticks
-		# Audio position 0.0 = beat 0 (Bar 1 Beat 1)
-		# Formula: beat_position = (song_position / seconds_per_beat) * subdivision
-		# Keep both float (for smooth visual motion) and int (for beat signals)
-		song_position_in_beats_float = (song_position / seconds_per_beat) * subdivision
-		song_position_in_beats = int(song_position_in_beats_float)
-		_report_beat()
+		# Convert song_position to beats (floating point for smooth interpolation)
+		# For tick-based compatibility: multiply by subdivision to get ticks
+		song_pos_in_beats = (song_position / sec_per_beat) * subdivision
 
-func _report_beat() -> void:
-	if last_reported_beat < song_position_in_beats:
-		emit_signal("beat", song_position_in_beats)
-		last_reported_beat = song_position_in_beats
-		emit_signal("measure", current_measure)
-		if current_measure < measures:
-			current_measure += 1
-		else:
-			current_measure = 1
+func _attempt_audio_recovery():
+	"""Fallback timing recovery for corrupted web audio."""
+	push_warning("Audio timing corruption detected, attempting recovery")
+
+	# Last resort: use playback position only (less accurate but stable)
+	var fallback_time = music_player.get_playback_position()
+
+	if fallback_time > 0 and fallback_time < 1000:
+		prev_audio_time = fallback_time
+		consecutive_invalid_frames = 0
 
 func play_with_beat_offset() -> void:
+	"""Start playback with countdown phase (industry standard approach)."""
 	# Initialize countdown phase
-	# Countdown happens in SILENCE, then audio starts at beat 0 (Bar 1 Beat 1)
 	in_countdown = true
 	countdown_time_elapsed = 0.0
-	countdown_tick_interval = seconds_per_beat / float(subdivision)
+	countdown_tick_interval = sec_per_beat / float(subdivision)
 	countdown_next_beat = -beats_before_start
-	last_reported_beat = -beats_before_start - 1
 
-	# Calculate total countdown duration for reference
+	# Calculate total countdown duration
 	countdown_duration = beats_before_start * countdown_tick_interval
 
-	# _physics_process will handle:
-	# 1. Fire beats from -beats_before_start to -1 during countdown (silent)
-	# 2. Call play() when countdown finishes at beat 0
-	# 3. Switch to audio-based timing after play()
+	# _process will handle countdown and automatically start audio
 
-	# Audio will start at beat 0 where position 0.0 = beat 0 (Bar 1 Beat 1)
+func play_song(audio_stream: AudioStream):
+	"""Load and play a song immediately (no countdown)."""
+	music_player.stream = audio_stream
+	music_player.play()
+	audio_start_dsp_time = AudioServer.get_time_since_last_mix()
+
+func pause():
+	"""Pause playback and save current position."""
+	if is_paused:
+		return
+
+	is_paused = true
+	pause_time = song_position
+	music_player.stream_paused = true
+
+func resume():
+	"""Resume playback from paused position."""
+	if not is_paused:
+		return
+
+	is_paused = false
+	music_player.stream_paused = false
+
+	# Resync timing after resume
+	audio_start_dsp_time = AudioServer.get_time_since_last_mix() - pause_time
+
+func stop():
+	"""Stop playback completely."""
+	music_player.stop()
+	is_paused = false
+	in_countdown = false
+	song_position = 0.0
+	song_pos_in_beats = 0.0
+
+# Legacy compatibility properties
+var playing: bool:
+	get:
+		return music_player.playing
+
+var stream_paused: bool:
+	get:
+		return music_player.stream_paused
+	set(value):
+		music_player.stream_paused = value
+
+var stream: AudioStream:
+	get:
+		return music_player.stream
+	set(value):
+		music_player.stream = value
+
+# For tick-based compatibility (returns integer ticks)
+var song_position_in_beats_float: float:
+	get:
+		return song_pos_in_beats
+
+var song_position_in_beats: int:
+	get:
+		return int(song_pos_in_beats)
+
+# Deprecated - kept for compatibility
+var seconds_per_beat: float:
+	get:
+		return sec_per_beat
+	set(value):
+		sec_per_beat = value
