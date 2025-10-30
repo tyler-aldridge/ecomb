@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://pregametutorial"]
 
-[ext_resource type="Script" path="res://scripts/tutorial/PreGameTutorial.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/tutorials/PreGameTutorial.gd" id="1_main"]
 
 [node name="PreGameTutorial" type="Control"]
 layout_mode = 3
