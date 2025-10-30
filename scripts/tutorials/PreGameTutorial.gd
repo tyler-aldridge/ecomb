@@ -84,8 +84,9 @@ var tutorial_steps = [
 ]
 
 func _ready():
-	setup_battle_ui()
+	# Create fade overlay FIRST so it covers everything during initial setup
 	create_fade_overlay()
+	setup_battle_ui()
 	fade_from_black()
 
 func setup_battle_ui():
@@ -113,13 +114,17 @@ func setup_battle_ui():
 
 func create_fade_overlay():
 	"""Create black fade overlay for scene transitions."""
+	# Create a dedicated CanvasLayer for fade (highest layer to cover everything)
+	var fade_layer = CanvasLayer.new()
+	fade_layer.layer = 200  # Above all other layers
+	add_child(fade_layer)
+
 	fade_overlay = ColorRect.new()
 	fade_overlay.color = Color.BLACK
 	fade_overlay.size = get_viewport().get_visible_rect().size
 	fade_overlay.position = Vector2.ZERO
-	fade_overlay.z_index = 1000
 	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ui_layer.add_child(fade_overlay)
+	fade_layer.add_child(fade_overlay)
 
 func fade_from_black():
 	"""Fade in from black overlay."""
@@ -225,6 +230,9 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 	border.default_color = Color.YELLOW
 	border.z_index = 90
 
+	# Start invisible for fade-in
+	border.modulate.a = 0.0
+
 	# Border points
 	var w = container.size.x
 	var h = container.size.y
@@ -235,6 +243,10 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 	border.add_point(Vector2(0, 0))
 
 	container.add_child(border)
+
+	# Fade in, then flash
+	var fade_tween = create_tween()
+	fade_tween.tween_property(border, "modulate:a", 1.0, 0.3).set_ease(Tween.EASE_OUT)
 
 	# Flashing animation
 	var tween = create_tween()

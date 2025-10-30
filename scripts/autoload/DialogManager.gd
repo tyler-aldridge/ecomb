@@ -23,6 +23,9 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 
 	current_dialog = dialog_box_scene.instantiate()
 
+	# Start invisible for fade-in
+	current_dialog.modulate.a = 0.0
+
 	# Set high z-index to appear above everything else
 	current_dialog.z_index = 1000
 
@@ -119,13 +122,17 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		dialog_pos = Vector2(center_x, top_margin)
 
 	current_dialog.position = dialog_pos
-	
+
 	# Reset anchors to ensure proper positioning
 	current_dialog.anchor_left = 0.0
 	current_dialog.anchor_right = 0.0
 	current_dialog.anchor_top = 0.0
 	current_dialog.anchor_bottom = 0.0
-	
+
+	# Fade in the dialog
+	var fade_tween = create_tween()
+	fade_tween.tween_property(current_dialog, "modulate:a", 1.0, 0.2).set_ease(Tween.EASE_OUT)
+
 	# Now animate the text typing
 	if text_node:
 		_set_text(text_node, "")
