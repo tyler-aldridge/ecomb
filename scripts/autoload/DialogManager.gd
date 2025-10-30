@@ -55,7 +55,7 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		var char_count = text.length()
 		var estimated_width = char_count * 15
 		var min_width = 300.0
-		var max_width = 600.0 if (_character == "opponent" or _character == "player") else 1000.0
+		var max_width = 600.0 if (_character == "opponent" or _character == "player") else 1500.0
 		var desired_width = clamp(estimated_width + 60, min_width, max_width)
 
 		# Set the size of the main dialog container - let the children follow

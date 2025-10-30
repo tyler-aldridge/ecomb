@@ -145,17 +145,22 @@ func create_fade_overlay():
 	add_child(fade_layer)
 
 	fade_overlay = ColorRect.new()
-	fade_overlay.color = Color.BLACK
+	fade_overlay.color = Color(0, 0, 0, 1)  # Pure black, fully opaque
 	fade_overlay.size = get_viewport().get_visible_rect().size
 	fade_overlay.position = Vector2.ZERO
 	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fade_overlay.z_index = 999  # Ensure it's on top
 	fade_layer.add_child(fade_overlay)
 
 func fade_from_black():
-	"""Fade in from black overlay."""
+	"""Fade in from black overlay - longer duration for smooth entrance."""
+	# Ensure starting from pure black
+	fade_overlay.color = Color(0, 0, 0, 1)
 	fade_overlay.modulate.a = 1.0
+
+	# Longer fade (4 seconds instead of 3)
 	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 0.0, fade_duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(fade_overlay, "modulate:a", 0.0, 4.0).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_callback(_start_first_step)
 
 func _start_first_step():
@@ -198,8 +203,8 @@ func show_tutorial_step(step_index: int):
 				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
 			# Create yellow border around player sprite extending vertically
-			# Top: 100px above sprite, Bottom: screen bottom (1080px)
-			var sprite_top = player_sprite.global_position.y - 100
+			# Top: 200px above sprite, Bottom: screen bottom (1080px)
+			var sprite_top = player_sprite.global_position.y - 200
 			var sprite_bottom = 1080  # Screen height
 			var border_height = sprite_bottom - sprite_top
 			var rect = Rect2(
@@ -245,15 +250,10 @@ func show_message(step: Dictionary, message_index: int):
 
 	# Show centered dialog with rainbow border (48px font, auto-sized)
 	# Using "center" character positions dialog in center of screen
-	# Don't auto-close - let it stay until we advance
-	DialogManager.show_dialog(message, "center", 0.0)
+	# AWAIT the typing to complete, then pause 2 seconds
+	await DialogManager.show_dialog(message, "center", 0.0)
 
-	# Wait for typing to finish (estimate based on message length)
-	# Typing is ~0.02s per character + buffer for audio
-	var typing_time = message.length() * 0.02 + 0.5
-	await get_tree().create_timer(typing_time).timeout
-
-	# Then pause for 2 seconds before advancing to next message
+	# Pause for 2 seconds after typing finishes before advancing to next message
 	auto_advance_timer = get_tree().create_timer(2.0)
 	await auto_advance_timer.timeout
 
@@ -442,7 +442,7 @@ func _spawn_notes_continuously():
 
 		# Get hit zone position from BattleManager constants
 		var hit_zone_pos = BattleManager.HIT_ZONE_POSITIONS[lane_key]
-		var lane_x = hit_zone_pos.x  # Use exact X position (note centers itself)
+		var lane_x = hit_zone_pos.x + 100  # Center of 200px hit zone
 		var hitzone_y = hit_zone_pos.y + 100  # Center of 200px hit zone
 
 		# Use the proper note scene from BattleManager
@@ -461,7 +461,7 @@ func _spawn_notes_continuously():
 				"3":
 					template.color = Color.YELLOW
 
-		# Position note off-screen above (spawn higher than battles)
+		# Position note off-screen above at the center X position
 		note.position = Vector2(lane_x, -200)  # Start off-screen
 		note.z_index = 50  # Below dialogs (which are z_index 1000)
 		add_child(note)
@@ -472,8 +472,18 @@ func _spawn_notes_continuously():
 
 		# After reaching center, show perfect feedback
 		tween.tween_callback(func():
+			var effect_pos = Vector2(lane_x, hitzone_y)
+
 			# Register the hit with BattleManager (updates combo, groove)
 			BattleManager.register_hit("PERFECT")
+
+			# Keep combo display hidden during hit zone section
+			if current_step == 2 and combo_display:  # Step 2 is hit zones
+				combo_display.visible = false
+
+			# Show random feedback text
+			var feedback_text = BattleManager.get_random_feedback_text("PERFECT")
+			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, self, self)
 
 			# Create shatter effect (use 120 BPM as tutorial speed)
 			var shatter_tween = BattleManager.create_fade_out_tween(note, 120.0)
