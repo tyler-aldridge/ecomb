@@ -1,4 +1,4 @@
-extends "res://scripts/ui/cutscenes/BasicCutscene.gd"
+extends "res://scripts/cutscenes/BasicCutscene.gd"
 
 ## ============================================================================
 ## PRE-GAME CUTSCENE 1
@@ -19,7 +19,7 @@ func _ready():
 	]
 
 	# Set next scene path
-	next_scene_path = "res://scenes/ui/tutorial/PreGameTutorial.tscn"
+	next_scene_path = "res://scenes/tutorial/PreGameTutorial.tscn"
 
 	# Call parent _ready
 	super._ready()
