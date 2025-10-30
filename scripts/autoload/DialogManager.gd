@@ -111,9 +111,9 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 
 		dialog_pos = Vector2(center_x, top_y)
 	elif _character == "center":
-		# Center of screen (for tutorials)
+		# Center of screen (for tutorials), moved up 100px
 		var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
-		var center_y = (viewport_size.y - current_dialog.size.y) * 0.5
+		var center_y = (viewport_size.y - current_dialog.size.y) * 0.5 - 100
 		dialog_pos = Vector2(center_x, center_y)
 	else:
 		# Default: center horizontally at top

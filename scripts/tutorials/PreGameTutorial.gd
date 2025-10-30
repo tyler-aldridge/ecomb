@@ -37,6 +37,7 @@ var fade_overlay: ColorRect
 # Tutorial borders
 var current_border: Control
 var border_tween: Tween
+var hit_zone_indicators: Array = []  # Track hit zone indicators for cleanup
 
 # State
 var current_step: int = 0
@@ -178,6 +179,11 @@ func show_tutorial_step(step_index: int):
 		current_border.queue_free()
 		current_border = null
 
+	# Remove hit zone indicators from previous step
+	if hit_zone_indicators.size() > 0:
+		BattleManager.stop_hit_zone_indicators(hit_zone_indicators, self)
+		hit_zone_indicators.clear()
+
 	# Disable groove bar highlighting from previous steps
 	if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
 		groove_bar.set_tutorial_highlight(false)
@@ -190,16 +196,12 @@ func show_tutorial_step(step_index: int):
 				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
 			# Create yellow border around player sprite using global position
-			var rect = Rect2(player_sprite.global_position - Vector2(100, 100), Vector2(200, 200))
-			current_border = create_flashing_border(rect, 15)
+			# Border extends beyond sprite edges (sprite is ~200x200, border 250x250)
+			var rect = Rect2(player_sprite.global_position - Vector2(125, 125), Vector2(250, 250))
+			current_border = create_flashing_border(rect, 20)
 		"hit_zones":
-			# Create borders for all hit zones
-			for zone in hit_zones:
-				if zone and is_instance_valid(zone):
-					var zone_pos = zone.global_position
-					var zone_size = zone.size  # Panel/Control always has .size property
-					var border = create_flashing_border(Rect2(zone_pos, zone_size), 15)
-					add_child(border)
+			# Create keyboard indicators (1, 2, 3) with yellow flashing borders
+			hit_zone_indicators = BattleManager.create_hit_zone_indicators(ui_layer, self, ["1", "2", "3"])
 
 	if current_border:
 		add_child(current_border)
@@ -233,10 +235,10 @@ func show_message(step: Dictionary, message_index: int):
 
 	# Show centered dialog with rainbow border (48px font, auto-sized)
 	# Using "center" character positions dialog in center of screen
-	DialogManager.show_dialog(message, "center", 5.0)
+	DialogManager.show_dialog(message, "center", 7.0)
 
-	# Auto-advance to next message after 5.5 seconds (dialog duration + buffer)
-	auto_advance_timer = get_tree().create_timer(5.5)
+	# Auto-advance to next message after 8.0 seconds (dialog duration + buffer)
+	auto_advance_timer = get_tree().create_timer(8.0)
 	await auto_advance_timer.timeout
 
 	# Only advance if we're still on the same message (not manually advanced)
@@ -383,8 +385,8 @@ func _simulate_xp_gains():
 		await get_tree().create_timer(1.2).timeout
 
 func _simulate_hit_zone_notes():
-	"""Simulate 6 random half notes hitting perfect center."""
-	# Start BattleManager temporarily for simulation
+	"""Simulate 6 random half notes hitting perfect center - visual only."""
+	# Initialize BattleManager for combo tracking
 	BattleManager.start_battle({
 		"battle_id": "tutorial_simulation",
 		"battle_level": 1,
@@ -398,28 +400,34 @@ func _simulate_hit_zone_notes():
 	for i in range(6):
 		await get_tree().create_timer(0.8).timeout
 
-		# Pick random lane (0, 1, or 2)
-		var lane = randi() % 3
-		var lane_x = hit_zones[lane].global_position.x + 100  # Center of hit zone
-		var hitzone_y = hit_zones[lane].global_position.y + 100
+		# Pick random lane (0, 1, or 2) and convert to lane key
+		var lane_index = randi() % 3
+		var lane_key = str(lane_index + 1)
 
-		# Spawn note above hit zone
-		var note_scene = preload("res://scenes/ui/battles/HalfNote.tscn")
+		# Get hit zone position from BattleManager constants
+		var hit_zone_pos = BattleManager.HIT_ZONE_POSITIONS[lane_key]
+		var lane_x = hit_zone_pos.x + 100  # Center of 200px hit zone
+		var hitzone_y = hit_zone_pos.y + 100
+
+		# Use the proper note scene from BattleManager
+		var note_scene = BattleManager.NOTE_TYPE_CONFIG["half"]["scene"]
 		var note = note_scene.instantiate()
-		note.position = Vector2(lane_x, hitzone_y - 400)
-		note.z_index = 50
+
+		# Position note above hit zone (same as battles)
+		note.position = Vector2(lane_x, hitzone_y - 600)
+		note.z_index = 50  # Below dialogs (which are z_index 1000)
 		add_child(note)
 
-		# Animate note falling to perfect center
+		# Animate note falling to perfect center (same timing as battles)
 		var tween = create_tween()
-		tween.tween_property(note, "position:y", hitzone_y, 0.6).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(note, "position:y", hitzone_y, 1.2).set_ease(Tween.EASE_IN)
 
 		# After reaching center, show perfect feedback
 		tween.tween_callback(func():
-			# Show perfect hit feedback
-			BattleManager.process_hit("PERFECT", Vector2(lane_x, hitzone_y))
+			# Register the hit with BattleManager (updates combo, groove)
+			BattleManager.register_hit("PERFECT")
 
-			# Create shatter effect (use 120 BPM as default tutorial speed)
+			# Create shatter effect (use 120 BPM as tutorial speed)
 			var shatter_tween = BattleManager.create_fade_out_tween(note, 120.0)
 			if shatter_tween:
 				await shatter_tween.finished
