@@ -58,8 +58,9 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		if _character == "center":
 			# Tutorial dialogs: DYNAMIC width with 1200px max
 			# Width scales with text length, consistent padding, longer messages wrap
-			var estimated_width = char_count * 15
-			desired_width = clamp(estimated_width + 60, 300.0, 1200.0)
+			# Reduced multiplier from 15 to 10 for better scaling with 48px font
+			var estimated_width = char_count * 10
+			desired_width = clamp(estimated_width + 100, 400.0, 1200.0)
 		else:
 			# Side dialogs: dynamic width based on text length
 			var estimated_width = char_count * 15

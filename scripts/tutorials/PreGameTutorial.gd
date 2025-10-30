@@ -87,24 +87,19 @@ var tutorial_steps = [
 ]
 
 func _ready():
-	# IMMEDIATELY set background to pure black before anything else
+	# Create fade overlay FIRST (fully opaque black) to cover everything immediately
+	create_fade_overlay()
+
+	# Set background to pure black
 	var background = $TutorialUI/Background
 	if background and background is ColorRect:
 		background.color = Color.BLACK
 		background.visible = true
 
-	# Create fade overlay IMMEDIATELY (fully opaque black) to cover everything
-	create_fade_overlay()
-
 	# Setup battle UI components (will be hidden under fade)
 	setup_battle_ui()
 
-	# Wait 3 frames to ensure complete rendering before fading
-	await get_tree().process_frame
-	await get_tree().process_frame
-	await get_tree().process_frame
-
-	# Start fade transition
+	# Start fade transition immediately (no frame waits to eliminate flash)
 	fade_from_black()
 
 func setup_battle_ui():
@@ -224,9 +219,9 @@ func show_tutorial_step(step_index: int):
 				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
 			# Create yellow border around player sprite extending vertically
-			# Top: 200px above sprite, Bottom: screen bottom (1080px)
+			# Top: 200px above sprite, Bottom: flush with screen bottom (raised 20px)
 			var sprite_top = player_sprite.global_position.y - 200
-			var sprite_bottom = 1080  # Screen height
+			var sprite_bottom = 1060  # Raised 20px from screen height (1080) to be flush
 			var border_height = sprite_bottom - sprite_top
 			var rect = Rect2(
 				player_sprite.global_position.x - 125,  # Center horizontally around sprite
@@ -245,7 +240,7 @@ func show_tutorial_step(step_index: int):
 					var combo_pos = combo_display.global_position
 					var combo_size = combo_display.size
 					var rect = Rect2(combo_pos, combo_size)
-					current_border = create_flashing_border(rect, 50)
+					current_border = create_flashing_border(rect, 25)
 
 	if current_border:
 		add_child(current_border)
