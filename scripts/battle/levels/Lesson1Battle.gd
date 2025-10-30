@@ -11,14 +11,15 @@ var hit_zones = []
 @export var level_data_path: String = "res://scripts/battle/data/Lesson1Data.json"
 var level_data: Dictionary = {}
 
-# Pre-sorted event arrays for dialogue/countdown/trigger handling in _on_beat()
-# Note: Notes handled by grid system in _physics_process(), not beat-based spawning
+# Pre-sorted event arrays for beat-based handling in _on_beat()
 var sorted_dialogues: Array = []
 var sorted_countdowns: Array = []
 var sorted_triggers: Array = []
+var sorted_notes: Array = []  # Notes sorted by beat_position for spawning
 var next_dialogue_index: int = 0
 var next_countdown_index: int = 0
 var next_trigger_index: int = 0
+var next_note_index: int = 0
 
 # ============================================================================
 # UNIVERSAL BATTLE MECHANICS - See BattleManager autoload
@@ -29,7 +30,7 @@ var next_trigger_index: int = 0
 # - HITZONE_HEIGHT: HitZone height constant (200px)
 # - MISS_WINDOW: Automatic miss threshold (150px below hitzone)
 # - OVERLAP_PREVENTION_WINDOW: Lane overlap prevention window (6 beats)
-# - BASE_PIXELS_PER_BEAT, SPAWN_AHEAD_BEATS, DESPAWN_BEHIND_BEATS: Grid system constants
+# - FALL_TIME, SPAWN_Y, TARGET_Y_OFFSET: Velocity-based movement constants
 # - get_hit_quality_for_note(): Edge-based hit detection logic
 # - choose_lane_avoiding_overlap(): Lane selection with overlap prevention
 # - create_fade_out_tween(): Shatter effect for hit notes
@@ -42,10 +43,8 @@ var next_trigger_index: int = 0
 # To modify universal mechanics, edit scripts/autoload/BattleManager.gd
 # ============================================================================
 
-# Note management (grid-based system)
-var active_notes: Array = []  # Notes currently visible/active
-var note_queue: Array = []  # Notes waiting to be activated (sorted by beat_position)
-var note_queue_index: int = 0  # Next note to check for activation
+# Note management (velocity-based system)
+var active_notes: Array = []  # Notes currently visible/moving
 
 # Effects layer
 var effects_layer: Node2D
@@ -268,8 +267,8 @@ func _ready():
 	setup_hit_zone_borders()
 	start_character_animations()
 
-	# Initialize object pool for grid-based note system
-	initialize_note_pool()
+	# Prepare notes for velocity-based spawning
+	prepare_notes()
 
 	conductor.beat.connect(_on_beat)
 
@@ -319,7 +318,6 @@ func load_level_data():
 			level_data = json.data
 
 			# Pre-sort event arrays by beat_position for _on_beat() handler
-			# Note: Note sorting handled by initialize_note_pool() in grid system
 			if level_data.has("dialogue"):
 				sorted_dialogues = level_data["dialogue"].duplicate()
 				sorted_dialogues.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
@@ -331,6 +329,11 @@ func load_level_data():
 			if level_data.has("triggers"):
 				sorted_triggers = level_data["triggers"].duplicate()
 				sorted_triggers.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
+
+			# Pre-sort notes by beat_position for beat-based spawning
+			if level_data.has("notes"):
+				sorted_notes = level_data["notes"].duplicate()
+				sorted_notes.sort_custom(func(a, b): return a.get("beat_position", 0) < b.get("beat_position", 0))
 		else:
 			push_error("Failed to parse level data JSON: " + json.get_error_message())
 	else:
@@ -369,67 +372,30 @@ func setup_hit_zone_borders():
 			border.add_point(Vector2(0, 0))
 			hit_zone.add_child(border)
 
-func initialize_note_pool():
-	"""Create object pool and prepare note queue for grid-based system."""
-	# Don't pre-create notes - we'll instantiate the correct type on demand
-	# The pool will hold notes after they're used and returned
-
-	# Prepare note queue from level data (sorted by beat_position)
-	var notes_data = level_data.get("notes", [])
-	for note_data in notes_data:
+func prepare_notes():
+	"""Prepare notes for velocity-based spawning (resolve random lanes)."""
+	# Notes are already sorted in load_level_data()
+	# We just need to resolve any random lane assignments
+	for note_data in sorted_notes:
 		# Resolve lane (random or specific)
 		var lane = note_data.get("lane", "random")
 		if lane == "random":
-			# Choose from available lanes (3-lane mode for tutorial)
+			# Choose from available lanes based on num_lanes
 			lane = BattleManager.choose_lane_avoiding_overlap(note_data["beat_position"])
+			# Update the note data with resolved lane
+			note_data["lane"] = lane
 
-		# Add to queue with resolved lane
-		note_queue.append({
-			"lane": lane,
-			"beat_position": note_data["beat_position"],
-			"note_type": note_data.get("note", "quarter")
-		})
-
-	# Sort queue by beat_position for sequential activation
-	note_queue.sort_custom(func(a, b): return a["beat_position"] < b["beat_position"])
-
-	print("Note pool initialized for ", note_queue.size(), " notes")
+	print("Notes prepared for spawning: ", sorted_notes.size(), " notes")
 
 func _physics_process(_delta):
-	"""Update note pool - activate notes when ready, return them when done."""
-	if not conductor or not conductor.playing:
-		return
-
-	var current_beat = conductor.song_position_in_beats
-
-	# Activate notes from queue when they're within spawn range
-	while note_queue_index < note_queue.size():
-		var note_data = note_queue[note_queue_index]
-		var beats_until_hit = note_data["beat_position"] - current_beat
-
-		# Check if note is within spawn range
-		if beats_until_hit <= BattleManager.SPAWN_AHEAD_BEATS:
-			# Always instantiate the correct note type (no pooling for now - simpler and works)
-			var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_data["note_type"]]["scene"]
-			var note = note_scene.instantiate()
-			note.z_index = 50
-			add_child(note)
-
-			# Activate the note
-			var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[note_data["lane"]].y
-			note.setup_grid(note_data["lane"], note_data["beat_position"], note_data["note_type"], conductor, hitzone_y)
-			active_notes.append(note)
-			note_queue_index += 1
-		else:
-			break  # Future notes, wait
-
+	"""Clean up notes that have gone off-screen."""
 	# Remove notes that have passed despawn threshold
 	var i = 0
 	while i < active_notes.size():
 		var note = active_notes[i]
 		if note.is_past_despawn_threshold():
 			active_notes.remove_at(i)
-			note.queue_free()  # Just free them (no pooling complexity)
+			note.queue_free()
 			# Don't increment i - we removed an element
 		else:
 			i += 1
@@ -450,8 +416,66 @@ func start_character_animations():
 		if opponent_sprite.sprite_frames and opponent_sprite.sprite_frames.has_animation("idle"):
 			opponent_sprite.play("idle")
 
+func spawn_notes_for_beat(current_beat: int):
+	"""Spawn notes that should appear at this beat (velocity-based spawning).
+
+	Notes spawn FALL_TIME seconds before they need to be hit.
+	We calculate spawn_ahead_beats from FALL_TIME and BPM.
+
+	Args:
+		current_beat: Current beat position from Conductor
+	"""
+	if not conductor:
+		return
+
+	# Calculate how many beats ahead to spawn
+	# fall_time (seconds) / seconds_per_beat = beats_ahead
+	var spawn_ahead_beats = int(BattleManager.FALL_TIME / conductor.seconds_per_beat)
+
+	# Spawn notes that should hit at (current_beat + spawn_ahead_beats)
+	# Example: If spawn_ahead = 5, and current_beat = 10, spawn notes for beat 15
+	var target_beat = current_beat + spawn_ahead_beats
+
+	# Check all pending notes and spawn those scheduled for target_beat
+	while next_note_index < sorted_notes.size():
+		var note_data = sorted_notes[next_note_index]
+		var note_beat = int(note_data.get("beat_position", 0))
+
+		# If this note's beat hasn't arrived yet, stop checking
+		if note_beat > target_beat:
+			break
+
+		# If we're past this note (shouldn't happen if sorted correctly), skip it
+		if note_beat < target_beat:
+			next_note_index += 1
+			continue
+
+		# Spawn this note (note_beat == target_beat)
+		var lane = note_data.get("lane", "1")
+		var note_type = note_data.get("note", "quarter")
+
+		# Instantiate the correct note type
+		var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_type]["scene"]
+		var note = note_scene.instantiate()
+		note.z_index = 50
+		add_child(note)
+
+		# Calculate spawn and target positions
+		var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[lane].y
+		var spawn_y = BattleManager.calculate_note_spawn_y()
+		var target_y = BattleManager.calculate_note_target_y(hitzone_y)
+
+		# Setup note with velocity-based movement
+		note.setup_velocity(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_TIME)
+		active_notes.append(note)
+
+		next_note_index += 1
+
 func _on_beat(beat_position: int):
 	check_automatic_misses()
+
+	# Spawn notes on beat signals (velocity-based system)
+	spawn_notes_for_beat(beat_position)
 
 	# Process dialogue events (optimized: check only next pending dialogue)
 	while next_dialogue_index < sorted_dialogues.size():
@@ -505,9 +529,6 @@ func _on_beat(beat_position: int):
 			handle_trigger(trigger_name)
 		next_trigger_index += 1
 
-	# NOTE: Note spawning removed - handled by grid system in _physics_process()
-	# Notes activate from object pool based on beat proximity, not beat signals
-
 func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""
 	match trigger_name:
@@ -525,9 +546,6 @@ func handle_trigger(trigger_name: String):
 			hit_zone_indicator_nodes = []
 		"fade_to_title":
 			fade_to_title()
-
-# NOTE: spawn_note_by_type() removed - deprecated by grid system
-# Notes now activate from object pool in _physics_process() based on beat proximity
 
 func fade_to_title():
 	# Hide battle UI elements (combo display and groove bar) before showing results

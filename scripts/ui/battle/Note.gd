@@ -1,49 +1,67 @@
 extends Area2D
 
 ## ============================================================================
-## GRID-BASED NOTE POSITIONING
+## VELOCITY-BASED NOTE MOVEMENT
 ## ============================================================================
-## Notes calculate their position DIRECTLY from audio time every frame.
-## This eliminates timing drift, pause/unpause issues, and offset problems.
+## Notes move at CONSTANT VELOCITY (position += speed * delta).
+## This is the standard rhythm game approach - notes spawn at a fixed distance
+## and fall at constant speed. Hit detection uses TIME windows, not position.
 ##
-## Grid Coordinate System:
-## - Column (lane): "1", "2", "3", "4", "5"
-## - Row (beat_position): Integer beat position (0 = Bar 1 Beat 1)
-##
-## Position is a pure function of: beat_position - current_beat
-## No accumulation, no drift, always accurate.
+## System:
+## - Notes spawn at a fixed Y position above the hitzone
+## - Notes move downward at constant speed (pixels/second)
+## - Notes track their expected_time (when player should hit)
+## - Hit detection compares current_time vs expected_time
+## - No recalculation, no drift, always accurate
 
 # Grid coordinates (set once, never changes)
 var lane: String = "1"
-var beat_position: int = 0  # When this note should be hit (grid row)
+var beat_position: int = 0  # Beat when this note should be hit
 var note_type: String = "quarter"
+
+# Movement properties
+var speed: float = 0.0  # Pixels per second (constant velocity)
+var expected_time: float = 0.0  # Song time when player should hit this note
 
 # References
 var conductor = null
-var hitzone_y: float = 0.0
 
 # Visual state
 var is_active: bool = false
 
-func setup_grid(p_lane: String, p_beat_position: int, p_note_type: String, p_conductor, p_hitzone_y: float):
-	"""Initialize note with grid coordinates.
+# Screen bounds for despawn
+const SCREEN_BOTTOM: float = 1200.0  # Notes despawn when they go off bottom
+
+func setup_velocity(p_lane: String, p_beat_position: int, p_note_type: String, p_conductor, spawn_y: float, target_y: float, fall_time: float):
+	"""Initialize note with velocity-based movement.
 
 	Args:
 		p_lane: Lane key ("1", "2", "3", "4", "5")
-		p_beat_position: Beat position when note should be hit
+		p_beat_position: Beat position when note should be hit (for tracking only)
 		p_note_type: Type of note ("whole", "half", "quarter")
 		p_conductor: Reference to Conductor for timing
-		p_hitzone_y: Y position of hitzone
+		spawn_y: Y position to spawn at (off-screen above hitzone)
+		target_y: Y position of hitzone center
+		fall_time: Time in seconds for note to reach hitzone
 	"""
 	lane = p_lane
 	beat_position = p_beat_position
 	note_type = p_note_type
 	conductor = p_conductor
-	hitzone_y = p_hitzone_y
 	is_active = true
+
+	# Calculate constant velocity: speed = distance / time
+	var distance = target_y - spawn_y
+	speed = distance / fall_time
+
+	# Calculate expected hit time (current song position + fall time)
+	expected_time = conductor.song_position + fall_time
 
 	# Set X position (column) - never changes
 	position.x = BattleManager.HIT_ZONE_POSITIONS[lane].x
+
+	# Set initial Y position (spawn off-screen)
+	position.y = spawn_y
 
 	# Set color based on lane
 	var color_rect = $NoteTemplate
@@ -62,6 +80,8 @@ func setup_grid(p_lane: String, p_beat_position: int, p_note_type: String, p_con
 		"5":
 			color_rect.color = Color.ORANGE
 
+	visible = true
+
 func deactivate():
 	"""Return note to pool (reset state)."""
 	is_active = false
@@ -69,38 +89,19 @@ func deactivate():
 	lane = ""
 	beat_position = 0
 	conductor = null
+	speed = 0.0
+	expected_time = 0.0
 
-func _physics_process(_delta):
-	if not is_active or not conductor:
+func _physics_process(delta):
+	if not is_active:
 		return
 
-	# Calculate position from grid coordinates (row)
-	# Use float beats for SMOOTH visual motion (not choppy integer steps)
-	var current_beat = conductor.song_position_in_beats_float
-	var beats_until_hit = beat_position - current_beat
+	# Constant velocity movement (THIS IS THE CORRECT APPROACH)
+	position.y += speed * delta
 
-	# Convert beats to pixels (BPM affects visual speed)
-	var pixels_per_beat = BattleManager.get_pixels_per_beat(conductor.bpm)
-	var distance_from_hitzone = beats_until_hit * pixels_per_beat
-
-	# Get note height dynamically
-	var note_height = $NoteTemplate.size.y if has_node("NoteTemplate") else 200.0
-
-	# Set Y position with CENTER alignment
-	# At beat_position (beats_until_hit = 0): center of note aligns with center of hitzone
-	# Formula: position.y = hitzone_center_y - note_center_offset - distance
-	var hitzone_center_y = hitzone_y + BattleManager.HITZONE_HEIGHT / 2.0
-	var note_center_offset = note_height / 2.0
-	position.y = hitzone_center_y - note_center_offset - distance_from_hitzone
-
-	# Visibility and despawn based on grid position
-	if beats_until_hit > BattleManager.SPAWN_AHEAD_BEATS:
-		visible = false  # Too far in future
-	elif beats_until_hit < -BattleManager.DESPAWN_BEHIND_BEATS:
-		# Passed hitzone, ready for removal (battle scene will return to pool)
+	# Despawn when note goes off bottom of screen
+	if position.y >= SCREEN_BOTTOM:
 		visible = false
-	else:
-		visible = true
 
 func is_past_despawn_threshold() -> bool:
 	"""Check if note is past the despawn threshold.
@@ -108,21 +109,45 @@ func is_past_despawn_threshold() -> bool:
 	Returns:
 		true if note should be returned to pool
 	"""
-	if not conductor:
-		return true
-	var current_beat = conductor.song_position_in_beats
-	var beats_until_hit = beat_position - current_beat
-	return beats_until_hit < -BattleManager.DESPAWN_BEHIND_BEATS
+	return position.y >= SCREEN_BOTTOM
+
+func test_hit(current_time: float, tolerance: float = 0.08) -> bool:
+	"""Time-based hit detection (rhythm game standard).
+
+	Args:
+		current_time: Current song position in seconds
+		tolerance: Time window for acceptable hit (default 0.08s = 80ms = OKAY window)
+
+	Returns:
+		true if hit is within time window
+	"""
+	return abs(expected_time - current_time) <= tolerance
+
+func test_miss(current_time: float, tolerance: float = 0.08) -> bool:
+	"""Check if note has been missed (time-based).
+
+	Args:
+		current_time: Current song position in seconds
+		tolerance: Time window past expected_time to consider missed
+
+	Returns:
+		true if note is past the miss window
+	"""
+	return current_time > expected_time + tolerance
 
 # Legacy compatibility (battle scenes may still call these)
 func setup(_key: String, _start_pos: Vector2, _target_position: float):
-	pass  # Deprecated - use setup_grid instead
+	pass  # Deprecated - use setup_velocity instead
+
+func setup_grid(_lane: String, _beat_position: int, _note_type: String, _conductor, _hitzone_y: float):
+	pass  # Deprecated - use setup_velocity instead
 
 func set_travel_time_and_distance(_time: float, _distance: float):
-	pass  # Deprecated - grid system calculates this automatically
+	pass  # Deprecated - velocity system calculates this automatically
 
 func stop_movement():
-	pass  # Deprecated - grid system doesn't use movement
+	"""Stop note movement (for hit/miss effects)."""
+	is_active = false
 
 # Expose track_key for compatibility with hit detection
 var track_key: String:
