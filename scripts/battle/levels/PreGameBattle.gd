@@ -8,7 +8,7 @@ extends Node2D
 var hit_zones = []
 
 # Level data
-@export var level_data_path: String = "res://scripts/battle/data/Lesson1Data.json"
+@export var level_data_path: String = "res://scripts/battle/data/PreGameBattleData.json"
 var level_data: Dictionary = {}
 
 # Pre-sorted event arrays for beat-based handling in _on_beat()

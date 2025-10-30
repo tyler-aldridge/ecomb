@@ -19,12 +19,12 @@ extends Control
 const SCENES = {
 	"main_title": "res://scenes/title/MainTitle.tscn",
 	"character_creation": "res://scenes/character/CharacterCreation.tscn",  # VERIFY PATH
-	"scene_1_narration": "res://scenes/ui/narrative/PostCharacterCreationScene.tscn",
-	"scene_2_tutorial": "res://scenes/tutorial/TutorialExplanationScene.tscn",
-	"scene_3a_calibration": "res://scenes/tutorial/TutorialCalibrationScene.tscn",
-	"scene_4_pre_battle": "res://scenes/ui/narrative/PreBattleNarrativeScene.tscn",
-	"scene_5_battle": "res://scenes/battle/Lesson1Battle.tscn",
-	"scene_6_results": "res://scenes/ui/battle/BattleResults.tscn"
+	"pregame_cutscene_1": "res://scenes/ui/cutscenes/PreGameCutscene1.tscn",
+	"pregame_tutorial": "res://scenes/ui/tutorial/PreGameTutorial.tscn",
+	"calibration": "res://scenes/ui/universal/CalibrationScene.tscn",
+	"pregame_cutscene_2": "res://scenes/ui/cutscenes/PreGameCutscene2.tscn",
+	"pregame_battle": "res://scenes/battle/PreGameBattle.tscn",
+	"battle_results": "res://scenes/ui/battle/BattleResults.tscn"
 }
 
 # UI elements
@@ -69,13 +69,13 @@ func setup_ui():
 	create_button("Main Title", "main_title")
 	create_button("Character Creation", "character_creation")
 	create_separator()
-	create_button("Scene 1: Post-Character Narration", "scene_1_narration")
-	create_button("Scene 2: Tutorial Explanation", "scene_2_tutorial")
-	create_button("Scene 3A: Tutorial Calibration", "scene_3a_calibration")
-	create_button("Scene 4: Pre-Battle Narrative", "scene_4_pre_battle")
+	create_button("PreGame Cutscene 1", "pregame_cutscene_1")
+	create_button("PreGame Tutorial", "pregame_tutorial")
+	create_button("Calibration (Universal)", "calibration")
+	create_button("PreGame Cutscene 2", "pregame_cutscene_2")
 	create_separator()
-	create_button("Scene 5: Lesson 1 Battle", "scene_5_battle")
-	create_button("Scene 6: Battle Results", "scene_6_results")
+	create_button("PreGame Battle", "pregame_battle")
+	create_button("Battle Results", "battle_results")
 	create_separator()
 	create_button("🚀 TEST COMPLETE FLOW (AUTO)", "complete_flow")
 
@@ -154,5 +154,5 @@ func start_complete_flow():
 	GameManager.set_setting("has_seen_tutorial", false)
 	GameManager.set_setting("has_calibrated", false)
 
-	# Start from Scene 1 (assumes character creation is done)
-	navigate_to_scene("scene_1_narration")
+	# Start from PreGameCutscene1 (assumes character creation is done)
+	navigate_to_scene("pregame_cutscene_1")

@@ -1,9 +1,11 @@
 extends Control
 
 ## ============================================================================
-## SCENE 3A: TUTORIAL CALIBRATION SCENE
+## CALIBRATION SCENE (UNIVERSAL)
 ## ============================================================================
-## Simplified calibration for first-time players.
+## Universal timing calibration scene accessible from:
+## 1. Pre-game tutorial flow (auto-advances to PreGameCutscene2)
+## 2. Overworld options menu (returns to options menu)
 ##
 ## Features:
 ## - 60 BPM (simple and slow)
@@ -13,12 +15,11 @@ extends Control
 ## - "Done Calibrating" button (no forced perfect hits)
 ## - Real-time feedback with explosions
 ##
-## Differences from Scene 3B (Options Menu Calibration):
-## - Tutorial version auto-advances to next scene
-## - Options version returns to options menu
+## Usage:
+## Set next_scene_path before instantiating to control where to go after calibration.
 ## ============================================================================
 
-@export var next_scene_path: String = "res://scenes/ui/narrative/PreBattleNarrativeScene.tscn"
+@export var next_scene_path: String = "res://scenes/ui/cutscenes/PreGameCutscene2.tscn"
 
 # Scene elements
 var background: ColorRect

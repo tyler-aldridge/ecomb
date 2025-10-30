@@ -1,9 +1,10 @@
 extends Control
 
 ## ============================================================================
-## SCENE 2: TUTORIAL EXPLANATION SCENE
+## PRE-GAME TUTORIAL
 ## ============================================================================
 ## Step-by-step tutorial explaining game mechanics with visual highlights.
+## First-time player tutorial before entering the main game.
 ##
 ## Steps:
 ## 1. Groove Bar Explanation (yellow border around groove bar)
@@ -18,7 +19,7 @@ extends Control
 ## ============================================================================
 
 # Scene configuration
-@export var next_scene_path: String = "res://scenes/tutorial/TutorialCalibrationScene.tscn"
+@export var next_scene_path: String = "res://scenes/ui/universal/CalibrationScene.tscn"
 @export var fade_duration: float = 3.0
 
 # UI elements

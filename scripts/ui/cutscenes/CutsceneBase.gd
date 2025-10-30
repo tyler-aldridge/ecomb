@@ -1,10 +1,10 @@
 extends Control
 
 ## ============================================================================
-## NARRATIVE SCENE CONTROLLER
+## CUTSCENE BASE CONTROLLER
 ## ============================================================================
-## Manages sequential typewriter text messages with fade transitions.
-## Used for Scene 1 (Post-Character Creation) and Scene 4 (Pre-Battle).
+## Base class for cutscene sequences with typewriter text and fade transitions.
+## Used by PreGameCutscene1, PreGameCutscene2, and future cutscene scenes.
 ##
 ## Features:
 ## - Multiple messages in sequence

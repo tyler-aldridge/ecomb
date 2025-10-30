@@ -1,18 +1,18 @@
-extends "res://scripts/ui/narrative/NarrativeScene.gd"
+extends "res://scripts/ui/cutscenes/CutsceneBase.gd"
 
 ## ============================================================================
-## SCENE 4: PRE-BATTLE NARRATIVE
+## PRE-GAME CUTSCENE 2
 ## ============================================================================
 ## Introduction to Coach Flex Galaxy before the first rhythm battle.
 ## 4 messages with typewriter effect, final message reveals Coach sprite.
 ##
-## This scene extends NarrativeScene.gd and adds Coach sprite reveal.
+## This scene extends CutsceneBase.gd and adds Coach sprite reveal.
 ## ============================================================================
 
 var coach_sprite: AnimatedSprite2D
 
 func _ready():
-	# Set messages for Scene 4
+	# Set messages for PreGameCutscene2
 	messages = [
 		"You approach the legendary Muscle Beach Gym.\n\nThe neon sign pulses with pure summer energy and absolute confidence in the power of gains.",
 		"Through the golden haze of protein powder and coconut oil, a figure emerges from the shadows...\n\nActually, he emerges from the squat rack. Because he was squatting. Obviously.",
@@ -21,7 +21,7 @@ func _ready():
 	]
 
 	# Set next scene path
-	next_scene_path = "res://scenes/battle/Lesson1Battle.tscn"
+	next_scene_path = "res://scenes/battle/PreGameBattle.tscn"
 
 	# Call parent _ready
 	super._ready()

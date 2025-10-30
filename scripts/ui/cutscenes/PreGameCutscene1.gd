@@ -1,16 +1,16 @@
-extends "res://scripts/ui/narrative/NarrativeScene.gd"
+extends "res://scripts/ui/cutscenes/CutsceneBase.gd"
 
 ## ============================================================================
-## SCENE 1: POST-CHARACTER CREATION NARRATION
+## PRE-GAME CUTSCENE 1
 ## ============================================================================
 ## Introduction to Muscle Beach world after character creation.
-## 4 messages with typewriter effect, auto-advances to Tutorial Scene.
+## 4 messages with typewriter effect, auto-advances to PreGameTutorial.
 ##
-## This scene extends NarrativeScene.gd and just sets the messages.
+## This scene extends CutsceneBase.gd and sets the narrative messages.
 ## ============================================================================
 
 func _ready():
-	# Set messages for Scene 1
+	# Set messages for PreGameCutscene1
 	messages = [
 		"Welcome to Muscle Beach, bro.",
 		"The year is 1987. The vibes are immaculate. The gains are... about to be legendary.",
@@ -19,7 +19,7 @@ func _ready():
 	]
 
 	# Set next scene path
-	next_scene_path = "res://scenes/tutorial/TutorialExplanationScene.tscn"
+	next_scene_path = "res://scenes/ui/tutorial/PreGameTutorial.tscn"
 
 	# Call parent _ready
 	super._ready()
