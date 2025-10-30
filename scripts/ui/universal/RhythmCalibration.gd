@@ -11,9 +11,9 @@ extends Control
 ## Features:
 ## - 60 BPM (simple and slow)
 ## - Random quarter notes dropping
-## - Metronome tone on beat 1
-## - Live timing adjustment slider
-## - "Done Calibrating" button (no forced perfect hits)
+## - Metronome tone on beat 1 (440Hz sine wave)
+## - Live timing adjustment slider (-1000 to +1000ms)
+## - "Done Calibrating" button
 ## - Real-time feedback with explosions
 ##
 ## Usage:
@@ -23,13 +23,15 @@ extends Control
 @export var next_scene_path: String = "res://scenes/cutscenes/PreGameCutscene2.tscn"
 
 # Scene elements
-var background: ColorRect
+var background: TextureRect
 var conductor: Conductor
 var hit_zones: Array = []
 var active_notes: Array = []
 
 # UI elements
+var ui_container: VBoxContainer
 var calibration_slider: HSlider
+var slider_label: Label
 var instructions_label: Label
 var done_button: Button
 var fade_overlay: ColorRect
@@ -37,9 +39,13 @@ var fade_overlay: ColorRect
 # Audio
 var hover_sound: AudioStreamPlayer
 var click_sound: AudioStreamPlayer
-var metronome_sound: AudioStreamPlayer
+var metronome_player: AudioStreamPlayer
+var metronome_generator: AudioStreamGenerator
+var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
+const HITZONE_Y = 390.0  # 150px above screen center (540)
+const DESPAWN_Y = 690.0  # 100px below hit zones (390 + 200 + 100)
 var bpm: float = 60.0
 var spawn_timer: float = 0.0
 var spawn_interval: float = 1.0  # Spawn every beat at 60 BPM
@@ -49,16 +55,68 @@ var last_beat: int = -1  # Track last beat for metronome
 var effects_layer: Node2D
 
 func _ready():
+	setup_audio()
 	setup_ui()
 	setup_conductor()
 	fade_from_black()
 
+func setup_audio():
+	"""Setup audio players and sine wave generator for metronome."""
+	# Hover sound
+	hover_sound = AudioStreamPlayer.new()
+	hover_sound.stream = preload("res://assets/audio/sfx/blip.ogg")
+	hover_sound.bus = "SFX"
+	add_child(hover_sound)
+
+	# Click sound
+	click_sound = AudioStreamPlayer.new()
+	click_sound.stream = preload("res://assets/audio/sfx/blop.ogg")
+	click_sound.bus = "SFX"
+	add_child(click_sound)
+
+	# Metronome sine wave generator (440Hz A note)
+	metronome_generator = AudioStreamGenerator.new()
+	metronome_generator.mix_rate = 44100
+	metronome_generator.buffer_length = 0.1
+
+	metronome_player = AudioStreamPlayer.new()
+	metronome_player.stream = metronome_generator
+	metronome_player.bus = "SFX"
+	add_child(metronome_player)
+	metronome_player.play()
+	metronome_playback = metronome_player.get_stream_playback()
+
+func play_metronome_beep():
+	"""Generate and play a 440Hz sine wave beep."""
+	if not metronome_playback:
+		return
+
+	var hz = 440.0
+	var duration = 0.1  # 100ms beep
+	var sample_rate = metronome_generator.mix_rate
+	var pulse_hz = hz / sample_rate
+	var samples_to_fill = int(duration * sample_rate)
+
+	var frames_available = metronome_playback.get_frames_available()
+	if frames_available < samples_to_fill:
+		return
+
+	for i in range(samples_to_fill):
+		var sample = sin(i * pulse_hz * TAU)
+		# Fade out at the end
+		if i > samples_to_fill * 0.7:
+			var fade = 1.0 - (float(i - samples_to_fill * 0.7) / (samples_to_fill * 0.3))
+			sample *= fade
+		metronome_playback.push_frame(Vector2(sample, sample))
+
 func setup_ui():
-	"""Create calibration UI."""
-	# Black background
-	background = ColorRect.new()
-	background.color = Color.BLACK
+	"""Create calibration UI with proper layout."""
+	# Gradient background
+	background = TextureRect.new()
+	background.texture = preload("res://assets/interface/ui/panel-gradient-2.png")
 	background.size = get_viewport().get_visible_rect().size
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_SCALE
 	add_child(background)
 
 	# Create hit zones
@@ -71,14 +129,32 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# Calibration slider (100px below hit zones)
+	# UI Container (centered below hit zones)
+	ui_container = VBoxContainer.new()
+	ui_container.position = Vector2(960 - 300, 650)  # Centered at screen X, below hit zones
+	ui_container.custom_minimum_size = Vector2(600, 0)
+	ui_container.add_theme_constant_override("separation", 30)
+	add_child(ui_container)
+
+	# Slider label (50px font, centered)
+	slider_label = Label.new()
+	slider_label.text = "Timing Offset: 0ms"
+	slider_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	slider_label.add_theme_font_size_override("font_size", 50)
+	slider_label.add_theme_color_override("font_color", Color.WHITE)
+	ui_container.add_child(slider_label)
+
+	# Calibration slider (-1000 to +1000ms, default 0)
+	var slider_container = HBoxContainer.new()
+	slider_container.custom_minimum_size = Vector2(600, 50)
+	ui_container.add_child(slider_container)
+
 	calibration_slider = HSlider.new()
-	calibration_slider.position = Vector2(660, 900)
-	calibration_slider.size = Vector2(600, 40)
-	calibration_slider.min_value = -200.0
-	calibration_slider.max_value = 200.0
+	calibration_slider.min_value = -1000.0
+	calibration_slider.max_value = 1000.0
 	calibration_slider.step = 1.0
 	calibration_slider.value = GameManager.get_setting("rhythm_timing_offset", 0)
+	calibration_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	calibration_slider.value_changed.connect(_on_slider_changed)
 
 	# Style slider like options menu (white slider with black border)
@@ -93,64 +169,43 @@ func setup_ui():
 	slider_style.expand_margin_bottom = 10.0
 	calibration_slider.add_theme_stylebox_override("slider", slider_style)
 
-	add_child(calibration_slider)
+	# Add grabber icon (use same as options menu)
+	var grabber_texture = preload("res://assets/interface/ui/grabber.png")
+	calibration_slider.add_theme_icon_override("grabber", grabber_texture)
+	calibration_slider.add_theme_icon_override("grabber_highlight", grabber_texture)
 
-	# Slider label (styled like options menu - large white text)
-	var slider_label = Label.new()
-	slider_label.text = "Timing Offset: " + str(int(calibration_slider.value)) + "ms"
-	slider_label.position = Vector2(960 - 200, 870)  # Centered above slider
-	slider_label.size = Vector2(400, 50)
-	slider_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	slider_label.add_theme_font_size_override("font_size", 30)
-	slider_label.add_theme_color_override("font_color", Color.WHITE)
-	calibration_slider.set_meta("label", slider_label)
-	add_child(slider_label)
+	slider_container.add_child(calibration_slider)
 
-	# Instructions label (centered, white text, larger font)
+	# Instructions label (50px font, centered)
 	instructions_label = Label.new()
 	instructions_label.text = "Adjust timing until notes feel perfectly synchronized"
-	instructions_label.position = Vector2(960 - 500, 950)  # Centered at screen width 1920
-	instructions_label.size = Vector2(1000, 50)
 	instructions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	instructions_label.add_theme_font_size_override("font_size", 28)
+	instructions_label.add_theme_font_size_override("font_size", 50)
 	instructions_label.add_theme_color_override("font_color", Color.WHITE)
-	add_child(instructions_label)
+	instructions_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	instructions_label.custom_minimum_size = Vector2(600, 0)
+	ui_container.add_child(instructions_label)
 
-	# Done button (centered, moved up from bottom - 100px from bottom)
+	# Done button (centered, styled like options menu with 50px font)
 	done_button = Button.new()
 	done_button.text = "Done Calibrating"
-	done_button.position = Vector2(960 - 150, 960)  # Centered horizontally
-	done_button.size = Vector2(300, 60)
-	done_button.add_theme_font_size_override("font_size", 28)
+	done_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	done_button.custom_minimum_size = Vector2(400, 80)
+	done_button.add_theme_font_size_override("font_size", 50)
 
 	# Style button like options menu
 	var button_hover_style = StyleBoxFlat.new()
-	button_hover_style.bg_color = Color(0.8, 0.8, 0.8, 0.3)
 	done_button.add_theme_stylebox_override("hover", button_hover_style)
 
 	var button_pressed_style = StyleBoxFlat.new()
-	button_pressed_style.bg_color = Color(0.6, 0.6, 0.6, 0.3)
 	done_button.add_theme_stylebox_override("pressed", button_pressed_style)
 
 	done_button.pressed.connect(_on_done_pressed)
 	done_button.mouse_entered.connect(_on_button_hover)
-	add_child(done_button)
+	ui_container.add_child(done_button)
 
-	# Audio players
-	hover_sound = AudioStreamPlayer.new()
-	hover_sound.stream = preload("res://assets/audio/sfx/blip.ogg")
-	hover_sound.bus = "SFX"
-	add_child(hover_sound)
-
-	click_sound = AudioStreamPlayer.new()
-	click_sound.stream = preload("res://assets/audio/sfx/blop.ogg")
-	click_sound.bus = "SFX"
-	add_child(click_sound)
-
-	metronome_sound = AudioStreamPlayer.new()
-	metronome_sound.stream = preload("res://assets/audio/sfx/blip.ogg")
-	metronome_sound.bus = "SFX"
-	add_child(metronome_sound)
+	# Update slider label with initial value
+	_on_slider_changed(calibration_slider.value)
 
 	# Fade overlay
 	fade_overlay = ColorRect.new()
@@ -160,12 +215,12 @@ func setup_ui():
 	add_child(fade_overlay)
 
 func create_hit_zones() -> Array:
-	"""Create hit zones for calibration."""
+	"""Create hit zones for calibration at 150px above screen center."""
 	var zones = []
 	var lane_positions = [
-		Vector2(610.0, 650.0),
-		Vector2(860.0, 650.0),
-		Vector2(1110.0, 650.0)
+		Vector2(610.0, HITZONE_Y),
+		Vector2(860.0, HITZONE_Y),
+		Vector2(1110.0, HITZONE_Y)
 	]
 
 	for i in range(3):
@@ -208,6 +263,9 @@ func fade_from_black():
 
 func _process(delta):
 	"""Spawn notes periodically and play metronome on beat 1."""
+	if not conductor:
+		return
+
 	spawn_timer += delta
 
 	if spawn_timer >= spawn_interval:
@@ -215,19 +273,22 @@ func _process(delta):
 		spawn_random_note()
 
 	# Play metronome on beat 1
-	if conductor:
-		var current_beat = int(conductor.song_pos_in_beats) % 4
-		if current_beat == 0 and last_beat != 0:
-			# Beat 1 (first beat of measure) - play metronome
-			if metronome_sound:
-				metronome_sound.play()
-		last_beat = current_beat
+	var current_beat = int(conductor.song_pos_in_beats) % 4
+	if current_beat == 0 and last_beat != 0:
+		# Beat 1 (first beat of measure) - play metronome sine wave
+		play_metronome_beep()
+	last_beat = current_beat
 
-	# Clean up off-screen notes
+	# Clean up despawned notes (100px below hit zones)
 	var i = 0
 	while i < active_notes.size():
 		var note = active_notes[i]
-		if note.is_past_despawn_threshold():
+		if not is_instance_valid(note):
+			active_notes.remove_at(i)
+			continue
+
+		# Despawn if 100px below bottom of hit zones
+		if note.position.y > DESPAWN_Y:
 			active_notes.remove_at(i)
 			note.queue_free()
 		else:
@@ -235,6 +296,9 @@ func _process(delta):
 
 func spawn_random_note():
 	"""Spawn a note in a random lane."""
+	if not conductor:
+		return
+
 	var lane = str(randi() % 3 + 1)  # "1", "2", or "3"
 	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS
 
@@ -244,10 +308,9 @@ func spawn_random_note():
 	note.z_index = 50
 	add_child(note)
 
-	# Setup note
-	var hitzone_y = 650.0
+	# Setup note with new hit zone Y position
 	var spawn_y = BattleManager.calculate_note_spawn_y(200.0)
-	var target_y = BattleManager.calculate_note_target_y(hitzone_y, 200.0)
+	var target_y = BattleManager.calculate_note_target_y(HITZONE_Y, 200.0)
 
 	note.setup_interpolation(lane, note_beat, "quarter", conductor, spawn_y, target_y, BattleManager.FALL_BEATS)
 	active_notes.append(note)
@@ -269,15 +332,17 @@ func _input(event):
 
 func check_hit(track_key: String):
 	"""Check for note hits and show feedback."""
-	var hit_zone_y = 650.0
 	var closest_note = null
 	var best_distance = 999999.0
 
 	for note in active_notes:
+		if not is_instance_valid(note):
+			continue
+
 		if note.track_key == track_key:
 			var note_height = 200.0
 			var note_center_y = note.position.y + (note_height / 2.0)
-			var hit_zone_center_y = hit_zone_y + (BattleManager.HITZONE_HEIGHT / 2.0)
+			var hit_zone_center_y = HITZONE_Y + (BattleManager.HITZONE_HEIGHT / 2.0)
 			var distance = abs(note_center_y - hit_zone_center_y)
 
 			if distance < best_distance:
@@ -286,7 +351,7 @@ func check_hit(track_key: String):
 
 	if closest_note:
 		# Get hit quality
-		var hit_quality = BattleManager.get_hit_quality_for_note(closest_note, hit_zone_y)
+		var hit_quality = BattleManager.get_hit_quality_for_note(closest_note, HITZONE_Y)
 
 		# Show feedback
 		var effect_pos = closest_note.position + Vector2(100, 100)
@@ -308,9 +373,8 @@ func _on_slider_changed(value: float):
 	GameManager.set_setting("rhythm_timing_offset", int(value))
 
 	# Update label
-	var label = calibration_slider.get_meta("label") as Label
-	if label:
-		label.text = "Timing Offset: " + str(int(value)) + "ms"
+	if slider_label:
+		slider_label.text = "Timing Offset: " + str(int(value)) + "ms"
 
 func _on_button_hover():
 	"""Play hover sound when mouse enters button."""
