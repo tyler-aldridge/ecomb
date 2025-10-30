@@ -50,22 +50,21 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		_set_text(text_node, text)
 
 		# Calculate desired width based on text length and character position
-		# Side dialogs (opponent/player) should be narrower to avoid blocking gameplay
-		# Center dialogs (tutorials) always use max width with wrapping
+		# All dialogs use dynamic width with different max widths
 		var char_count = text.length()
-		var desired_width: float
+		var estimated_width = char_count * 15
+		var min_width = 300.0
+		var max_width: float
 
 		if _character == "center":
-			# Tutorial dialogs: always use max width and enable wrapping
-			desired_width = 1500.0
-			text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			# Tutorial dialogs: wider max width for readability
+			max_width = 1200.0
 		else:
-			# Side dialogs: calculate width based on text length
-			var estimated_width = char_count * 15
-			var min_width = 300.0
-			var max_width = 600.0
-			desired_width = clamp(estimated_width + 60, min_width, max_width)
-			text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			# Side dialogs: narrower to avoid blocking gameplay
+			max_width = 600.0
+
+		var desired_width = clamp(estimated_width + 60, min_width, max_width)
+		text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 		# Set the size of the main dialog container - let the children follow
 		current_dialog.size.x = desired_width

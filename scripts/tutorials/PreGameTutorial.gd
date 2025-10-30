@@ -87,18 +87,20 @@ var tutorial_steps = [
 ]
 
 func _ready():
-	# Set background to pure black to prevent flash during transition
+	# IMMEDIATELY set background to pure black before anything else
 	var background = $TutorialUI/Background
 	if background and background is ColorRect:
 		background.color = Color.BLACK
+		background.visible = true
 
-	# Create fade overlay FIRST so it covers everything during initial setup
+	# Create fade overlay IMMEDIATELY (fully opaque black) to cover everything
 	create_fade_overlay()
 
-	# Setup battle UI components
+	# Setup battle UI components (will be hidden under fade)
 	setup_battle_ui()
 
-	# Wait 2 frames to ensure everything is rendered before fading
+	# Wait 3 frames to ensure complete rendering before fading
+	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().process_frame
 
@@ -158,11 +160,13 @@ func create_fade_overlay():
 	add_child(fade_layer)
 
 	fade_overlay = ColorRect.new()
-	fade_overlay.color = Color(0, 0, 0, 1)  # Pure black, fully opaque
+	fade_overlay.color = Color.BLACK  # Pure black
+	fade_overlay.modulate.a = 1.0  # Fully opaque immediately
 	fade_overlay.size = get_viewport().get_visible_rect().size
 	fade_overlay.position = Vector2.ZERO
 	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_overlay.z_index = 999  # Ensure it's on top
+	fade_overlay.visible = true  # Explicitly visible
 	fade_layer.add_child(fade_overlay)
 
 func fade_from_black():
@@ -469,13 +473,17 @@ func _spawn_notes_continuously():
 		# Get hit zone position from BattleManager constants
 		var hit_zone_pos = BattleManager.HIT_ZONE_POSITIONS[lane_key]
 
-		# Half notes are 200x400 (width x height)
-		# Hit zones are 200x200
-		# Align left edges for X, bottom edge hits center for Y
+		# Half notes are 200x400 (width x height), Hit zones are 200x200
+		# For dead center: note center aligns with hit zone center
+		# Note center Y = note.position.y + 200 (half of 400px)
+		# Hit zone center Y = hit_zone_pos.y + 100 (half of 200px)
+		# So: note.position.y + 200 = hit_zone_pos.y + 100
+		# Therefore: note.position.y = hit_zone_pos.y - 100
+		# This means 100px extends above hit zone, 200px aligns, 100px extends below
 		var note_x = hit_zone_pos.x  # Align left edges (both 200px wide)
-		var hitzone_center_y = hit_zone_pos.y + 100  # Center of 200px hit zone
-		var note_target_y = hitzone_center_y - 400  # Bottom of 400px note at center
-		var note_center_x = hit_zone_pos.x + 100  # For effect positioning
+		var note_target_y = hit_zone_pos.y - 100  # Center note on hit zone
+		var hitzone_center_y = hit_zone_pos.y + 100  # Hit zone center for effects
+		var note_center_x = hit_zone_pos.x + 100  # Note center X for effects
 
 		# Use the proper note scene from BattleManager
 		var note_scene = BattleManager.NOTE_TYPE_CONFIG["half"]["scene"]
