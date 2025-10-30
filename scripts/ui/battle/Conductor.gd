@@ -63,9 +63,9 @@ func _physics_process(delta: float) -> void:
 	if in_countdown:
 		countdown_time_elapsed += delta
 
-		# Fire beats at regular intervals until we reach beat -(4 * subdivision)
-		# For 4/4: fires beats -36 to -9, stops before -8
-		while countdown_next_beat < -(4 * subdivision):  # Stop BEFORE beat -8
+		# Fire beats at regular intervals until we reach beat 0
+		# For 4/4 with 36 beats before start: fires beats -36 to -1, stops before 0
+		while countdown_next_beat < 0:  # Stop BEFORE beat 0 (Bar 1 Beat 1)
 			var beat_time = (countdown_next_beat - (-beats_before_start)) * countdown_tick_interval
 			if countdown_time_elapsed >= beat_time:
 				emit_signal("beat", countdown_next_beat)
@@ -74,14 +74,13 @@ func _physics_process(delta: float) -> void:
 			else:
 				break
 
-		# Check if countdown is complete - start audio at beat -(4 * subdivision)
-		# At this point, countdown_next_beat == -8 (for 4/4)
-		if countdown_next_beat >= -(4 * subdivision):
+		# Check if countdown is complete - start audio at beat 0 (Bar 1 Beat 1)
+		if countdown_next_beat >= 0:
 			var start_time = (countdown_next_beat - (-beats_before_start)) * countdown_tick_interval
 			if countdown_time_elapsed >= start_time:
 				in_countdown = false
-				play()  # Start audio NOW - position 0.0 = beat -8 (Bar 1 Beat 1)
-				# Audio-based timing will now take over and fire beat -8 and onwards
+				play()  # Start audio NOW - position 0.0 = beat 0 (Bar 1 Beat 1)
+				# Audio-based timing will now take over and fire beat 0 and onwards
 				return
 
 	# PLAYING PHASE: Audio is playing, use position for timing
@@ -112,10 +111,10 @@ func _physics_process(delta: float) -> void:
 		song_position += GameManager.get_timing_offset()
 
 		# Convert song_position to beat ticks
-		# Audio position 0.0 = beat -8 (Bar 1 Beat 1)
-		# Formula: beat_position = (song_position / seconds_per_beat) * subdivision - (4 * subdivision)
-		# Example: position 0.0 → -8, position 0.395s (1 beat @ 152 BPM) → -6
-		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision) - (4 * subdivision)
+		# Audio position 0.0 = beat 0 (Bar 1 Beat 1)
+		# Formula: beat_position = (song_position / seconds_per_beat) * subdivision
+		# Example: position 0.0 → 0, position 0.395s (1 beat @ 152 BPM) → 2
+		song_position_in_beats = int((song_position / seconds_per_beat) * subdivision)
 		_report_beat()
 
 func _report_beat() -> void:
@@ -130,7 +129,7 @@ func _report_beat() -> void:
 
 func play_with_beat_offset() -> void:
 	# Initialize countdown phase
-	# Countdown happens in SILENCE, then audio starts at beat -(4 * subdivision)
+	# Countdown happens in SILENCE, then audio starts at beat 0 (Bar 1 Beat 1)
 	in_countdown = true
 	countdown_time_elapsed = 0.0
 	countdown_tick_interval = seconds_per_beat / float(subdivision)
@@ -138,13 +137,13 @@ func play_with_beat_offset() -> void:
 	last_reported_beat = -beats_before_start - 1
 
 	# Calculate total countdown duration for reference
-	countdown_duration = (beats_before_start - (4 * subdivision)) * countdown_tick_interval
+	countdown_duration = beats_before_start * countdown_tick_interval
 
 	# _physics_process will handle:
-	# 1. Fire beats from -beats_before_start to -(4 * subdivision) during countdown
-	# 2. Call play() when countdown finishes
+	# 1. Fire beats from -beats_before_start to -1 during countdown (silent)
+	# 2. Call play() when countdown finishes at beat 0
 	# 3. Switch to audio-based timing after play()
 
-	# Audio will start at beat -(4 * subdivision) where position 0.0 = beat -8 (Bar 1 Beat 1)
+	# Audio will start at beat 0 where position 0.0 = beat 0 (Bar 1 Beat 1)
 		
 		

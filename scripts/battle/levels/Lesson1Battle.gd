@@ -43,8 +43,12 @@ var next_trigger_index: int = 0
 # To modify universal mechanics, edit scripts/autoload/BattleManager.gd
 # ============================================================================
 
-# Hit detection
-var active_notes = []
+# Object pooling for notes (grid-based system)
+const POOL_SIZE = 20  # Number of note instances to reuse
+var note_pool: Array = []  # Available notes ready to activate
+var active_notes: Array = []  # Notes currently visible/active
+var note_queue: Array = []  # Notes waiting to be activated (sorted by beat_position)
+var note_queue_index: int = 0  # Next note to check for activation
 
 # Effects layer
 var effects_layer: Node2D
@@ -263,6 +267,10 @@ func _ready():
 
 	setup_hit_zone_borders()
 	start_character_animations()
+
+	# Initialize object pool for grid-based note system
+	initialize_note_pool()
+
 	conductor.beat.connect(_on_beat)
 
 	# Start with beat offset
@@ -396,6 +404,75 @@ func setup_hit_zone_borders():
 			border.add_point(Vector2(0, BattleManager.HITZONE_HEIGHT))
 			border.add_point(Vector2(0, 0))
 			hit_zone.add_child(border)
+
+func initialize_note_pool():
+	"""Create object pool and prepare note queue for grid-based system."""
+	# Create pool of reusable note instances
+	for i in range(POOL_SIZE):
+		var note = BattleManager.NOTE_TYPE_CONFIG["quarter"]["scene"].instantiate()
+		note.visible = false
+		note.z_index = 50
+		add_child(note)
+		note_pool.append(note)
+
+	# Prepare note queue from level data (sorted by beat_position)
+	var notes_data = level_data.get("notes", [])
+	for note_data in notes_data:
+		# Resolve lane (random or specific)
+		var lane = note_data.get("lane", "random")
+		if lane == "random":
+			# Choose from available lanes (3-lane mode for tutorial)
+			lane = BattleManager.choose_lane_avoiding_overlap(note_data["beat_position"])
+
+		# Add to queue with resolved lane
+		note_queue.append({
+			"lane": lane,
+			"beat_position": note_data["beat_position"],
+			"note_type": note_data.get("note", "quarter")
+		})
+
+	# Sort queue by beat_position for sequential activation
+	note_queue.sort_custom(func(a, b): return a["beat_position"] < b["beat_position"])
+
+	print("Note pool initialized: ", POOL_SIZE, " instances for ", note_queue.size(), " notes")
+
+func _physics_process(delta):
+	"""Update note pool - activate notes when ready, return them when done."""
+	if not conductor or not conductor.playing:
+		return
+
+	var current_beat = conductor.song_position_in_beats
+
+	# Activate notes from queue when they're within spawn range
+	while note_queue_index < note_queue.size():
+		var note_data = note_queue[note_queue_index]
+		var beats_until_hit = note_data["beat_position"] - current_beat
+
+		# Check if note is within spawn range
+		if beats_until_hit <= BattleManager.SPAWN_AHEAD_BEATS:
+			# Activate note from pool
+			if note_pool.size() > 0:
+				var note = note_pool.pop_back()
+				var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[note_data["lane"]].y
+				note.setup_grid(note_data["lane"], note_data["beat_position"], note_data["note_type"], conductor, hitzone_y)
+				active_notes.append(note)
+			else:
+				push_warning("Note pool exhausted! Increase POOL_SIZE if this happens frequently.")
+			note_queue_index += 1
+		else:
+			break  # Future notes, wait
+
+	# Return notes to pool when they pass despawn threshold
+	var i = 0
+	while i < active_notes.size():
+		var note = active_notes[i]
+		if note.is_past_despawn_threshold():
+			active_notes.remove_at(i)
+			note.deactivate()
+			note_pool.append(note)
+			# Don't increment i - we removed an element
+		else:
+			i += 1
 
 func start_character_animations():
 	# Store original positions FIRST before any animation changes
