@@ -15,6 +15,7 @@ var beats_before_start: int = 28
 var current_measure: int = 1
 var cached_output_latency: float = 0.0
 var latency_cache_timer: float = 0.0
+var startup_offset: float = 0.0  # Offset applied during countdown phase
 
 # Time signature subdivision: 2 for simple meters (4/4, 3/4, 7/4), 3 for compound meters (6/8, 9/8, 12/8)
 # Controls how Conductor converts beats to ticks (eighth notes vs triplets)
@@ -39,11 +40,13 @@ func _ready() -> void:
 	seconds_per_beat = 60.0 / bpm
 
 	# Cache output latency once at start
-	# NOTE: Web browsers often report incorrect/low latency values
-	# Use user timing offset setting for accurate web compensation
-	# Cache output latency for all platforms
-	# User timing offset in settings provides additional calibration if needed
 	cached_output_latency = AudioServer.get_output_latency()
+
+	# Safety: Web browsers sometimes report unrealistic latency values
+	# If latency is suspiciously low (< 5ms), ignore it and rely on user timing offset
+	if OS.has_feature("web") and cached_output_latency < 0.005:
+		cached_output_latency = 0.0
+		print("Conductor: Web latency detection unreliable, using user timing offset only")
 
 func _physics_process(delta: float) -> void:
 	# Simple pause handling - stream_paused stops playback automatically
@@ -55,6 +58,9 @@ func _physics_process(delta: float) -> void:
 		latency_cache_timer += delta
 		if latency_cache_timer >= 1.0:
 			cached_output_latency = AudioServer.get_output_latency()
+			# Safety check for web unrealistic values
+			if OS.has_feature("web") and cached_output_latency < 0.005:
+				cached_output_latency = 0.0
 			latency_cache_timer = 0.0
 
 		# Get audio playback position using proper AudioServer timing (all platforms)
@@ -69,6 +75,9 @@ func _physics_process(delta: float) -> void:
 		# time_since_mix = time since audio buffer sent to hardware
 		# cached_output_latency = hardware/driver speaker delay
 		song_position = playback_pos + time_since_mix - cached_output_latency
+
+		# Apply startup offset for countdown phase (negative time before audio starts)
+		song_position += startup_offset
 
 		# Apply user-configurable timing offset for manual calibration
 		song_position += GameManager.get_timing_offset()
@@ -90,18 +99,16 @@ func _report_beat() -> void:
 			current_measure = 1
 
 func play_with_beat_offset() -> void:
-	# Start audio immediately with offset calculated from beats_before_start
-	# Beats will naturally fire from negative positions through _physics_process
+	# Calculate countdown offset: convert beats to seconds
+	# This creates a negative time period before audio starts where beats fire for countdown
+	var time_offset = (beats_before_start * seconds_per_beat) / float(subdivision)
+	startup_offset = -time_offset  # Applied to song_position in _physics_process
+
+	# Initialize beat tracking to start from countdown
 	last_reported_beat = -beats_before_start - 1  # Start one beat before to ensure first beat fires
 
-	# Calculate time offset: convert beats to seconds
-	var time_offset = (beats_before_start * seconds_per_beat) / float(subdivision)
-
-	# Start playback immediately (no Timer needed - _physics_process handles beat signals)
+	# Start audio playback immediately
+	# Beats will fire naturally from negative positions due to startup_offset
 	play()
-
-	# Manually adjust song_position to start from negative time (countdown)
-	# This makes beats fire naturally from the beginning
-	song_position = -time_offset
 		
 		
