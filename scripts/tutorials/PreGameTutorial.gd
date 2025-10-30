@@ -88,13 +88,18 @@ var tutorial_steps = [
 
 func _ready():
 	# Set background to pure black to prevent flash during transition
-	var background = $TutorialUI/BattleBackground
+	var background = $TutorialUI/Background
 	if background and background is ColorRect:
 		background.color = Color.BLACK
 
 	# Create fade overlay FIRST so it covers everything during initial setup
 	create_fade_overlay()
 	setup_battle_ui()
+
+	# Wait 2 frames to ensure everything is rendered before fading
+	await get_tree().process_frame
+	await get_tree().process_frame
+
 	fade_from_black()
 
 func setup_battle_ui():
@@ -185,6 +190,10 @@ func show_tutorial_step(step_index: int):
 	# Stop any active simulations when changing steps
 	xp_simulation_active = false
 	# Note: note_spawning_active continues from hit zone to combo section
+
+	# Hide XP gain display when not on XP step (step 1)
+	if xp_gain_display:
+		xp_gain_display.visible = (step_index == 1)
 
 	# Remove previous highlighting
 	if current_border:
@@ -456,8 +465,14 @@ func _spawn_notes_continuously():
 
 		# Get hit zone position from BattleManager constants
 		var hit_zone_pos = BattleManager.HIT_ZONE_POSITIONS[lane_key]
-		var lane_x = hit_zone_pos.x + 100  # Center of 200px hit zone
-		var hitzone_y = hit_zone_pos.y + 100  # Center of 200px hit zone
+
+		# Half notes are 200x400 (width x height)
+		# Hit zones are 200x200
+		# Align left edges for X, bottom edge hits center for Y
+		var note_x = hit_zone_pos.x  # Align left edges (both 200px wide)
+		var hitzone_center_y = hit_zone_pos.y + 100  # Center of 200px hit zone
+		var note_target_y = hitzone_center_y - 400  # Bottom of 400px note at center
+		var note_center_x = hit_zone_pos.x + 100  # For effect positioning
 
 		# Use the proper note scene from BattleManager
 		var note_scene = BattleManager.NOTE_TYPE_CONFIG["half"]["scene"]
@@ -475,18 +490,18 @@ func _spawn_notes_continuously():
 				"3":
 					template.color = Color.YELLOW
 
-		# Position note off-screen above at the center X position
-		note.position = Vector2(lane_x, -200)  # Start off-screen
+		# Position note off-screen above, aligned with hit zone
+		note.position = Vector2(note_x, -600)  # Start off-screen
 		note.z_index = 50  # Below dialogs (which are z_index 1000)
 		add_child(note)
 
 		# Animate note falling to perfect center (1.6s for full fall)
 		var tween = create_tween()
-		tween.tween_property(note, "position:y", hitzone_y, 1.6).set_ease(Tween.EASE_IN)
+		tween.tween_property(note, "position:y", note_target_y, 1.6).set_ease(Tween.EASE_IN)
 
 		# After reaching center, show perfect feedback and explosion
 		tween.tween_callback(func():
-			var effect_pos = Vector2(lane_x, hitzone_y)
+			var effect_pos = Vector2(note_center_x, hitzone_center_y)
 
 			# Register the hit with BattleManager (updates combo, groove)
 			BattleManager.register_hit("PERFECT")
