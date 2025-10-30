@@ -43,8 +43,7 @@ var next_trigger_index: int = 0
 # ============================================================================
 
 # Object pooling for notes (grid-based system)
-const POOL_SIZE = 20  # Number of note instances to reuse
-var note_pool: Array = []  # Available notes ready to activate
+var note_pool: Array = []  # Recycled notes (correct type) ready to reuse
 var active_notes: Array = []  # Notes currently visible/active
 var note_queue: Array = []  # Notes waiting to be activated (sorted by beat_position)
 var note_queue_index: int = 0  # Next note to check for activation
@@ -373,13 +372,8 @@ func setup_hit_zone_borders():
 
 func initialize_note_pool():
 	"""Create object pool and prepare note queue for grid-based system."""
-	# Create pool of reusable note instances
-	for i in range(POOL_SIZE):
-		var note = BattleManager.NOTE_TYPE_CONFIG["quarter"]["scene"].instantiate()
-		note.visible = false
-		note.z_index = 50
-		add_child(note)
-		note_pool.append(note)
+	# Don't pre-create notes - we'll instantiate the correct type on demand
+	# The pool will hold notes after they're used and returned
 
 	# Prepare note queue from level data (sorted by beat_position)
 	var notes_data = level_data.get("notes", [])
@@ -400,7 +394,7 @@ func initialize_note_pool():
 	# Sort queue by beat_position for sequential activation
 	note_queue.sort_custom(func(a, b): return a["beat_position"] < b["beat_position"])
 
-	print("Note pool initialized: ", POOL_SIZE, " instances for ", note_queue.size(), " notes")
+	print("Note pool initialized for ", note_queue.size(), " notes")
 
 func _physics_process(_delta):
 	"""Update note pool - activate notes when ready, return them when done."""
@@ -416,14 +410,26 @@ func _physics_process(_delta):
 
 		# Check if note is within spawn range
 		if beats_until_hit <= BattleManager.SPAWN_AHEAD_BEATS:
-			# Activate note from pool
-			if note_pool.size() > 0:
-				var note = note_pool.pop_back()
-				var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[note_data["lane"]].y
-				note.setup_grid(note_data["lane"], note_data["beat_position"], note_data["note_type"], conductor, hitzone_y)
-				active_notes.append(note)
-			else:
-				push_warning("Note pool exhausted! Increase POOL_SIZE if this happens frequently.")
+			var note = null
+
+			# Try to get note from pool (matching type if possible)
+			for pooled_note in note_pool:
+				if pooled_note.note_type == note_data["note_type"]:
+					note = pooled_note
+					note_pool.erase(pooled_note)
+					break
+
+			# If no matching type in pool, instantiate new note of correct type
+			if note == null:
+				var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_data["note_type"]]["scene"]
+				note = note_scene.instantiate()
+				note.z_index = 50
+				add_child(note)
+
+			# Activate the note
+			var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[note_data["lane"]].y
+			note.setup_grid(note_data["lane"], note_data["beat_position"], note_data["note_type"], conductor, hitzone_y)
+			active_notes.append(note)
 			note_queue_index += 1
 		else:
 			break  # Future notes, wait
