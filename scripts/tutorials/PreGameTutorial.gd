@@ -87,6 +87,11 @@ var tutorial_steps = [
 ]
 
 func _ready():
+	# Set background to pure black to prevent flash during transition
+	var background = $TutorialUI/BattleBackground
+	if background and background is ColorRect:
+		background.color = Color.BLACK
+
 	# Create fade overlay FIRST so it covers everything during initial setup
 	create_fade_overlay()
 	setup_battle_ui()
@@ -250,11 +255,11 @@ func show_message(step: Dictionary, message_index: int):
 
 	# Show centered dialog with rainbow border (48px font, auto-sized)
 	# Using "center" character positions dialog in center of screen
-	# AWAIT the typing to complete, then pause 2 seconds
+	# AWAIT the typing to complete, then pause 3 seconds
 	await DialogManager.show_dialog(message, "center", 0.0)
 
-	# Pause for 2 seconds after typing finishes before advancing to next message
-	auto_advance_timer = get_tree().create_timer(2.0)
+	# Pause for 3 seconds after typing finishes before advancing to next message
+	auto_advance_timer = get_tree().create_timer(3.0)
 	await auto_advance_timer.timeout
 
 	# Only advance if we're still on the same message (not manually advanced)
@@ -304,6 +309,11 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 func _input(event):
 	"""Handle player input to skip typing and advance tutorial."""
 	if is_transitioning:
+		return
+
+	# ESC key skips entire tutorial
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		_transition_to_next_scene()
 		return
 
 	# Allow click or spacebar to skip typing and advance to next message
@@ -397,6 +407,10 @@ func _simulate_xp_gains():
 
 	# Loop continuously while on XP step
 	while xp_simulation_active:
+		# Check flag before emitting (in case we just stopped)
+		if not xp_simulation_active:
+			break
+
 		var xp_data = xp_types[type_index]
 		BattleManager.hit_registered.emit(xp_data["quality"], xp_data["xp"], xp_data["multiplier"])
 
@@ -470,7 +484,7 @@ func _spawn_notes_continuously():
 		var tween = create_tween()
 		tween.tween_property(note, "position:y", hitzone_y, 1.6).set_ease(Tween.EASE_IN)
 
-		# After reaching center, show perfect feedback
+		# After reaching center, show perfect feedback and explosion
 		tween.tween_callback(func():
 			var effect_pos = Vector2(lane_x, hitzone_y)
 
@@ -484,6 +498,9 @@ func _spawn_notes_continuously():
 			# Show random feedback text
 			var feedback_text = BattleManager.get_random_feedback_text("PERFECT")
 			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, self, self)
+
+			# Perfect hit: rainbow explosion
+			BattleManager.explode_note_at_position(note, "rainbow", 5, effect_pos, self, self)
 
 			# Create shatter effect (use 120 BPM as tutorial speed)
 			var shatter_tween = BattleManager.create_fade_out_tween(note, 120.0)

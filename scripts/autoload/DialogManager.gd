@@ -61,8 +61,12 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		# Set the size of the main dialog container - let the children follow
 		current_dialog.size.x = desired_width
 
-		# Enable text wrapping for better readability
-		text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		# Enable text wrapping only for side dialogs (battles)
+		# Center dialogs (tutorials) have enough width to avoid wrapping
+		if _character == "center":
+			text_node.autowrap_mode = TextServer.AUTOWRAP_OFF
+		else:
+			text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 		# Calculate height dynamically based on text length
 		# Estimate lines needed: char_count / chars_per_line
