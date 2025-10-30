@@ -42,6 +42,7 @@ var border_tween: Tween
 var current_step: int = 0
 var current_message_index: int = 0
 var is_transitioning: bool = false
+var auto_advance_timer: SceneTreeTimer = null
 
 # Tutorial steps data
 var tutorial_steps = [
@@ -192,6 +193,15 @@ func show_message(step: Dictionary, message_index: int):
 	# Using "center" character positions dialog in center of screen
 	DialogManager.show_dialog(message, "center", 5.0)
 
+	# Auto-advance to next message after 5.5 seconds (dialog duration + buffer)
+	auto_advance_timer = get_tree().create_timer(5.5)
+	await auto_advance_timer.timeout
+
+	# Only advance if we're still on the same message (not manually advanced)
+	if not is_transitioning and current_message_index == message_index:
+		_on_advance_requested()
+	auto_advance_timer = null
+
 	# Run simulation for first message of certain steps
 	if message_index == 0 and step.has("simulate"):
 		match step["simulate"]:
@@ -234,10 +244,32 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 
 	return container
 
+func _input(event):
+	"""Handle player input to skip typing and advance tutorial."""
+	if is_transitioning:
+		return
+
+	# Allow click or spacebar to skip typing and advance to next message
+	if event is InputEventMouseButton and event.pressed:
+		# Set skip flag for DialogManager to skip typing
+		get_tree().root.set_meta("skip_dialog_typing", true)
+		# Advance to next message
+		_on_advance_requested()
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
+		# Set skip flag for DialogManager to skip typing
+		get_tree().root.set_meta("skip_dialog_typing", true)
+		# Advance to next message
+		_on_advance_requested()
+
 func _on_advance_requested():
 	"""Handle advance to next message or step."""
 	if is_transitioning:
 		return
+
+	# Cancel auto-advance timer if manually advancing
+	if auto_advance_timer:
+		# Timer is already running, will be cancelled naturally
+		pass
 
 	var step = tutorial_steps[current_step]
 	current_message_index += 1
