@@ -284,7 +284,7 @@ func create_battle_ui():
 	add_child(ui_layer)
 
 	# Groove bar (full width at top)
-	var groove_bar_scene = preload("res://scenes/ui/battle/GrooveBar.tscn")
+	var groove_bar_scene = preload("res://scenes/ui/battles/GrooveBar.tscn")
 	groove_bar = groove_bar_scene.instantiate()
 	ui_layer.add_child(groove_bar)
 
@@ -296,12 +296,12 @@ func create_battle_ui():
 	hit_zones = displays.get("hitzones", [])
 
 	# Battle results menu (hidden until battle completes successfully)
-	var battle_results_scene = preload("res://scenes/ui/battle/BattleResults.tscn")
+	var battle_results_scene = preload("res://scenes/ui/battles/BattleResults.tscn")
 	battle_results = battle_results_scene.instantiate()
 	ui_layer.add_child(battle_results)
 
 	# Battle failure dialog (hidden until battle fails)
-	var battle_failure_scene = preload("res://scenes/ui/battle/BattleFailure.tscn")
+	var battle_failure_scene = preload("res://scenes/ui/battles/BattleFailure.tscn")
 	battle_failure = battle_failure_scene.instantiate()
 	ui_layer.add_child(battle_failure)
 

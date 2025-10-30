@@ -33,6 +33,7 @@ var is_typing: bool = false
 var typing_complete_flag: bool = false
 var auto_advance_timer: float = 0.0
 var full_text: String = ""
+var char_timer: float = 0.0
 
 func _ready():
 	# Create container for centering
@@ -86,7 +87,6 @@ func _type_next_character(delta):
 		return
 
 	# Simple timing (not perfect but sufficient)
-	static var char_timer: float = 0.0
 	char_timer += delta
 
 	if char_timer >= typing_speed:

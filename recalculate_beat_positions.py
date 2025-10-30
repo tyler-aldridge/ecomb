@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Recalculate all beat_position values in Lesson1Data.json using Bar/Beat as source of truth.
+Recalculate all beat_position values in PreGameBattleData.json using Bar/Beat as source of truth.
 Formula: beat_position = (bar - 1) * ticks_per_bar + (beat - 1) * subdivision
 For 4/4: ticks_per_bar = 8, subdivision = 2
 
-VELOCITY SYSTEM: No offsets needed! All notes use the same formula.
-Notes move at constant velocity and spawn at the correct time before their hit beat.
+POSITION INTERPOLATION SYSTEM: No offsets needed! All notes use the same formula.
+Notes calculate position from beat progress each frame.
 """
 
 import json
@@ -40,7 +40,7 @@ def bar_beat_to_position(bar, beat):
     return int(base_pos)
 
 # Load JSON
-with open('/home/user/ecomb/scripts/battle/data/Lesson1Data.json', 'r') as f:
+with open('/home/user/ecomb/scripts/battles/data/PreGameBattleData.json', 'r') as f:
     data = json.load(f)
 
 # Recalculate all beat_positions (velocity system - no offsets!)
@@ -67,8 +67,8 @@ print(f"\nTotal changes: {changes_count}")
 print(f"Total notes processed: {len(data['notes'])}")
 
 # Save with nice formatting
-with open('/home/user/ecomb/scripts/battle/data/Lesson1Data.json', 'w') as f:
+with open('/home/user/ecomb/scripts/battles/data/PreGameBattleData.json', 'w') as f:
     json.dump(data, f, indent=2)
 
 print("\n✓ All beat_positions recalculated using Bar/Beat as source of truth")
-print("✓ Velocity system: All notes use the same formula (no offsets)")
+print("✓ Position interpolation system: All notes use the same formula (no offsets)")
