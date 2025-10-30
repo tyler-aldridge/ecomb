@@ -1,11 +1,12 @@
 extends Control
 
 ## ============================================================================
-## CALIBRATION SCENE (UNIVERSAL)
+## RHYTHM CALIBRATION (UNIVERSAL)
 ## ============================================================================
-## Universal timing calibration scene accessible from:
+## Universal timing calibration scene accessible from anywhere:
 ## 1. Pre-game tutorial flow (auto-advances to PreGameCutscene2)
-## 2. Overworld options menu (returns to options menu)
+## 2. Options menu from title screen (returns to title)
+## 3. Future: Overworld options menu (returns to overworld)
 ##
 ## Features:
 ## - 60 BPM (simple and slow)

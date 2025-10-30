@@ -19,7 +19,7 @@ extends Control
 ## ============================================================================
 
 # Scene configuration
-@export var next_scene_path: String = "res://scenes/ui/universal/CalibrationScene.tscn"
+@export var next_scene_path: String = "res://scenes/ui/universal/RhythmCalibration.tscn"
 @export var fade_duration: float = 3.0
 
 # UI elements
