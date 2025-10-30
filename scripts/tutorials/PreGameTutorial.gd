@@ -43,6 +43,7 @@ var current_step: int = 0
 var current_message_index: int = 0
 var is_transitioning: bool = false
 var auto_advance_timer: SceneTreeTimer = null
+var xp_simulation_active: bool = false  # Track if XP simulation should continue
 
 # Tutorial steps data
 var tutorial_steps = [
@@ -91,6 +92,9 @@ func _ready():
 
 func setup_battle_ui():
 	"""Create battle UI using REAL components (same as PreGameBattle)."""
+	# Start player sprite invisible for smooth fade-in
+	player_sprite.modulate.a = 0.0
+
 	# Create UI layer for proper screen-space rendering
 	ui_layer = CanvasLayer.new()
 	ui_layer.layer = 100
@@ -109,6 +113,10 @@ func setup_battle_ui():
 	var groove_fade = create_tween()
 	groove_fade.tween_property(groove_bar, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_OUT).set_delay(0.2)
 
+	# Fade in the player sprite
+	var sprite_fade = create_tween()
+	sprite_fade.tween_property(player_sprite, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_OUT).set_delay(0.2)
+
 	# Set groove bar to tutorial starting value (50%)
 	if groove_bar.has_method("set_groove"):
 		groove_bar.set_groove(50.0)
@@ -119,6 +127,13 @@ func setup_battle_ui():
 	combo_display = displays.get("combo_display")
 	xp_gain_display = displays.get("xp_display")
 	hit_zones = displays.get("hitzones", [])
+
+	# Fade in hit zones
+	for zone in hit_zones:
+		if zone and is_instance_valid(zone):
+			zone.modulate.a = 0.0
+			var zone_fade = create_tween()
+			zone_fade.tween_property(zone, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_OUT).set_delay(0.2)
 
 func create_fade_overlay():
 	"""Create black fade overlay for scene transitions."""
@@ -154,6 +169,9 @@ func show_tutorial_step(step_index: int):
 	current_step = step_index
 	current_message_index = 0
 	var step = tutorial_steps[step_index]
+
+	# Stop any active XP simulation when changing steps
+	xp_simulation_active = false
 
 	# Remove previous highlighting
 	if current_border:
@@ -309,6 +327,9 @@ func _transition_to_next_scene():
 	"""Fade to black and load next scene."""
 	is_transitioning = true
 
+	# Stop any active simulations
+	xp_simulation_active = false
+
 	# Remove borders and highlighting
 	if current_border:
 		current_border.queue_free()
@@ -334,16 +355,31 @@ func _load_next_scene():
 # ============================================================================
 
 func _simulate_xp_gains():
-	"""Simulate XP gain feedback over player sprite."""
-	# Show different quality XP gains in sequence using BattleManager signal
+	"""Simulate XP gain feedback over player sprite continuously."""
+	# Enable continuous XP simulation
+	xp_simulation_active = true
+
+	# XP quality types to cycle through
+	var xp_types = [
+		{"quality": "PERFECT", "xp": 10, "multiplier": 5.0},
+		{"quality": "GOOD", "xp": 7, "multiplier": 3.0},
+		{"quality": "OKAY", "xp": 4, "multiplier": 1.0}
+	]
+	var type_index = 0
+
+	# Initial delay before starting
 	await get_tree().create_timer(0.5).timeout
-	BattleManager.hit_registered.emit("PERFECT", 10, 5.0)
 
-	await get_tree().create_timer(1.2).timeout
-	BattleManager.hit_registered.emit("GOOD", 7, 3.0)
+	# Loop continuously while on XP step
+	while xp_simulation_active:
+		var xp_data = xp_types[type_index]
+		BattleManager.hit_registered.emit(xp_data["quality"], xp_data["xp"], xp_data["multiplier"])
 
-	await get_tree().create_timer(1.2).timeout
-	BattleManager.hit_registered.emit("OKAY", 4, 1.0)
+		# Move to next XP type (cycle through PERFECT → GOOD → OKAY → repeat)
+		type_index = (type_index + 1) % xp_types.size()
+
+		# Wait before next XP gain
+		await get_tree().create_timer(1.2).timeout
 
 func _simulate_hit_zone_notes():
 	"""Simulate 6 random half notes hitting perfect center."""

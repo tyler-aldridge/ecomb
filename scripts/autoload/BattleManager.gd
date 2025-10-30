@@ -807,12 +807,7 @@ func setup_battle_character_displays(player_sprite: AnimatedSprite2D, opponent_s
 		style.border_width_top = 3
 		style.border_width_right = 3
 		style.border_width_bottom = 3
-
-		# Border color by lane (1=red, 2=blue, 3=green)
-		match zone_key:
-			"1": style.border_color = Color(1, 0, 0, 1)  # Red
-			"2": style.border_color = Color(0, 0, 1, 1)  # Blue
-			"3": style.border_color = Color(0, 1, 0, 1)  # Green
+		style.border_color = Color(1, 1, 1, 1)  # White borders for all lanes
 
 		hitzone.add_theme_stylebox_override("panel", style)
 

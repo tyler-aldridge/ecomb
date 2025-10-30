@@ -14,9 +14,9 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		current_dialog = null  # Clear reference immediately
 
 		# SUPER FAST fade out (0.1s) to minimize overlap
-		var fade_tween = create_tween()
-		fade_tween.tween_property(old_dialog, "modulate:a", 0.0, 0.1)
-		fade_tween.tween_callback(func():
+		var old_dialog_fade = create_tween()
+		old_dialog_fade.tween_property(old_dialog, "modulate:a", 0.0, 0.1)
+		old_dialog_fade.tween_callback(func():
 			if is_instance_valid(old_dialog):
 				old_dialog.queue_free()
 		)
@@ -130,8 +130,8 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 	current_dialog.anchor_bottom = 0.0
 
 	# Fade in the dialog
-	var fade_tween = create_tween()
-	fade_tween.tween_property(current_dialog, "modulate:a", 1.0, 0.2).set_ease(Tween.EASE_OUT)
+	var dialog_fade_in = create_tween()
+	dialog_fade_in.tween_property(current_dialog, "modulate:a", 1.0, 0.2).set_ease(Tween.EASE_OUT)
 
 	# Now animate the text typing
 	if text_node:
