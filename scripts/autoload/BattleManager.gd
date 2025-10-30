@@ -73,7 +73,10 @@ const HIT_ZONE_POSITIONS = {
 # Visual speed SCALES WITH BPM for proper rhythm game feel:
 # - Higher BPM (152) → shorter fall time → faster visual speed (energetic)
 # - Lower BPM (60) → longer fall time → slower visual speed (relaxed)
-const FALL_BEATS = 8.0  # Number of beats ahead to spawn notes (constant across all BPMs)
+# FALL_BEATS is in TICKS (subdivision units), not full beats:
+# - 6 ticks = 3 full beats in 4/4 time (subdivision = 2)
+# - At 152 BPM: 6 ticks = 1.18s fall time → max ~4 notes visible
+const FALL_BEATS = 6.0  # Number of ticks ahead to spawn notes (reduces visual clutter)
 const SPAWN_BUFFER = 100.0  # Extra space above screen top to ensure notes fully off-screen
 const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}
