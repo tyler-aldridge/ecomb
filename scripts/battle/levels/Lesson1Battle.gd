@@ -189,14 +189,24 @@ func _ready():
 	var ts_info = get_time_signature_info()
 	conductor.subdivision = ts_info["subdivision"]
 
-	if level_data.has("audio_file"):
+	# Load music from MusicManager (lazy loading with LRU cache)
+	# Supports both music_id (preferred) and audio_file (legacy)
+	var audio_stream: AudioStream = null
+	if level_data.has("music_id"):
+		# New format: use music ID for better performance
+		var music_id = level_data["music_id"]
+		audio_stream = MusicManager.get_music(music_id)
+		if not audio_stream:
+			push_error("Failed to get music by ID: " + music_id)
+	elif level_data.has("audio_file"):
+		# Legacy format: use file path (backward compatible)
 		var audio_path = level_data["audio_file"]
-		# Use MusicManager for instant, preloaded music (no web stuttering!)
-		var audio_stream = MusicManager.get_music_by_path(audio_path)
-		if audio_stream:
-			conductor.stream = audio_stream
-		else:
-			push_error("Failed to get music from MusicManager: " + audio_path)
+		audio_stream = MusicManager.get_music_by_path(audio_path)
+		if not audio_stream:
+			push_error("Failed to get music by path: " + audio_path)
+
+	if audio_stream:
+		conductor.stream = audio_stream
 
 	# Calculate max possible strength (assuming all PERFECT hits with full combo)
 	# PERFECT base = 10, but with combo multipliers it scales up
