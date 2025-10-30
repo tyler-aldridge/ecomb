@@ -45,6 +45,7 @@ var current_message_index: int = 0
 var is_transitioning: bool = false
 var auto_advance_timer: SceneTreeTimer = null
 var xp_simulation_active: bool = false  # Track if XP simulation should continue
+var note_spawning_active: bool = false  # Track if note spawning should continue
 
 # Tutorial steps data
 var tutorial_steps = [
@@ -171,8 +172,9 @@ func show_tutorial_step(step_index: int):
 	current_message_index = 0
 	var step = tutorial_steps[step_index]
 
-	# Stop any active XP simulation when changing steps
+	# Stop any active simulations when changing steps
 	xp_simulation_active = false
+	# Note: note_spawning_active continues from hit zone to combo section
 
 	# Remove previous highlighting
 	if current_border:
@@ -195,9 +197,17 @@ func show_tutorial_step(step_index: int):
 			if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
 				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
-			# Create yellow border around player sprite using global position
-			# Border extends beyond sprite edges (sprite is ~200x200, border 250x250)
-			var rect = Rect2(player_sprite.global_position - Vector2(125, 125), Vector2(250, 250))
+			# Create yellow border around player sprite extending vertically
+			# Top: 100px above sprite, Bottom: screen bottom (1080px)
+			var sprite_top = player_sprite.global_position.y - 100
+			var sprite_bottom = 1080  # Screen height
+			var border_height = sprite_bottom - sprite_top
+			var rect = Rect2(
+				player_sprite.global_position.x - 125,  # Center horizontally around sprite
+				sprite_top,
+				250,  # Width
+				border_height
+			)
 			current_border = create_flashing_border(rect, 20)
 		"hit_zones":
 			# Create keyboard indicators (1, 2, 3) with yellow flashing borders
@@ -235,10 +245,16 @@ func show_message(step: Dictionary, message_index: int):
 
 	# Show centered dialog with rainbow border (48px font, auto-sized)
 	# Using "center" character positions dialog in center of screen
-	DialogManager.show_dialog(message, "center", 7.0)
+	# Don't auto-close - let it stay until we advance
+	DialogManager.show_dialog(message, "center", 0.0)
 
-	# Auto-advance to next message after 8.0 seconds (dialog duration + buffer)
-	auto_advance_timer = get_tree().create_timer(8.0)
+	# Wait for typing to finish (estimate based on message length)
+	# Typing is ~0.02s per character + buffer for audio
+	var typing_time = message.length() * 0.02 + 0.5
+	await get_tree().create_timer(typing_time).timeout
+
+	# Then pause for 2 seconds before advancing to next message
+	auto_advance_timer = get_tree().create_timer(2.0)
 	await auto_advance_timer.timeout
 
 	# Only advance if we're still on the same message (not manually advanced)
@@ -277,9 +293,9 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 	var fade_tween = create_tween()
 	fade_tween.tween_property(border, "modulate:a", 1.0, 0.3).set_ease(Tween.EASE_OUT)
 
-	# Flashing animation
+	# Flashing animation (large number of loops instead of infinite to avoid errors)
 	var tween = create_tween()
-	tween.set_loops()
+	tween.set_loops(1000)
 	tween.tween_property(border, "modulate:a", 0.3, 0.5).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(border, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_IN_OUT)
 
@@ -330,12 +346,18 @@ func _transition_to_next_scene():
 	"""Fade to black and load next scene."""
 	is_transitioning = true
 
-	# Stop any active simulations
+	# Stop all active simulations
 	xp_simulation_active = false
+	note_spawning_active = false
 
 	# Remove borders and highlighting
 	if current_border:
 		current_border.queue_free()
+
+	# Remove hit zone indicators
+	if hit_zone_indicators.size() > 0:
+		BattleManager.stop_hit_zone_indicators(hit_zone_indicators, self)
+		hit_zone_indicators.clear()
 
 	# Disable groove bar highlighting
 	if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
@@ -385,8 +407,12 @@ func _simulate_xp_gains():
 		await get_tree().create_timer(1.2).timeout
 
 func _simulate_hit_zone_notes():
-	"""Simulate 6 random half notes hitting perfect center - visual only."""
-	# Initialize BattleManager for combo tracking
+	"""Start continuous note spawning - hides combo display."""
+	# Hide combo display during this section
+	if combo_display:
+		combo_display.visible = false
+
+	# Initialize BattleManager for combo/groove tracking
 	BattleManager.start_battle({
 		"battle_id": "tutorial_simulation",
 		"battle_level": 1,
@@ -396,31 +422,53 @@ func _simulate_hit_zone_notes():
 		"max_strength": 100
 	})
 
-	# Spawn 6 half notes in random lanes, staggered timing
-	for i in range(6):
-		await get_tree().create_timer(0.8).timeout
+	# Start continuous note spawning
+	note_spawning_active = true
+	_spawn_notes_continuously()
 
+func _simulate_combo():
+	"""Show combo display - note spawning continues from previous section."""
+	# Show combo display for this section
+	await get_tree().create_timer(0.5).timeout
+	if combo_display:
+		combo_display.visible = true
+
+func _spawn_notes_continuously():
+	"""Continuously spawn notes in random lanes until stopped."""
+	while note_spawning_active:
 		# Pick random lane (0, 1, or 2) and convert to lane key
 		var lane_index = randi() % 3
 		var lane_key = str(lane_index + 1)
 
 		# Get hit zone position from BattleManager constants
 		var hit_zone_pos = BattleManager.HIT_ZONE_POSITIONS[lane_key]
-		var lane_x = hit_zone_pos.x + 100  # Center of 200px hit zone
-		var hitzone_y = hit_zone_pos.y + 100
+		var lane_x = hit_zone_pos.x  # Use exact X position (note centers itself)
+		var hitzone_y = hit_zone_pos.y + 100  # Center of 200px hit zone
 
 		# Use the proper note scene from BattleManager
 		var note_scene = BattleManager.NOTE_TYPE_CONFIG["half"]["scene"]
 		var note = note_scene.instantiate()
 
-		# Position note above hit zone (same as battles)
-		note.position = Vector2(lane_x, hitzone_y - 600)
+		# Get NoteTemplate to set color BEFORE adding to scene
+		if note.has_node("NoteTemplate"):
+			var template = note.get_node("NoteTemplate")
+			# Set CMY colors based on lane
+			match lane_key:
+				"1":
+					template.color = Color.CYAN
+				"2":
+					template.color = Color.MAGENTA
+				"3":
+					template.color = Color.YELLOW
+
+		# Position note off-screen above (spawn higher than battles)
+		note.position = Vector2(lane_x, -200)  # Start off-screen
 		note.z_index = 50  # Below dialogs (which are z_index 1000)
 		add_child(note)
 
-		# Animate note falling to perfect center (same timing as battles)
+		# Animate note falling to perfect center (1.6s for full fall)
 		var tween = create_tween()
-		tween.tween_property(note, "position:y", hitzone_y, 1.2).set_ease(Tween.EASE_IN)
+		tween.tween_property(note, "position:y", hitzone_y, 1.6).set_ease(Tween.EASE_IN)
 
 		# After reaching center, show perfect feedback
 		tween.tween_callback(func():
@@ -434,12 +482,5 @@ func _simulate_hit_zone_notes():
 			note.queue_free()
 		)
 
-func _simulate_combo():
-	"""Simulate combo display feedback."""
-	# Show combo building from the previous hit zone simulation
-	# The combo should already be at 6 from the hit zone step
-	# Just show the combo display updating
-	await get_tree().create_timer(0.5).timeout
-
-	if combo_display and combo_display.has_method("update_combo"):
-		combo_display.update_combo(6)
+		# Wait before spawning next note (0.8s = continuous stream)
+		await get_tree().create_timer(0.8).timeout

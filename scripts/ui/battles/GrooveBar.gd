@@ -186,9 +186,9 @@ func set_tutorial_highlight(enabled: bool):
 		cached_fill_style.border_width_right = 10
 		cached_fill_style.border_width_bottom = 10
 
-		# Create flashing yellow animation (infinite loop)
+		# Create flashing yellow animation (large number of loops to avoid infinite loop errors)
 		tutorial_highlight_tween = create_tween()
-		tutorial_highlight_tween.set_loops()
+		tutorial_highlight_tween.set_loops(1000)
 		tutorial_highlight_tween.tween_property(cached_fill_style, "border_color", Color(1, 1, 0, 0.3), 0.5).set_ease(Tween.EASE_IN_OUT)
 		tutorial_highlight_tween.tween_property(cached_fill_style, "border_color", Color(1, 1, 0, 1.0), 0.5).set_ease(Tween.EASE_IN_OUT)
 	else:
