@@ -5,7 +5,7 @@
 "groove_start": 50.0,
 "groove_miss_penalty": 10.0,
 "song_name": "DivineFoxPlay-152BPM",
-"audio_file": "res://assets/audio/music/DivineFoxPlay-152BPM.ogg",
+"music_id": "lesson1",
 "bpm": 152,
 "time_signature_numerator": 4,
 "time_signature_denominator": 4,
