@@ -51,25 +51,26 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 
 		text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+		var char_count = text.length()
+		var desired_width: float
+
 		if _character == "center":
-			# Tutorial dialogs: TRUE DYNAMIC width with 1200px max
-			# Let RichTextLabel with fit_content size itself naturally
-			text_node.custom_minimum_size.x = 0  # No minimum width constraint
-			text_node.size.x = 1200.0  # Max width for wrapping
+			# Tutorial dialogs: DYNAMIC width with 1200px max
+			# Use font to measure actual text width, then clamp to range
+			# 48px font, estimate ~25px per char average
+			var estimated_width = char_count * 25
+			desired_width = clamp(estimated_width + 100, 500.0, 1200.0)
 		else:
 			# Side dialogs: dynamic width based on text length
-			text_node.custom_minimum_size.x = 0
-			text_node.size.x = 600.0  # Max width for wrapping
-	
-	# Wait for the dialog to process its new size with fit_content
-	await get_tree().process_frame
+			var estimated_width = char_count * 15
+			desired_width = clamp(estimated_width + 60, 300.0, 600.0)
 
-	# Force the PanelContainer to resize to fit the RichTextLabel
-	if text_node and is_instance_valid(current_dialog):
-		# RichTextLabel with fit_content has calculated its natural size
-		# Now make the PanelContainer match it
-		current_dialog.reset_size()
-		await get_tree().process_frame
+		# Set the container width for wrapping
+		current_dialog.custom_minimum_size.x = desired_width
+		current_dialog.size.x = desired_width
+
+	# Wait for the dialog to process its new size
+	await get_tree().process_frame
 
 	# Position based on character speaking
 	var viewport_size = get_viewport().get_visible_rect().size
