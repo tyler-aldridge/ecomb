@@ -419,28 +419,33 @@ func start_character_animations():
 func spawn_notes_for_beat(current_beat: int):
 	"""Spawn notes that should appear at this beat (velocity-based spawning).
 
-	Notes spawn FALL_BEATS beats ahead (constant across all BPMs).
-	Fall time varies with BPM to create proper visual rhythm:
-	- 152 BPM: 8 beats = 3.16s → fast visual speed (energetic)
-	- 60 BPM: 8 beats = 8.0s → slow visual speed (relaxed)
+	Notes spawn FALL_BEATS ticks (subdivision units) ahead.
+	Fall time accounts for subdivision to match tick-based beat positions.
+
+	CRITICAL: beat_position is in TICKS (subdivision units), not full beats!
+	- 4/4 time: subdivision = 2 (ticks = eighth notes)
+	- FALL_BEATS = 6 ticks = 3 full beats at 152 BPM = ~1.2 seconds
 
 	Args:
-		current_beat: Current beat position from Conductor
+		current_beat: Current beat position from Conductor (in ticks/subdivision units)
 	"""
 	if not conductor:
 		return
 
-	# Use constant beat distance (visual speed scales with BPM)
+	# Use constant tick distance (visual speed scales with BPM)
 	var spawn_ahead_beats = int(BattleManager.FALL_BEATS)
 
-	# Calculate fall time based on BPM (higher BPM = shorter time = faster visual)
-	var fall_time = BattleManager.FALL_BEATS * conductor.seconds_per_beat
+	# Calculate fall time accounting for subdivision
+	# CRITICAL: beat_position is in ticks, so we need seconds per tick, not seconds per beat!
+	# seconds_per_tick = seconds_per_beat / subdivision
+	var fall_time = BattleManager.FALL_BEATS * (conductor.seconds_per_beat / float(conductor.subdivision))
 
 	# Spawn notes that should hit at (current_beat + spawn_ahead_beats)
-	# Example: If spawn_ahead = 8, and current_beat = 10, spawn notes for beat 18
+	# Example: If spawn_ahead = 6, and current_beat = 10, spawn notes for beat 16
 	var target_beat = current_beat + spawn_ahead_beats
 
-	# Check all pending notes and spawn those scheduled for target_beat
+	# Check all pending notes and spawn those scheduled for target_beat or earlier (catch-up)
+	# This prevents skipping notes if we miss a beat signal
 	while next_note_index < sorted_notes.size():
 		var note_data = sorted_notes[next_note_index]
 		var note_beat = int(note_data.get("beat_position", 0))
@@ -449,12 +454,8 @@ func spawn_notes_for_beat(current_beat: int):
 		if note_beat > target_beat:
 			break
 
-		# If we're past this note (shouldn't happen if sorted correctly), skip it
-		if note_beat < target_beat:
-			next_note_index += 1
-			continue
-
-		# Spawn this note (note_beat == target_beat)
+		# Spawn this note (note_beat <= target_beat)
+		# This catches up any missed notes from previous beats
 		var lane = note_data.get("lane", "1")
 		var note_type = note_data.get("note", "quarter")
 
