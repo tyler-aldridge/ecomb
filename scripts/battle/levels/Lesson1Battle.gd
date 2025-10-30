@@ -402,7 +402,7 @@ func initialize_note_pool():
 
 	print("Note pool initialized: ", POOL_SIZE, " instances for ", note_queue.size(), " notes")
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	"""Update note pool - activate notes when ready, return them when done."""
 	if not conductor or not conductor.playing:
 		return
@@ -518,8 +518,13 @@ func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""
 	match trigger_name:
 		"create_hit_zone_indicators":
-			# Use universal BattleManager function
-			hit_zone_indicator_nodes = BattleManager.create_hit_zone_indicators(ui_layer, self)
+			# Read num_lanes from level data (default to 3 if not specified)
+			var num_lanes = level_data.get("num_lanes", 3)
+			var lanes = []
+			for i in range(num_lanes):
+				lanes.append(str(i + 1))
+			# Use universal BattleManager function with lane configuration
+			hit_zone_indicator_nodes = BattleManager.create_hit_zone_indicators(ui_layer, self, lanes)
 		"stop_hit_zone_indicators":
 			# Use universal BattleManager function
 			BattleManager.stop_hit_zone_indicators(hit_zone_indicator_nodes, self)
