@@ -19,7 +19,7 @@ func _ready():
 	]
 
 	# Set next scene path
-	next_scene_path = "res://scenes/tutorial/PreGameTutorial.tscn"
+	next_scene_path = "res://scenes/tutorials/PreGameTutorial.tscn"
 
 	# Call parent _ready
 	super._ready()
