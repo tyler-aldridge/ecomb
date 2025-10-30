@@ -42,7 +42,11 @@ with open('/home/user/ecomb/scripts/battle/data/Lesson1Data.json', 'r') as f:
     data = json.load(f)
 
 # Recalculate all beat_positions
-whole_note_offset = 12  # +12 beats so bottom touches hitzone top at Bar/Beat time
+# Correct offset calculation:
+# Note height: 800px, Hitzone: 200px, BPM: 152, pixels_per_beat: 23.684
+# Distance: 400px (note bottom to center) + 100px (hitzone top to center) = 500px
+# Beats: 500 / 23.684 = 21.11 beats
+whole_note_offset = 21  # +21 beats so bottom touches hitzone top at Bar/Beat time
 changes_count = 0
 
 for note in data['notes']:
@@ -76,5 +80,5 @@ with open('/home/user/ecomb/scripts/battle/data/Lesson1Data.json', 'w') as f:
     json.dump(data, f)
 
 print("\n✓ All beat_positions recalculated using Bar/Beat as source of truth")
-print("✓ Whole notes: +12 offset (bottom-touch alignment)")
+print("✓ Whole notes: +21 offset (bottom-touch alignment)")
 print("✓ All other notes: center alignment (no offset)")
