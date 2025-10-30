@@ -1,6 +1,6 @@
 [gd_scene load_steps=53 format=3 uid="uid://bun3uquelaorr"]
 
-[ext_resource type="Script" uid="uid://dhabv6lrpnwo" path="res://scripts/title/MainTitle.gd" id="1_4ignj"]
+[ext_resource type="Script" uid="uid://dhabv6lrpnwo" path="res://scripts/ui/title/MainTitle.gd" id="1_4ignj"]
 [ext_resource type="AudioStream" uid="uid://bux47n2lu0pyf" path="res://assets/audio/music/Main Title Song.ogg" id="2_wosw1"]
 [ext_resource type="Texture2D" uid="uid://crjgohh4l5gga" path="res://assets/cutscenes/title/title-beach-background.png" id="3_p6dhs"]
 [ext_resource type="Texture2D" uid="uid://cgmyw6iwqwxw8" path="res://assets/cutscenes/title/title-text.png" id="4_pyl7j"]

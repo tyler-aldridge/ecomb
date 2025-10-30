@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://b0ls4o1dgym8o"]
 
 [ext_resource type="Texture2D" uid="uid://cd1c0aa057108" path="res://assets/cutscenes/splash/splash-blue-gradient.png" id="1_5svwm"]
-[ext_resource type="Script" uid="uid://dw6ymjiosekxh" path="res://scripts/title/Splash.gd" id="1_31efs"]
+[ext_resource type="Script" uid="uid://dw6ymjiosekxh" path="res://scripts/ui/title/Splash.gd" id="1_31efs"]
 [ext_resource type="Texture2D" uid="uid://sbit2h6xxq7v" path="res://assets/cutscenes/splash/splash-cs-logo.png" id="2_31efs"]
 [ext_resource type="AudioStream" uid="uid://cu3hp1fgpntku" path="res://assets/audio/sfx/intro-splash.ogg" id="3_c8158"]
 

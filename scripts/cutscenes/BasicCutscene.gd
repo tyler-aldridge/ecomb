@@ -112,4 +112,4 @@ func _load_next_scene():
 	if next_scene_path != "":
 		get_tree().change_scene_to_file(next_scene_path)
 	else:
-		push_error("NarrativeScene: next_scene_path not set!")
+		push_error("BasicCutscene: next_scene_path not set!")

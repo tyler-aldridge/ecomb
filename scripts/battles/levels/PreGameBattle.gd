@@ -8,7 +8,7 @@ extends Node2D
 var hit_zones = []
 
 # Level data
-@export var level_data_path: String = "res://scripts/battle/data/PreGameBattleData.json"
+@export var level_data_path: String = "res://scripts/battles/data/PreGameBattleData.json"
 var level_data: Dictionary = {}
 
 # Pre-sorted event arrays for beat-based handling in _on_beat()
@@ -30,7 +30,7 @@ var next_note_index: int = 0
 # - HITZONE_HEIGHT: HitZone height constant (200px)
 # - MISS_WINDOW: Automatic miss threshold (150px below hitzone)
 # - OVERLAP_PREVENTION_WINDOW: Lane overlap prevention window (6 beats)
-# - FALL_TIME, SPAWN_Y, TARGET_Y_OFFSET: Velocity-based movement constants
+# - FALL_BEATS: Position interpolation distance (6 beats)
 # - get_hit_quality_for_note(): Edge-based hit detection logic
 # - choose_lane_avoiding_overlap(): Lane selection with overlap prevention
 # - create_fade_out_tween(): Shatter effect for hit notes
@@ -43,7 +43,7 @@ var next_note_index: int = 0
 # To modify universal mechanics, edit scripts/autoload/BattleManager.gd
 # ============================================================================
 
-# Note management (velocity-based system)
+# Note management (position interpolation system)
 var active_notes: Array = []  # Notes currently visible/moving
 
 # Effects layer
@@ -373,7 +373,7 @@ func setup_hit_zone_borders():
 			hit_zone.add_child(border)
 
 func prepare_notes():
-	"""Prepare notes for velocity-based spawning (resolve random lanes)."""
+	"""Prepare notes for position interpolation spawning (resolve random lanes)."""
 	# Notes are already sorted in load_level_data()
 	# We just need to resolve any random lane assignments
 	for note_data in sorted_notes:
@@ -536,73 +536,6 @@ func spawn_note_interpolation(note_data: Dictionary):
 	note.setup_interpolation(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_BEATS)
 	active_notes.append(note)
 
-# DEPRECATED: Old velocity-based spawning (kept for reference, not called)
-func spawn_notes_for_beat(current_beat: int):
-	"""Spawn notes that should appear at this beat (velocity-based spawning).
-
-	Notes spawn FALL_BEATS ticks (subdivision units) ahead.
-	Fall time accounts for subdivision to match tick-based beat positions.
-
-	CRITICAL: beat_position is in TICKS (subdivision units), not full beats!
-	- 4/4 time: subdivision = 2 (ticks = eighth notes)
-	- FALL_BEATS = 6 ticks = 3 full beats at 152 BPM = ~1.2 seconds
-
-	Args:
-		current_beat: Current beat position from Conductor (in ticks/subdivision units)
-	"""
-	if not conductor:
-		return
-
-	# Use constant tick distance (visual speed scales with BPM)
-	var spawn_ahead_beats = int(BattleManager.FALL_BEATS)
-
-	# Calculate fall time accounting for subdivision
-	# CRITICAL: beat_position is in ticks, so we need seconds per tick, not seconds per beat!
-	# seconds_per_tick = seconds_per_beat / subdivision
-	var fall_time = BattleManager.FALL_BEATS * (conductor.seconds_per_beat / float(conductor.subdivision))
-
-	# Spawn notes that should hit at (current_beat + spawn_ahead_beats)
-	# Example: If spawn_ahead = 6, and current_beat = 10, spawn notes for beat 16
-	var target_beat = current_beat + spawn_ahead_beats
-
-	# Check all pending notes and spawn those scheduled for target_beat or earlier (catch-up)
-	# This prevents skipping notes if we miss a beat signal
-	while next_note_index < sorted_notes.size():
-		var note_data = sorted_notes[next_note_index]
-		var note_beat = int(note_data.get("beat_position", 0))
-
-		# If this note's beat hasn't arrived yet, stop checking
-		if note_beat > target_beat:
-			break
-
-		# Spawn this note (note_beat <= target_beat)
-		# This catches up any missed notes from previous beats
-		var lane = note_data.get("lane", "1")
-		var note_type = note_data.get("note", "quarter")
-
-		# Instantiate the correct note type
-		var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_type]["scene"]
-		var note = note_scene.instantiate()
-		note.z_index = 50
-		add_child(note)
-
-		# Read note height from NoteTemplate to calculate proper spawn/target positions
-		var note_height = 200.0  # Default
-		if note.has_node("NoteTemplate"):
-			note_height = note.get_node("NoteTemplate").size.y
-
-		# Calculate spawn and target positions based on note height
-		var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[lane].y
-		var spawn_y = BattleManager.calculate_note_spawn_y(note_height)
-		var target_y = BattleManager.calculate_note_target_y(hitzone_y, note_height)
-
-		# Setup note with velocity-based movement (fall_time varies with BPM)
-		note.setup_velocity(lane, note_beat, note_type, conductor, spawn_y, target_y, fall_time)
-		active_notes.append(note)
-
-		next_note_index += 1
-
-# DEPRECATED: _on_beat removed - we use polling instead of signals
 
 func handle_trigger(trigger_name: String):
 	"""Handle trigger events using universal BattleManager functions where possible."""
@@ -701,7 +634,7 @@ func change_to_title():
 	if is_instance_valid(GameManager):
 		GameManager.complete_tutorial()
 	if is_instance_valid(get_tree()):
-		get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
+		get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
 
 func check_automatic_misses():
 	"""Check if any notes have passed the hit zone and register automatic misses."""

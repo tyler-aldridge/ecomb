@@ -89,7 +89,7 @@ func _on_exit_confirmed():
 	_fade_to_black()
 	await get_tree().create_timer(1.5).timeout
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
+	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
 
 func _fade_to_black():
 	"""Fade overlay to black for scene transition."""

@@ -1,11 +1,11 @@
 [gd_scene load_steps=17 format=3 uid="uid://b4g0yxphlhsby"]
 
-[ext_resource type="Script" uid="uid://bnwasxfrkta00" path="res://scripts/battle/levels/Lesson1Battle.gd" id="1_116nv"]
+[ext_resource type="Script" uid="uid://bnwasxfrkta00" path="res://scripts/battles/levels/PreGameBattle.gd" id="1_116nv"]
 [ext_resource type="AudioStream" uid="uid://dt1xxbp6gwgmt" path="res://assets/audio/music/DivineFoxPlay-152BPM.ogg" id="1_em4w1"]
-[ext_resource type="PackedScene" uid="uid://ctq8rm3n7ypse" path="res://scenes/ui/battle/BattleBackground.tscn" id="2_background"]
+[ext_resource type="PackedScene" uid="uid://ctq8rm3n7ypse" path="res://scenes/ui/battles/BattleBackground.tscn" id="2_background"]
 [ext_resource type="Texture2D" uid="uid://cfvlcvrc6ylsq" path="res://assets/characters/muscle_man/RipJackson_idel2size.png" id="2_es7p1"]
-[ext_resource type="Script" uid="uid://c7u6adrsp0ot2" path="res://scripts/ui/battle/Conductor.gd" id="3_es7p1"]
-[ext_resource type="PackedScene" uid="uid://clqd6cw1r46y8" path="res://scenes/ui/battle/BattleOptionsMenu.tscn" id="4_options"]
+[ext_resource type="Script" uid="uid://c7u6adrsp0ot2" path="res://scripts/ui/battles/Conductor.gd" id="3_es7p1"]
+[ext_resource type="PackedScene" uid="uid://clqd6cw1r46y8" path="res://scenes/ui/battles/BattleOptionsMenu.tscn" id="4_options"]
 [ext_resource type="Texture2D" uid="uid://bilktb84t5goh" path="res://assets/characters/muscle_man/RipJackson_peckflex2size.png" id="6_x7iy0"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rd7vk"]

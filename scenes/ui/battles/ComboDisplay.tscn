@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c4p1r7k5m8bxq"]
 
-[ext_resource type="Script" path="res://scripts/ui/battle/ComboDisplay.gd" id="1_combo"]
+[ext_resource type="Script" path="res://scripts/ui/battles/ComboDisplay.gd" id="1_combo"]
 
 [node name="ComboDisplay" type="Label"]
 anchors_preset = 8

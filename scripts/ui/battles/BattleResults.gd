@@ -165,7 +165,7 @@ func _on_continue_pressed():
 	await get_tree().create_timer(1.5).timeout
 	get_tree().paused = false
 	# For now, go to title. Later: navigate to overworld or next battle
-	get_tree().change_scene_to_file("res://scenes/title/MainTitle.tscn")
+	get_tree().change_scene_to_file("res://scenes/ui/title/MainTitle.tscn")
 
 func _on_restart_pressed():
 	"""Restart the battle."""

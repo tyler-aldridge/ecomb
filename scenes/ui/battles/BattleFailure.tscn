@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://bv8qm5n7kypse"]
 
-[ext_resource type="Script" uid="uid://ct0vudb2lfjky" path="res://scripts/ui/battle/BattleFailure.gd" id="1_failure"]
+[ext_resource type="Script" uid="uid://ct0vudb2lfjky" path="res://scripts/ui/battles/BattleFailure.gd" id="1_failure"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="3_hover"]
 [ext_resource type="AudioStream" uid="uid://blyy4qd322wkd" path="res://assets/audio/sfx/lifeup.ogg" id="3_owl2p"]
 [ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="4_rgfia"]

@@ -19,7 +19,7 @@ extends Control
 ## Set next_scene_path before instantiating to control where to go after calibration.
 ## ============================================================================
 
-@export var next_scene_path: String = "res://scenes/ui/cutscenes/PreGameCutscene2.tscn"
+@export var next_scene_path: String = "res://scenes/cutscenes/PreGameCutscene2.tscn"
 
 # Scene elements
 var background: ColorRect

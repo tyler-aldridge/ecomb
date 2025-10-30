@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ctq8rm3n7ypse"]
 
-[ext_resource type="Script" path="res://scripts/ui/battle/BattleBackground.gd" id="1_background"]
+[ext_resource type="Script" path="res://scripts/ui/battles/BattleBackground.gd" id="1_background"]
 
 [node name="BattleBackground" type="ColorRect"]
 custom_minimum_size = Vector2(1920, 1080)
