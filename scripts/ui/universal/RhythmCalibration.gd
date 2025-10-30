@@ -34,10 +34,16 @@ var instructions_label: Label
 var done_button: Button
 var fade_overlay: ColorRect
 
+# Audio
+var hover_sound: AudioStreamPlayer
+var click_sound: AudioStreamPlayer
+var metronome_sound: AudioStreamPlayer
+
 # Calibration state
 var bpm: float = 60.0
 var spawn_timer: float = 0.0
 var spawn_interval: float = 1.0  # Spawn every beat at 60 BPM
+var last_beat: int = -1  # Track last beat for metronome
 
 # Effects
 var effects_layer: Node2D
@@ -74,36 +80,77 @@ func setup_ui():
 	calibration_slider.step = 1.0
 	calibration_slider.value = GameManager.get_setting("rhythm_timing_offset", 0)
 	calibration_slider.value_changed.connect(_on_slider_changed)
+
+	# Style slider like options menu (white slider with black border)
+	var slider_style = StyleBoxFlat.new()
+	slider_style.bg_color = Color.WHITE
+	slider_style.border_width_left = 2
+	slider_style.border_width_top = 2
+	slider_style.border_width_right = 2
+	slider_style.border_width_bottom = 2
+	slider_style.border_color = Color.BLACK
+	slider_style.expand_margin_top = 10.0
+	slider_style.expand_margin_bottom = 10.0
+	calibration_slider.add_theme_stylebox_override("slider", slider_style)
+
 	add_child(calibration_slider)
 
-	# Slider label
+	# Slider label (styled like options menu - large white text)
 	var slider_label = Label.new()
 	slider_label.text = "Timing Offset: " + str(int(calibration_slider.value)) + "ms"
-	slider_label.position = Vector2(860, 870)
+	slider_label.position = Vector2(960 - 200, 870)  # Centered above slider
+	slider_label.size = Vector2(400, 50)
 	slider_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	slider_label.add_theme_font_size_override("font_size", 20)
+	slider_label.add_theme_font_size_override("font_size", 30)
 	slider_label.add_theme_color_override("font_color", Color.WHITE)
 	calibration_slider.set_meta("label", slider_label)
 	add_child(slider_label)
 
-	# Instructions label (50px below slider)
+	# Instructions label (centered, white text, larger font)
 	instructions_label = Label.new()
 	instructions_label.text = "Adjust timing until notes feel perfectly synchronized"
-	instructions_label.position = Vector2(960, 950)
-	instructions_label.size = Vector2(800, 50)
+	instructions_label.position = Vector2(960 - 500, 950)  # Centered at screen width 1920
+	instructions_label.size = Vector2(1000, 50)
 	instructions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	instructions_label.add_theme_font_size_override("font_size", 24)
+	instructions_label.add_theme_font_size_override("font_size", 28)
 	instructions_label.add_theme_color_override("font_color", Color.WHITE)
 	add_child(instructions_label)
 
-	# Done button (50px below label)
+	# Done button (centered, moved up from bottom - 100px from bottom)
 	done_button = Button.new()
 	done_button.text = "Done Calibrating"
-	done_button.position = Vector2(810, 1010)
+	done_button.position = Vector2(960 - 150, 960)  # Centered horizontally
 	done_button.size = Vector2(300, 60)
-	done_button.add_theme_font_size_override("font_size", 24)
+	done_button.add_theme_font_size_override("font_size", 28)
+
+	# Style button like options menu
+	var button_hover_style = StyleBoxFlat.new()
+	button_hover_style.bg_color = Color(0.8, 0.8, 0.8, 0.3)
+	done_button.add_theme_stylebox_override("hover", button_hover_style)
+
+	var button_pressed_style = StyleBoxFlat.new()
+	button_pressed_style.bg_color = Color(0.6, 0.6, 0.6, 0.3)
+	done_button.add_theme_stylebox_override("pressed", button_pressed_style)
+
 	done_button.pressed.connect(_on_done_pressed)
+	done_button.mouse_entered.connect(_on_button_hover)
 	add_child(done_button)
+
+	# Audio players
+	hover_sound = AudioStreamPlayer.new()
+	hover_sound.stream = preload("res://assets/audio/sfx/blip.ogg")
+	hover_sound.bus = "SFX"
+	add_child(hover_sound)
+
+	click_sound = AudioStreamPlayer.new()
+	click_sound.stream = preload("res://assets/audio/sfx/blop.ogg")
+	click_sound.bus = "SFX"
+	add_child(click_sound)
+
+	metronome_sound = AudioStreamPlayer.new()
+	metronome_sound.stream = preload("res://assets/audio/sfx/blip.ogg")
+	metronome_sound.bus = "SFX"
+	add_child(metronome_sound)
 
 	# Fade overlay
 	fade_overlay = ColorRect.new()
@@ -150,8 +197,7 @@ func setup_conductor():
 	conductor.subdivision = 2
 	add_child(conductor)
 
-	# TODO: Load metronome audio
-	# For now, just start silent playback
+	# Start conductor playback
 	conductor.play_with_beat_offset()
 
 func fade_from_black():
@@ -161,12 +207,21 @@ func fade_from_black():
 	tween.tween_property(fade_overlay, "modulate:a", 0.0, 3.0).set_ease(Tween.EASE_OUT)
 
 func _process(delta):
-	"""Spawn notes periodically."""
+	"""Spawn notes periodically and play metronome on beat 1."""
 	spawn_timer += delta
 
 	if spawn_timer >= spawn_interval:
 		spawn_timer = 0.0
 		spawn_random_note()
+
+	# Play metronome on beat 1
+	if conductor:
+		var current_beat = int(conductor.song_pos_in_beats) % 4
+		if current_beat == 0 and last_beat != 0:
+			# Beat 1 (first beat of measure) - play metronome
+			if metronome_sound:
+				metronome_sound.play()
+		last_beat = current_beat
 
 	# Clean up off-screen notes
 	var i = 0
@@ -257,8 +312,17 @@ func _on_slider_changed(value: float):
 	if label:
 		label.text = "Timing Offset: " + str(int(value)) + "ms"
 
+func _on_button_hover():
+	"""Play hover sound when mouse enters button."""
+	if hover_sound:
+		hover_sound.play()
+
 func _on_done_pressed():
 	"""Handle Done button press."""
+	# Play click sound
+	if click_sound:
+		click_sound.play()
+
 	# Fade to black and transition to next scene
 	var tween = create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", 1.0, 3.0).set_ease(Tween.EASE_IN)
@@ -269,6 +333,6 @@ func _load_next_scene():
 	if next_scene_path != "":
 		# Mark tutorial calibration as complete
 		GameManager.set_setting("has_calibrated", true)
-		get_tree().change_scene_to_file(next_scene_path)
+		Router.goto_scene_with_fade(next_scene_path, 3.0)
 	else:
 		push_error("TutorialCalibrationScene: next_scene_path not set!")
