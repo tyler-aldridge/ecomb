@@ -234,16 +234,6 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 
 	return container
 
-func _input(event):
-	"""Handle player input to advance tutorial."""
-	if is_transitioning:
-		return
-
-	if event is InputEventMouseButton and event.pressed:
-		_on_advance_requested()
-	elif event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
-		_on_advance_requested()
-
 func _on_advance_requested():
 	"""Handle advance to next message or step."""
 	if is_transitioning:
@@ -293,15 +283,15 @@ func _load_next_scene():
 
 func _simulate_xp_gains():
 	"""Simulate XP gain feedback over player sprite."""
-	# Show different quality XP gains in sequence
+	# Show different quality XP gains in sequence using BattleManager signal
 	await get_tree().create_timer(0.5).timeout
-	BattleManager.show_xp_gain(10, "PERFECT", player_sprite.position)
+	BattleManager.hit_registered.emit("PERFECT", 10, 5.0)
 
 	await get_tree().create_timer(1.2).timeout
-	BattleManager.show_xp_gain(7, "GOOD", player_sprite.position)
+	BattleManager.hit_registered.emit("GOOD", 7, 3.0)
 
 	await get_tree().create_timer(1.2).timeout
-	BattleManager.show_xp_gain(4, "OKAY", player_sprite.position)
+	BattleManager.hit_registered.emit("OKAY", 4, 1.0)
 
 func _simulate_hit_zone_notes():
 	"""Simulate 6 random half notes hitting perfect center."""

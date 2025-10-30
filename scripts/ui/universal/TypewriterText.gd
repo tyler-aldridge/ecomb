@@ -153,6 +153,7 @@ func _setup_audio_generator():
 	audio_player = AudioStreamPlayer.new()
 	audio_player.stream = audio_generator
 	audio_player.bus = "SFX"
+	audio_player.volume_db = -6.0  # Lower volume by 6dB
 	add_child(audio_player)
 
 	# Start playback to get playback instance

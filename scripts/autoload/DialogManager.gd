@@ -48,10 +48,11 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 
 		# Calculate desired width based on text length and character position
 		# Side dialogs (opponent/player) should be narrower to avoid blocking gameplay
+		# Center dialogs (tutorials) can be wider for readability
 		var char_count = text.length()
 		var estimated_width = char_count * 15
 		var min_width = 300.0
-		var max_width = 600.0 if (_character == "opponent" or _character == "player") else get_viewport().get_visible_rect().size.x * 0.8
+		var max_width = 600.0 if (_character == "opponent" or _character == "player") else 1000.0
 		var desired_width = clamp(estimated_width + 60, min_width, max_width)
 
 		# Set the size of the main dialog container - let the children follow
@@ -169,6 +170,9 @@ func _set_text(node: Node, value: String) -> void:
 		node.text = value
 
 func _type_text(node: Node, full_text: String) -> void:
+	# Clear skip flag
+	get_tree().root.set_meta("skip_dialog_typing", false)
+
 	# Get the DialogContainer to play audio
 	var dialog_container = null
 	if node and node.get_parent() and node.get_parent().has_method("play_character_tone"):
@@ -177,6 +181,12 @@ func _type_text(node: Node, full_text: String) -> void:
 	for i in range(full_text.length() + 1):
 		if not is_instance_valid(node):
 			return
+
+		# Check if skip was requested
+		if get_tree().root.get_meta("skip_dialog_typing", false):
+			_set_text(node, full_text)
+			return
+
 		_set_text(node, full_text.substr(0, i))
 
 		# Play audio for character (skip for first iteration when text is empty)

@@ -43,6 +43,7 @@ bbcode_enabled = true
 fit_content = true
 autowrap_mode = 3
 text_direction = 1
+horizontal_alignment = 1
 
 [node name="ContinueArrow" type="TextureRect" parent="."]
 visible = false

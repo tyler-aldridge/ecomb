@@ -37,6 +37,15 @@ func _ready():
 	if enable_audio:
 		_setup_audio_generator()
 
+func _input(event):
+	"""Allow clicking or spacebar to skip typing animation."""
+	if event is InputEventMouseButton and event.pressed:
+		# Signal to DialogManager to skip typing
+		get_tree().root.set_meta("skip_dialog_typing", true)
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
+		# Signal to DialogManager to skip typing
+		get_tree().root.set_meta("skip_dialog_typing", true)
+
 func _process(delta):
 	# Only animate if we have a valid cached style
 	if not cached_style:
@@ -63,6 +72,7 @@ func _setup_audio_generator():
 	audio_player = AudioStreamPlayer.new()
 	audio_player.stream = audio_generator
 	audio_player.bus = "SFX"
+	audio_player.volume_db = -6.0  # Lower volume by 6dB
 	add_child(audio_player)
 
 	# Start playback to get playback instance
