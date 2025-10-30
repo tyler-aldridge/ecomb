@@ -99,7 +99,15 @@ func setup_battle_ui():
 	# REAL Groove bar (full width at top)
 	var groove_bar_scene = preload("res://scenes/ui/battles/GrooveBar.tscn")
 	groove_bar = groove_bar_scene.instantiate()
+
+	# Start invisible for smooth fade-in with scene
+	groove_bar.modulate.a = 0.0
+
 	ui_layer.add_child(groove_bar)
+
+	# Fade in the groove bar
+	var groove_fade = create_tween()
+	groove_fade.tween_property(groove_bar, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_OUT).set_delay(0.2)
 
 	# Set groove bar to tutorial starting value (50%)
 	if groove_bar.has_method("set_groove"):
