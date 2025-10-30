@@ -1,4 +1,4 @@
-extends "res://scripts/ui/cutscenes/CutsceneBase.gd"
+extends "res://scripts/ui/cutscenes/BasicCutscene.gd"
 
 ## ============================================================================
 ## PRE-GAME CUTSCENE 2
@@ -6,7 +6,7 @@ extends "res://scripts/ui/cutscenes/CutsceneBase.gd"
 ## Introduction to Coach Flex Galaxy before the first rhythm battle.
 ## 4 messages with typewriter effect, final message reveals Coach sprite.
 ##
-## This scene extends CutsceneBase.gd and adds Coach sprite reveal.
+## This scene extends BasicCutscene.gd and adds Coach sprite reveal.
 ## ============================================================================
 
 var coach_sprite: AnimatedSprite2D

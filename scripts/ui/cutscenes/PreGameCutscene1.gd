@@ -1,4 +1,4 @@
-extends "res://scripts/ui/cutscenes/CutsceneBase.gd"
+extends "res://scripts/ui/cutscenes/BasicCutscene.gd"
 
 ## ============================================================================
 ## PRE-GAME CUTSCENE 1
@@ -6,7 +6,7 @@ extends "res://scripts/ui/cutscenes/CutsceneBase.gd"
 ## Introduction to Muscle Beach world after character creation.
 ## 4 messages with typewriter effect, auto-advances to PreGameTutorial.
 ##
-## This scene extends CutsceneBase.gd and sets the narrative messages.
+## This scene extends BasicCutscene.gd and sets the narrative messages.
 ## ============================================================================
 
 func _ready():
