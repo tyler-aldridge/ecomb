@@ -42,8 +42,7 @@ var next_trigger_index: int = 0
 # To modify universal mechanics, edit scripts/autoload/BattleManager.gd
 # ============================================================================
 
-# Object pooling for notes (grid-based system)
-var note_pool: Array = []  # Recycled notes (correct type) ready to reuse
+# Note management (grid-based system)
 var active_notes: Array = []  # Notes currently visible/active
 var note_queue: Array = []  # Notes waiting to be activated (sorted by beat_position)
 var note_queue_index: int = 0  # Next note to check for activation
@@ -410,21 +409,11 @@ func _physics_process(_delta):
 
 		# Check if note is within spawn range
 		if beats_until_hit <= BattleManager.SPAWN_AHEAD_BEATS:
-			var note = null
-
-			# Try to get note from pool (matching type if possible)
-			for pooled_note in note_pool:
-				if pooled_note.note_type == note_data["note_type"]:
-					note = pooled_note
-					note_pool.erase(pooled_note)
-					break
-
-			# If no matching type in pool, instantiate new note of correct type
-			if note == null:
-				var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_data["note_type"]]["scene"]
-				note = note_scene.instantiate()
-				note.z_index = 50
-				add_child(note)
+			# Always instantiate the correct note type (no pooling for now - simpler and works)
+			var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_data["note_type"]]["scene"]
+			var note = note_scene.instantiate()
+			note.z_index = 50
+			add_child(note)
 
 			# Activate the note
 			var hitzone_y = BattleManager.HIT_ZONE_POSITIONS[note_data["lane"]].y
@@ -434,14 +423,13 @@ func _physics_process(_delta):
 		else:
 			break  # Future notes, wait
 
-	# Return notes to pool when they pass despawn threshold
+	# Remove notes that have passed despawn threshold
 	var i = 0
 	while i < active_notes.size():
 		var note = active_notes[i]
 		if note.is_past_despawn_threshold():
 			active_notes.remove_at(i)
-			note.deactivate()
-			note_pool.append(note)
+			note.queue_free()  # Just free them (no pooling complexity)
 			# Don't increment i - we removed an element
 		else:
 			i += 1

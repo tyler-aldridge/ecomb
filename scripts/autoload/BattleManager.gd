@@ -70,8 +70,9 @@ const HIT_ZONE_POSITIONS = {
 
 # Grid system constants for note positioning
 # Notes calculate their Y position based on how many beats until they should be hit
-const BASE_PIXELS_PER_BEAT = 30.0  # At 120 BPM reference
-const SPAWN_AHEAD_BEATS = 36  # How many beats ahead to show notes (notes appear from off-screen)
+# Tuned for 300 pixels/second fall speed (good rhythm game feel)
+const BASE_PIXELS_PER_BEAT = 150.0  # At 120 BPM reference (notes fall ~2.5 seconds from spawn to hit)
+const SPAWN_AHEAD_BEATS = 8  # How many beats ahead to show notes (notes appear from off-screen)
 const DESPAWN_BEHIND_BEATS = 5  # How many beats past hitzone before removing note
 const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}
