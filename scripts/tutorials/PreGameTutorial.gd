@@ -96,6 +96,10 @@ func _ready():
 	# Router handles scene fade, so we start directly
 	setup_battle_ui()
 
+	# Wait for Router fade-in to complete before showing dialog
+	# Router fade is 3 seconds, add 1 second buffer
+	await get_tree().create_timer(4.0).timeout
+
 	# Start first tutorial step
 	_start_first_step()
 
