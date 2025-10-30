@@ -340,8 +340,8 @@ func _simulate_hit_zone_notes():
 			# Show perfect hit feedback
 			BattleManager.process_hit("PERFECT", Vector2(lane_x, hitzone_y))
 
-			# Create shatter effect
-			var shatter_tween = BattleManager.create_fade_out_tween(note)
+			# Create shatter effect (use 120 BPM as default tutorial speed)
+			var shatter_tween = BattleManager.create_fade_out_tween(note, 120.0)
 			if shatter_tween:
 				await shatter_tween.finished
 			note.queue_free()
