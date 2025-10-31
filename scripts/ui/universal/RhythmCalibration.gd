@@ -319,6 +319,8 @@ func _start_conductor():
 	await get_tree().create_timer(0.5).timeout
 	if conductor and conductor_started:
 		spawn_random_note()
+		# Set last_spawn_bar so regular spawning continues from here
+		last_spawn_bar = int(conductor.song_pos_in_beats / 4.0)
 
 func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
@@ -328,7 +330,7 @@ func _process(_delta):
 	# Spawn notes on beat 1 of every bar (every 4 beats)
 	# This uses the Conductor's timing which includes the offset
 	var current_bar = int(conductor.song_pos_in_beats / 4.0)
-	if current_bar > last_spawn_bar and conductor.song_pos_in_beats >= 0:
+	if current_bar > last_spawn_bar:
 		# New bar started - spawn a note on beat 1
 		spawn_random_note()
 		last_spawn_bar = current_bar
@@ -343,7 +345,8 @@ func _process(_delta):
 	# Calculate which beat offset notes arrive at (based on FALL_BEATS)
 	var note_arrival_beat_in_bar = int(BattleManager.FALL_BEATS) % 4
 
-	if beat_in_bar == note_arrival_beat_in_bar and last_metronome_beat != note_arrival_beat_in_bar and conductor.song_pos_in_beats >= BattleManager.FALL_BEATS:
+	# Play metronome on every note arrival (removed >= FALL_BEATS check for continuous play)
+	if beat_in_bar == note_arrival_beat_in_bar and last_metronome_beat != note_arrival_beat_in_bar:
 		# Beat aligned with note center - play metronome sine wave
 		play_metronome_beep()
 	last_metronome_beat = beat_in_bar
