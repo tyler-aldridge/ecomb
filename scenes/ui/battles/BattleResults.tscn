@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://cr2mx8n5qbv7k"]
+[gd_scene load_steps=12 format=3 uid="uid://cr2mx8n5qbv7k"]
 
 [ext_resource type="Script" path="res://scripts/ui/battles/BattleResults.gd" id="1_results"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="2_hover"]
@@ -16,6 +16,54 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_RestartNormal"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_RestartHover"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_RestartPressed"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ContinueNormal"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ContinueHover"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ContinuePressed"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 0, 1)
 
 [node name="BattleResults" type="Control"]
 visible = false
@@ -149,15 +197,21 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="RestartButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
-custom_minimum_size = Vector2(150, 60)
+custom_minimum_size = Vector2(200, 80)
 layout_mode = 2
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxFlat_RestartNormal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_RestartHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_RestartPressed")
 text = "Restart"
 
 [node name="ContinueButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer/ButtonContainer"]
-custom_minimum_size = Vector2(150, 60)
+custom_minimum_size = Vector2(200, 80)
 layout_mode = 2
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxFlat_ContinueNormal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ContinueHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ContinuePressed")
 text = "Continue"
 
 [node name="ButtonHoverSound" type="AudioStreamPlayer" parent="."]
