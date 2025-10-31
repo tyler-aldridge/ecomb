@@ -312,6 +312,10 @@ func _input(event):
 
 	# ESC key skips entire tutorial
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		# Stop dialog typing immediately
+		get_tree().root.set_meta("skip_dialog_typing", true)
+		# Stop any playing dialog audio
+		DialogManager.stop_typing()
 		_transition_to_next_scene()
 		return
 

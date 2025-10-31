@@ -47,7 +47,7 @@ var metronome_playback: AudioStreamGeneratorPlayback
 const HITZONE_Y = 340.0  # Shifted up 50px (was 390)
 const HITZONE_BOTTOM = 540.0  # Bottom of hitzone (340 + 200)
 const DESPAWN_Y = 540.0  # Start fading when note top passes hitzone bottom
-var bpm: float = 60.0
+var bpm: float = 85.0  # Increased from 60 for better UX
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
 var conductor_started: bool = false  # Track if conductor has started (after fade)
@@ -392,7 +392,15 @@ func spawn_random_note():
 		return
 
 	var lane = str(randi() % 3 + 1)  # "1", "2", or "3"
-	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS
+
+	# Apply slider offset to note spawn timing
+	# Slider value is in milliseconds, convert to beats
+	var offset_ms = calibration_slider.value
+	var offset_seconds = offset_ms / 1000.0
+	var offset_beats = offset_seconds / conductor.sec_per_beat * conductor.subdivision
+
+	# Add offset to note beat - positive offset means note arrives later
+	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS + offset_beats
 
 	# Load quarter note scene
 	var note_scene = BattleManager.NOTE_TYPE_CONFIG["quarter"]["scene"]
@@ -461,17 +469,15 @@ func check_hit(track_key: String):
 		active_notes.erase(closest_note)
 
 func _on_slider_value_changed(value: float):
-	"""Handle calibration slider value change (updates label and offset in real-time)."""
+	"""Handle calibration slider value change (updates label only - applies to new notes)."""
 	if slider_label:
 		slider_label.text = "Timing Offset: " + str(int(value)) + "ms"
-	# CRITICAL: Update the setting immediately so Conductor uses new offset
-	# Conductor.song_position reads GameManager.get_timing_offset() every frame
-	GameManager.set_setting("rhythm_timing_offset", int(value))
+	# NOTE: Don't update GameManager here! Slider value only affects NEW notes that spawn.
+	# Existing notes on screen should not jump around when slider changes.
 
 func _on_slider_drag_ended(_value_changed: bool):
-	"""Handle slider drag end (confirm and log the final value)."""
-	print("Offset finalized: ", int(calibration_slider.value), "ms")
-	GameManager.save_settings()
+	"""Handle slider drag end (log the value)."""
+	print("Offset preview: ", int(calibration_slider.value), "ms (applies to new notes only)")
 
 func _on_button_hover():
 	"""Play hover sound when mouse enters button."""
@@ -485,6 +491,11 @@ func _on_done_pressed():
 
 	# Stop spawning new notes and playing metronome
 	is_exiting = true
+
+	# Save the calibrated offset
+	GameManager.set_setting("rhythm_timing_offset", int(calibration_slider.value))
+	GameManager.save_settings()
+	print("Offset saved: ", int(calibration_slider.value), "ms")
 
 	# Play click sound
 	if click_sound:

@@ -72,6 +72,9 @@ func _input(event):
 	"""Handle ESC key to skip cutscene."""
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		if not is_transitioning:
+			# Stop typewriter immediately
+			if typewriter:
+				typewriter.is_typing = false
 			_transition_to_next_scene()
 
 func _on_advance_requested():
