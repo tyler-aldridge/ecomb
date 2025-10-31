@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://c6h3w4y0dc52j"]
+[gd_scene load_steps=17 format=3 uid="uid://c6h3w4y0dc52j"]
 
 [ext_resource type="Script" uid="uid://cubyc6d2rwa8f" path="res://scripts/ui/title/TitleOptionsMenu.gd" id="1_evyrg"]
 [ext_resource type="Texture2D" uid="uid://ddpukf3u74xr0" path="res://assets/interface/ui/panel-gradient-4.png" id="2_rcr6o"]
@@ -68,6 +68,8 @@ content_margin_left = 50.0
 content_margin_top = 25.0
 content_margin_right = 50.0
 content_margin_bottom = 25.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Separator"]
 
 [node name="TitleOptionsMenu" type="Control"]
 custom_minimum_size = Vector2(1920, 1080)
@@ -270,7 +272,7 @@ theme_override_styles/disabled = SubResource("StyleBoxTexture_f2l25")
 [node name="BottomSeparator" type="HSeparator" parent="OptionsContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-theme_override_styles/separator = SubResource("StyleBoxFlat_88x8e")
+theme_override_styles/separator = SubResource("StyleBoxFlat_Separator")
 
 [node name="ButtonsContainer" type="HBoxContainer" parent="OptionsContainer"]
 layout_mode = 2

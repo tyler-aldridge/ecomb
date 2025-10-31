@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://clqd6cw1r46y8"]
+[gd_scene load_steps=19 format=3 uid="uid://clqd6cw1r46y8"]
 
 [ext_resource type="Script" uid="uid://b4dsy1v4ljl26" path="res://scripts/ui/battles/BattleOptionsMenu.gd" id="1_vm04o"]
 [ext_resource type="Texture2D" uid="uid://ddpukf3u74xr0" path="res://assets/interface/ui/panel-gradient-4.png" id="2_f8yp2"]
@@ -70,6 +70,8 @@ content_margin_left = 50.0
 content_margin_top = 25.0
 content_margin_right = 50.0
 content_margin_bottom = 25.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Separator"]
 
 [node name="GameOptionsMenu" type="Control"]
 process_mode = 3
@@ -273,7 +275,7 @@ theme_override_styles/disabled = SubResource("StyleBoxTexture_f2l25")
 [node name="BottomSeparator" type="HSeparator" parent="GameOptionsContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-theme_override_styles/separator = SubResource("StyleBoxFlat_88x8e")
+theme_override_styles/separator = SubResource("StyleBoxFlat_Separator")
 
 [node name="ButtonsContainer" type="HBoxContainer" parent="GameOptionsContainer"]
 layout_mode = 2
