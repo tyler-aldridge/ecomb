@@ -496,6 +496,9 @@ func _spawn_notes_continuously():
 		# After reaching center, show perfect feedback and explosion
 		# Note: Don't await inside the callback - let shatter happen asynchronously
 		tween.tween_callback(func():
+			if not is_instance_valid(note):
+				return
+
 			var effect_pos = Vector2(note_center_x, hitzone_center_y)
 
 			# Register the hit with BattleManager (updates combo, groove)
@@ -512,8 +515,8 @@ func _spawn_notes_continuously():
 			# Perfect hit: rainbow explosion
 			BattleManager.explode_note_at_position(note, "rainbow", 5, effect_pos, self, self)
 
-			# Create shatter effect and free note asynchronously
-			_shatter_and_free_note(note, 120.0)
+			# Create shatter effect and free note asynchronously (don't await!)
+			BattleManager.create_fade_out_tween(note, 120.0)
 		)
 
 		# Wait before spawning next note (1.2s for smooth flow without bunching)

@@ -1073,12 +1073,12 @@ func create_song_credit_label(song_name: String, ui_layer: CanvasLayer, tween_pa
 	credit_label.text = song_name
 	credit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	credit_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	credit_label.add_theme_font_size_override("font_size", 32)
+	credit_label.add_theme_font_size_override("font_size", 65)
 	credit_label.add_theme_color_override("font_color", Color.WHITE)
 
-	# Position: 50px from left edge, 125px from top (50px below 75px groove bar)
-	credit_label.position = Vector2(50, 125)
-	credit_label.size = Vector2(800, 50)  # Wide enough for long song titles
+	# Position: 25px from left edge, 100px from top (25px below 75px groove bar)
+	credit_label.position = Vector2(25, 100)
+	credit_label.size = Vector2(1200, 80)  # Wider and taller for 65px font
 	credit_label.z_index = 100
 
 	# Start invisible for fade in

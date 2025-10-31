@@ -255,9 +255,11 @@ func _ready():
 	if not BattleManager.battle_failed.is_connected(_on_battle_failed):
 		BattleManager.battle_failed.connect(_on_battle_failed)
 
+	# Clear any leftover active notes from previous battle (in case of restart)
+	active_notes.clear()
+
 	# Create fade overlay
 	create_fade_overlay()
-	fade_from_black()
 
 	# Create effects layer
 	effects_layer = Node2D.new()
@@ -275,17 +277,20 @@ func _ready():
 
 	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
-	# Start with beat offset
+	# Start fade from black BEFORE starting conductor
+	# This ensures scene fades in smoothly on both initial load and restart
+	fade_from_black()
+
+	# Wait for fade to complete, THEN start conductor
 	# TIMELINE (at 152 BPM, beats_before_start=32):
 	#   0.0s: Scene starts, fade begins
-	#   0.5s: Conductor starts countdown at beat -32 (BATTLE_START_DELAY)
-	#   2.5s: Fade finishes (conductor at ~beat -26.6)
-	#   3.02s: Backend activates at beat -30 (conductor_started = true)
-	#   3.97s: First note spawns (beat -12, with FALL_BEATS=12 advance)
-	#   6.34s: Music starts (beat 0), dialogue appears, first note reaches hitzone
+	#   2.5s: Fade finishes, conductor starts countdown at beat -32
+	#   2.5s: Backend activates at beat -30 (2 beats after conductor start)
+	#   3.47s: First note spawns (beat -12, with FALL_BEATS=12 advance)
+	#   5.84s: Music starts (beat 0), dialogue appears, first note reaches hitzone
 	# ✅ ZERO notes/dialogue visible during fade (0-2.5s)
-	# ✅ Backend activates at beat -30 (2 beats after conductor start)
-	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
+	# ✅ Conductor starts AFTER fade completes
+	await get_tree().create_timer(BattleManager.FADE_FROM_BLACK_DURATION).timeout
 	conductor.play_with_beat_offset()
 	# conductor_started will be set to true in _physics_process when beat reaches -30
 
@@ -662,12 +667,21 @@ func check_automatic_misses():
 	# Never modify an array while iterating over it!
 	var notes_to_remove = []
 
+	# Hitzone bottom = 650 + 200 = 850
+	# Trigger miss when note bottom passes hitzone bottom + MISS_WINDOW (150px)
+	# This keeps the shatter effect visible on screen
+	var miss_threshold = 850.0 + BattleManager.MISS_WINDOW
+
 	for note in active_notes:
 		if is_instance_valid(note):
-			# Check if TOP of note has passed BOTTOM OF SCREEN (1080px)
-			# This ensures whole notes (800px), half notes (400px), and quarter notes (200px)
-			# all properly miss when they leave the visible area
-			if note.position.y > 1080:
+			# Get note height dynamically
+			var note_height = BattleManager.get_note_height(note)
+			# Calculate note's bottom edge
+			var note_bottom = note.position.y + note_height
+
+			# Check if BOTTOM of note has passed the miss threshold
+			# This triggers while note is still partially visible for shatter effect
+			if note_bottom > miss_threshold:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration
@@ -679,10 +693,17 @@ func check_automatic_misses():
 			# Calculate effect position at note's center (dynamic for any note size)
 			var effect_pos = note.position + Vector2(100, note_height / 2.0)
 
+			# Show explosion and feedback
 			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
+
+			# Process miss (updates score, groove, etc.)
 			process_miss()
+
+			# Create shatter effect (same as input misses)
 			BattleManager.create_miss_fade_tween(note)
+
+			# Remove from active notes
 			active_notes.erase(note)
 
 func _unhandled_input(event):
