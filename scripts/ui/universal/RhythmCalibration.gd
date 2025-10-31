@@ -9,10 +9,10 @@ extends Control
 ## 3. Future: Overworld options menu (returns to overworld)
 ##
 ## Features:
-## - 60 BPM (simple and slow)
-## - Random quarter notes dropping
-## - Metronome tone on beat 1 (440Hz sine wave)
-## - Live timing adjustment slider (-1000 to +1000ms)
+## - 85 BPM (faster for better UX)
+## - White quarter notes in center lane only
+## - Metronome tone when note centers (440Hz sine wave)
+## - Live timing adjustment slider (-1000 to +1000ms, applies to new notes)
 ## - "Done Calibrating" button
 ## - Real-time feedback with explosions
 ##
@@ -254,37 +254,32 @@ func setup_ui():
 	add_child(fade_overlay)
 
 func create_hit_zones() -> Array:
-	"""Create hit zones for calibration at 150px above screen center."""
+	"""Create single center hit zone for calibration."""
 	var zones = []
-	var lane_positions = [
-		Vector2(610.0, HITZONE_Y),
-		Vector2(860.0, HITZONE_Y),
-		Vector2(1110.0, HITZONE_Y)
-	]
 
-	for i in range(3):
-		var zone = ColorRect.new()
-		zone.color = Color(1, 1, 1, 0.1)
-		zone.size = Vector2(200, 200)
-		zone.position = lane_positions[i]
+	# Only create center hitzone (lane 2)
+	var zone = ColorRect.new()
+	zone.color = Color(1, 1, 1, 0.1)
+	zone.size = Vector2(200, 200)
+	zone.position = Vector2(860.0, HITZONE_Y)  # Center lane
 
-		# Add white border
-		var border = Line2D.new()
-		border.width = 3.0
-		border.default_color = Color.WHITE
-		border.add_point(Vector2(0, 0))
-		border.add_point(Vector2(200, 0))
-		border.add_point(Vector2(200, 200))
-		border.add_point(Vector2(0, 200))
-		border.add_point(Vector2(0, 0))
-		zone.add_child(border)
+	# Add white border
+	var border = Line2D.new()
+	border.width = 3.0
+	border.default_color = Color.WHITE
+	border.add_point(Vector2(0, 0))
+	border.add_point(Vector2(200, 0))
+	border.add_point(Vector2(200, 200))
+	border.add_point(Vector2(0, 200))
+	border.add_point(Vector2(0, 0))
+	zone.add_child(border)
 
-		zones.append(zone)
+	zones.append(zone)
 
 	return zones
 
 func setup_conductor():
-	"""Create and configure conductor for 60 BPM with silent audio for timing."""
+	"""Create and configure conductor for 85 BPM with silent audio for timing."""
 	conductor = Conductor.new()
 	conductor.bpm = bpm
 	conductor.sec_per_beat = 60.0 / bpm
@@ -387,11 +382,11 @@ func _process(_delta):
 			i += 1
 
 func spawn_random_note():
-	"""Spawn a note in a random lane."""
+	"""Spawn a white note in center lane."""
 	if not conductor:
 		return
 
-	var lane = str(randi() % 3 + 1)  # "1", "2", or "3"
+	var lane = "2"  # Always center lane
 
 	# Apply slider offset to note spawn timing
 	# Slider value is in milliseconds, convert to beats
@@ -413,22 +408,20 @@ func spawn_random_note():
 	var target_y = BattleManager.calculate_note_target_y(HITZONE_Y, 200.0)
 
 	note.setup_interpolation(lane, note_beat, "quarter", conductor, spawn_y, target_y, BattleManager.FALL_BEATS)
+
+	# Make note white
+	var color_rect = note.get_node("NoteTemplate")
+	if color_rect:
+		color_rect.color = Color.WHITE
+
 	active_notes.append(note)
 
 func _input(event):
 	"""Handle player input for hitting notes."""
 	if event is InputEventKey and event.pressed:
-		var lane_key = ""
-		match event.keycode:
-			KEY_1:
-				lane_key = "1"
-			KEY_2:
-				lane_key = "2"
-			KEY_3:
-				lane_key = "3"
-
-		if lane_key != "":
-			check_hit(lane_key)
+		# Only accept key 2 for center lane
+		if event.keycode == KEY_2:
+			check_hit("2")
 
 func check_hit(track_key: String):
 	"""Check for note hits and show feedback."""
