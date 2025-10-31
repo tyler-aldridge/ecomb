@@ -44,9 +44,9 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 350.0  # Center hitzone position
-const HITZONE_BOTTOM = 550.0  # Bottom of hitzone (350 + 200)
-const DESPAWN_Y = 600.0  # Start fading when note top is 50px below hitzone
+const HITZONE_Y = 250.0  # Center hitzone position (higher up to avoid UI)
+const HITZONE_BOTTOM = 450.0  # Bottom of hitzone (250 + 200)
+const DESPAWN_Y = 500.0  # Start fading when note top is 50px below hitzone
 var bpm: float = 90.0  # Increased for better note speed feel
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_bar: int = -1  # Track last bar we played metronome on
@@ -131,19 +131,19 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container (properly centered using anchors, 50px below hitzone bottom)
+	# UI Container (centered horizontally, anchored to bottom with 50px margin)
 	ui_container = VBoxContainer.new()
 	ui_container.anchor_left = 0.5
 	ui_container.anchor_right = 0.5
-	ui_container.anchor_top = 0.0
-	ui_container.anchor_bottom = 0.0
+	ui_container.anchor_top = 1.0  # Anchor to bottom
+	ui_container.anchor_bottom = 1.0  # Anchor to bottom
 	ui_container.offset_left = -750  # Half of 1500px width
 	ui_container.offset_right = 750   # Half of 1500px width
-	ui_container.offset_top = 600     # 50px below hitzone bottom (550 + 50)
-	ui_container.offset_bottom = 600 + 400  # Enough height for all elements
+	ui_container.offset_top = -350   # Height of UI (negative because anchored to bottom)
+	ui_container.offset_bottom = -50  # 50px from bottom of screen
 	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	ui_container.grow_vertical = Control.GROW_DIRECTION_BOTH
-	ui_container.add_theme_constant_override("separation", 15)  # Reduced from 30 to avoid overlap
+	ui_container.grow_vertical = Control.GROW_DIRECTION_END
+	ui_container.add_theme_constant_override("separation", 15)
 	add_child(ui_container)
 
 	# Slider label (50px font, centered)
@@ -312,8 +312,9 @@ func _start_conductor():
 	conductor_started = true
 	# Initialize metronome bar to avoid early metronome beep
 	last_metronome_bar = -1
-	# Don't manually spawn first note - let _process handle it naturally
-	# This avoids timing conflicts and overlapping notes
+	# Spawn first note immediately so player doesn't wait, then prevent duplicate
+	spawn_random_note()
+	last_spawn_bar = int(conductor.song_pos_in_beats / 4.0)
 
 func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome at fixed intervals."""
