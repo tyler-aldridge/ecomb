@@ -47,9 +47,8 @@ var metronome_playback: AudioStreamGeneratorPlayback
 const HITZONE_Y = 390.0  # 150px above screen center (540)
 const DESPAWN_Y = 690.0  # 100px below hit zones (390 + 200 + 100)
 var bpm: float = 60.0
-var spawn_timer: float = 0.0
-var spawn_interval: float = 1.0  # Spawn every beat at 60 BPM
-var last_beat: int = -1  # Track last beat for metronome
+var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
+var last_metronome_beat: int = -1  # Track last beat for metronome
 
 # Effects
 var effects_layer: Node2D
@@ -274,22 +273,24 @@ func fade_from_black():
 	tween.tween_property(fade_overlay, "modulate:a", 0.0, 3.0).set_ease(Tween.EASE_OUT)
 
 func _process(delta):
-	"""Spawn notes periodically and play metronome on beat 1."""
+	"""Spawn notes based on Conductor beats and play metronome on beat 1."""
 	if not conductor:
 		return
 
-	spawn_timer += delta
-
-	if spawn_timer >= spawn_interval:
-		spawn_timer = 0.0
+	# Spawn notes on beat 1 of every bar (every 4 beats)
+	# This uses the Conductor's timing which includes the offset
+	var current_bar = int(conductor.song_pos_in_beats / 4.0)
+	if current_bar > last_spawn_bar and conductor.song_pos_in_beats >= 0:
+		# New bar started - spawn a note on beat 1
 		spawn_random_note()
+		last_spawn_bar = current_bar
 
-	# Play metronome on beat 1
+	# Play metronome on beat 1 of every measure
 	var current_beat = int(conductor.song_pos_in_beats) % 4
-	if current_beat == 0 and last_beat != 0:
+	if current_beat == 0 and last_metronome_beat != 0 and conductor.song_pos_in_beats >= 0:
 		# Beat 1 (first beat of measure) - play metronome sine wave
 		play_metronome_beep()
-	last_beat = current_beat
+	last_metronome_beat = current_beat
 
 	# Clean up despawned notes (100px below hit zones)
 	var i = 0
