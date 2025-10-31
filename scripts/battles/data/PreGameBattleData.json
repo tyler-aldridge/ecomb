@@ -9,11 +9,10 @@
   "bpm": 152,
   "time_signature_numerator": 4,
   "time_signature_denominator": 4,
-  "beats_before_start": 32,
+  "beats_before_start": 20,
   "num_lanes": 3,
   "dialogue": [
-    {"beat_position": -12, "text": "Yo chump! Think you got what it takes?", "character": "opponent", "duration": 3.0},
-    {"beat_position": -4, "text": "Don't embarrass yourself out there, cupcake!", "character": "opponent", "duration": 4.0},
+    {"beat_position": 0, "text": "Yo chump! Think you got what it takes? Don't embarrass yourself out there, cupcake!", "character": "opponent", "duration": 5.0},
     {"beat_position": 78, "text": "Feeling the heat yet? That was just the warm-up!", "character": "opponent", "duration": 3.5},
     {"beat_position": 148, "text": "Alright, time to see if you can handle the REAL grind!", "character": "opponent", "duration": 3.0},
     {"beat_position": 396, "text": "Not bad for a rookie... but can you keep up?", "character": "opponent", "duration": 3.0},

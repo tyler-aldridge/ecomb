@@ -276,12 +276,12 @@ func _ready():
 	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
 	# Start with beat offset
-	# TIMELINE (at 152 BPM, beats_before_start=32):
+	# TIMELINE (at 152 BPM, beats_before_start=20):
 	#   0.0s: Scene starts, fade begins
-	#   0.5s: Conductor starts countdown at beat -32 (BATTLE_START_DELAY)
-	#   2.5s: Fade finishes (conductor at ~beat -22)
-	#   4.44s: First dialogue appears & first note spawns (beat -12)
-	#   6.81s: Music starts playing (beat 0), first note reaches hitzone
+	#   0.5s: Conductor starts countdown at beat -20 (BATTLE_START_DELAY)
+	#   2.5s: Fade finishes (conductor at ~beat -14.4)
+	#   3.24s: First note spawns (beat -12, with FALL_BEATS=12 advance)
+	#   4.21s: Music starts (beat 0), dialogue appears, first note reaches hitzone
 	# ✅ ZERO notes/dialogue visible during fade (0-2.5s)
 	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
 	conductor.play_with_beat_offset()
