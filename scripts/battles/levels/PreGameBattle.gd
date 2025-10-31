@@ -281,22 +281,18 @@ func _ready():
 
 	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
-	# Start fade from black BEFORE starting conductor
-	# This ensures scene fades in smoothly on both initial load and restart
-	fade_from_black()
-
-	# Wait for fade to complete, THEN start conductor
-	# TIMELINE (at 152 BPM, beats_before_start=32):
+	# Fade from black and wait for it to complete
+	# TIMELINE (at 152 BPM, beats_before_start=33):
 	#   0.0s: Scene starts, fade begins
-	#   2.5s: Fade finishes, conductor starts countdown at beat -32
-	#   2.5s: Backend activates at beat -30 (2 beats after conductor start)
-	#   3.47s: First note spawns (beat -12, with FALL_BEATS=12 advance)
-	#   5.84s: Music starts (beat 0), dialogue appears, first note reaches hitzone
-	# ✅ ZERO notes/dialogue visible during fade (0-2.5s)
-	# ✅ Conductor starts AFTER fade completes
-	await get_tree().create_timer(BattleManager.FADE_FROM_BLACK_DURATION).timeout
+	#   3.0s: Fade finishes (2.5s + 0.5s buffer), conductor starts
+	#   ~3.5s: First note spawns (beat -12, with FALL_BEATS=12 advance)
+	#   ~5.84s: Music starts (beat 0), dialogue appears, first note reaches hitzone
+	fade_from_black()
+	await get_tree().create_timer(BattleManager.FADE_FROM_BLACK_DURATION + 0.5).timeout  # Wait for fade + 0.5s buffer
+
+	# Start conductor after fade completes
 	conductor.play_with_beat_offset()
-	# conductor_started will be set to true in _physics_process when beat reaches -30
+	# conductor_started will be set to true in _physics_process when conductor is playing
 
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
@@ -388,22 +384,9 @@ func fade_from_black():
 
 func setup_hit_zone_borders():
 	"""Add white borders to all hit zones using universal BattleManager constants."""
-	for i in range(hit_zones.size()):
-		var hit_zone = hit_zones[i]
-		if is_instance_valid(hit_zone):
-			# Set background color if it's a ColorRect
-			if hit_zone is ColorRect:
-				hit_zone.color = Color(1, 1, 1, 0)
-
-			var border = Line2D.new()
-			border.width = BattleManager.HITZONE_BORDER_WIDTH
-			border.default_color = BattleManager.HITZONE_BORDER_COLOR
-			border.add_point(Vector2(0, 0))
-			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, 0))
-			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, BattleManager.HITZONE_HEIGHT))
-			border.add_point(Vector2(0, BattleManager.HITZONE_HEIGHT))
-			border.add_point(Vector2(0, 0))
-			hit_zone.add_child(border)
+	# Hit zones are already created by BattleManager with borders
+	# This function is now deprecated - borders are handled in BattleManager
+	pass
 
 func prepare_notes():
 	"""Prepare notes for position interpolation spawning (resolve random lanes)."""

@@ -197,9 +197,9 @@ func set_tutorial_highlight(enabled: bool):
 			tutorial_highlight_tween.kill()
 			tutorial_highlight_tween = null
 
-		# Reset border to default
+		# Reset border to default (5px white)
 		cached_fill_style.border_width_left = 5
 		cached_fill_style.border_width_top = 5
 		cached_fill_style.border_width_right = 5
 		cached_fill_style.border_width_bottom = 5
-		cached_fill_style.border_color = Color(1, 1, 1, 1)
+		cached_fill_style.border_color = Color.WHITE

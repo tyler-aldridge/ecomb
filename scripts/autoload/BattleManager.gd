@@ -68,22 +68,23 @@ const HIT_ZONE_POSITIONS = {
 	"5": Vector2(1235.0, 650.0)   # Right of lane 3 (for 5-lane mode)
 }
 
-# Velocity-based note movement constants (rhythm game standard)
-# Notes move at CONSTANT VELOCITY from spawn to hitzone
+# Position interpolation note movement constants (rhythm game standard)
+# Notes move from spawn to hitzone based on beat position
+# FALL_BEATS determines how far ahead notes spawn (lookahead distance)
 # Visual speed SCALES WITH BPM for proper rhythm game feel:
-# - Higher BPM (152) → shorter fall time → faster visual speed (energetic)
-# - Lower BPM (60) → longer fall time → slower visual speed (relaxed)
+# - Higher BPM → shorter fall time → faster visual speed
+# - Lower BPM → longer fall time → slower visual speed
 # FALL_BEATS is in TICKS (subdivision units), not full beats:
 # - 12 ticks = 6 full beats in 4/4 time (subdivision = 2)
-# - At 152 BPM: 12 ticks = 2.37s fall time → better note visibility
-const FALL_BEATS = 12.0  # Number of ticks ahead to spawn notes (increased for better UX)
+# - At 152 BPM: 12 ticks = 2.37s fall time (comfortable for players)
+const FALL_BEATS = 12.0  # Number of ticks ahead to spawn notes (increased from 6 for better UX)
 const SPAWN_BUFFER = 100.0  # Extra space above screen top to ensure notes fully off-screen
 const OVERLAP_PREVENTION_WINDOW = 6  # Beats between notes in same lane (for random selection)
 var recent_note_spawns = {}
-const MISS_WINDOW = 150.0
+const MISS_WINDOW = 500.0  # Allow notes to go far below hitzone before auto-miss (increased from 150)
 const FADE_FROM_BLACK_DURATION = 2.5  # Longer fade hides sprite positioning adjustments
 const FADE_TO_BLACK_DURATION = 2.0
-const BATTLE_START_DELAY = 0.5  # Reduced for faster battle start
+const BATTLE_START_DELAY = 1.0
 const HITZONE_BORDER_WIDTH = 3.0
 const HITZONE_BORDER_COLOR = Color.WHITE
 const INDICATOR_BORDER_WIDTH = 5.0
@@ -157,7 +158,7 @@ func calculate_note_target_y(hitzone_y: float, note_height: float) -> float:
 var battle_active: bool = false
 var battle_id: String = ""
 var battle_level: int = 1
-var battle_type: String = "event"  # "tutorial", "event", or "random"
+var battle_type: String = "story"  # "story", "lesson", or "random"
 var player_quit_to_title: bool = false  # Set to true when player quits to title from battle
 
 # Groove bar (health system)
@@ -217,9 +218,9 @@ func start_battle(battle_data: Dictionary):
 
 	Args:
 		battle_data: Dictionary with keys:
-			- battle_id: String (unique identifier for tutorial/event battles)
+			- battle_id: String (unique identifier for story/lesson battles)
 			- battle_level: int (1-10, for XP scaling)
-			- battle_type: String ("tutorial", "event", or "random")
+			- battle_type: String ("story", "lesson", or "random")
 			- groove_miss_penalty: float (optional, default 10.0)
 			- groove_start: float (optional, default 50.0)
 			- max_strength: int (optional, max possible strength from all PERFECT hits)
@@ -227,7 +228,7 @@ func start_battle(battle_data: Dictionary):
 	battle_active = true
 	battle_id = battle_data.get("battle_id", "")
 	battle_level = battle_data.get("battle_level", 1)
-	battle_type = battle_data.get("battle_type", "event")
+	battle_type = battle_data.get("battle_type", "story")
 	player_quit_to_title = false  # Reset quit flag for new battle
 
 	# Groove settings
@@ -339,14 +340,15 @@ func register_hit(quality: String):
 	if strength_gain > 0:
 		strength_gained.emit(strength_gain, strength_total)
 
-	# Calculate groove change
+	# Calculate groove change (only PERFECT hits refill groove)
 	var groove_change = 0.0
 	if quality == "MISS":
 		groove_change = -groove_miss_penalty
-	else:
-		# Apply combo multiplier to groove recovery
+	elif quality == "PERFECT":
+		# Only PERFECT hits refill groove (with combo multiplier)
 		var base_groove = HIT_VALUES[quality]["groove"]
 		groove_change = base_groove * combo_multiplier
+	# GOOD and OKAY hits do not change groove
 
 	update_groove(groove_change)
 
@@ -410,7 +412,7 @@ func get_combo_multiplier() -> float:
 func calculate_awarded_strength() -> int:
 	"""Calculate actual XP awarded after applying level scaling.
 
-	For event and tutorial battles that have been completed before, players can only
+	For story and lesson battles that have been completed before, players can only
 	improve on their previous score (tracked in GameManager).
 
 	For random battles, XP is scaled based on player level vs battle level.
@@ -425,8 +427,8 @@ func calculate_awarded_strength() -> int:
 	if battle_type == "random":
 		awarded_strength = apply_level_scaling(base_strength)
 
-	# Check if this is a replay of an event or tutorial battle
-	elif (battle_type == "event" or battle_type == "tutorial") and battle_id != "":
+	# Check if this is a replay of a story or lesson battle
+	elif (battle_type == "story" or battle_type == "lesson") and battle_id != "":
 		awarded_strength = GameManager.calculate_battle_strength_improvement(
 			battle_id,
 			base_strength
@@ -690,12 +692,12 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 
 func create_miss_fade_tween(note: Node) -> Tween:
 	"""
-	Create a shatter fade out tween for missed notes.
+	Create a fast fade out tween for missed notes.
 
 	Missed notes:
-	- Shatter into black pieces
+	- Turn black
 	- Stop in place (no movement)
-	- Fade out quickly (0.6 seconds)
+	- Fade out quickly (0.4 seconds)
 
 	Args:
 		note: The note node to fade
@@ -713,89 +715,32 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	if note.has_method("set_physics_process"):
 		note.set_physics_process(false)
 
-	# Get note size from NoteTemplate
-	var note_size = Vector2(200, 200)  # Default
-	if note.has_node("NoteTemplate"):
-		var template = note.get_node("NoteTemplate")
-		note_size = template.size
-
-	# Hide the original note immediately
-	note.modulate.a = 0.0
-
-	# Get the parent to add shards to (should be the battle scene)
+	# Get parent to create tween on (avoids lambda capture errors)
 	var parent = note.get_parent()
 	if not is_instance_valid(parent):
 		note.queue_free()
 		return null
 
-	# Create a 3x3 grid of black pieces that shatter
-	var grid_size = 3
-	var piece_size = Vector2(note_size.x / grid_size, note_size.y / grid_size)
-	var note_top_left = note.global_position
-	var explosion_duration = 0.6  # Slightly faster than hit shatter
-
-	for row in range(grid_size):
-		for col in range(grid_size):
-			var piece = ColorRect.new()
-			piece.color = Color.BLACK  # Black pieces for misses
-			piece.size = piece_size
-
-			# Position piece to form the original note shape
-			var piece_x = note_top_left.x + (col * piece_size.x)
-			var piece_y = note_top_left.y + (row * piece_size.y)
-			piece.position = Vector2(piece_x, piece_y)
-
-			parent.add_child(piece)
-
-			# Calculate direction from note center
-			var note_center = note_top_left + note_size / 2.0
-			var piece_center = piece.position + piece_size / 2.0
-			var direction = (piece_center - note_center).normalized()
-
-			# Add some randomness to explosion
-			var random_offset = Vector2(randf_range(-50, 50), randf_range(-50, 50))
-			direction = (direction + random_offset.normalized() * 0.3).normalized()
-
-			# Pieces further from center fly faster
-			var distance_from_center = piece_center.distance_to(note_center)
-			var speed = 200 + (distance_from_center * 2.0)
-			var target_offset = direction * speed
-
-			# Capture piece in local var to avoid lambda capture errors in loop
-			var p = piece
-
-			# Create tween on parent (not piece) to avoid lambda capture errors
-			var piece_tween = parent.create_tween()
-			piece_tween.set_parallel(true)
-
-			# Move outward
-			piece_tween.tween_property(p, "position", p.position + target_offset, explosion_duration)
-
-			# Rotate based on position (edge pieces spin more)
-			var rotation_amount = randf_range(-PI, PI) * (1.0 + distance_from_center / 100.0)
-			piece_tween.tween_property(p, "rotation", rotation_amount, explosion_duration)
-
-			# Fade out
-			piece_tween.tween_property(p, "modulate:a", 0.0, explosion_duration)
-
-			# Scale down slightly
-			piece_tween.tween_property(p, "scale", Vector2(0.5, 0.5), explosion_duration)
-
-			# Clean up piece after animation - wrap queue_free in lambda
-			piece_tween.chain().tween_callback(func():
-				if is_instance_valid(p):
-					p.queue_free()
-			)
-
-	# Clean up original note after a short delay - wrap queue_free in lambda
+	# Capture note first to avoid lambda issues
 	var n = note
-	var cleanup_tween = parent.create_tween()
-	cleanup_tween.tween_callback(func():
+
+	# Turn note black and fade out fast
+	var tween = parent.create_tween()
+	tween.set_parallel(true)
+
+	# Turn black immediately
+	tween.tween_property(n, "modulate", Color(0, 0, 0, 1), 0.0)
+
+	# Fade out quickly
+	tween.tween_property(n, "modulate:a", 0.0, 0.4)
+
+	# Free the note after fade completes - wrap queue_free in lambda
+	tween.chain().tween_callback(func():
 		if is_instance_valid(n):
 			n.queue_free()
-	).set_delay(explosion_duration)
+	)
 
-	return cleanup_tween
+	return tween
 
 # ============================================================================
 # UNIVERSAL UI SETUP
@@ -1045,66 +990,6 @@ func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
 	var invert_material = ShaderMaterial.new()
 	invert_material.shader = OPPONENT_INVERT_SHADER
 	opponent_sprite.material = invert_material
-
-func create_song_credit_label(song_name: String, ui_layer: CanvasLayer, tween_parent: Node) -> Label:
-	"""
-	Universal song credit display that fades in at battle start and out after 10 seconds.
-
-	Displays the song name, artist, and BPM in a label positioned near the top-left
-	of the screen, below the groove bar.
-
-	Args:
-		song_name: Display name of the song (e.g., "Divine Fox Play by Ender Alders - 152BPM")
-		ui_layer: The CanvasLayer to add the label to
-		tween_parent: The node to create tweens on (prevents lambda capture errors)
-
-	Returns:
-		Label: The created label node
-
-	Example:
-		var song_credit = BattleManager.create_song_credit_label(
-			level_data.get("song_name"),
-			ui_layer,
-			self
-		)
-	"""
-	# Create label for song credit
-	var credit_label = Label.new()
-	credit_label.text = song_name
-	credit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	credit_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	credit_label.add_theme_font_size_override("font_size", 65)
-	credit_label.add_theme_color_override("font_color", Color.WHITE)
-
-	# Position: 25px from left edge, 100px from top (25px below 75px groove bar)
-	credit_label.position = Vector2(25, 100)
-	credit_label.size = Vector2(1200, 80)  # Wider and taller for 65px font
-	credit_label.z_index = 100
-
-	# Start invisible for fade in
-	credit_label.modulate.a = 0.0
-
-	# Add to UI layer
-	ui_layer.add_child(credit_label)
-
-	# Capture label to avoid lambda issues
-	var lbl = credit_label
-
-	# Fade in over 1 second
-	var fade_in_tween = tween_parent.create_tween()
-	fade_in_tween.tween_property(lbl, "modulate:a", 1.0, 1.0)
-
-	# Fade out after 10 seconds (1 second fade out duration)
-	var fade_out_tween = tween_parent.create_tween()
-	fade_out_tween.tween_property(lbl, "modulate:a", 0.0, 1.0).set_delay(10.0)
-
-	# Clean up label after fade out completes
-	fade_out_tween.chain().tween_callback(func():
-		if is_instance_valid(lbl):
-			lbl.queue_free()
-	)
-
-	return credit_label
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
