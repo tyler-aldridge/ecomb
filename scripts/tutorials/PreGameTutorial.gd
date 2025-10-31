@@ -521,11 +521,3 @@ func _spawn_notes_continuously():
 
 		# Wait before spawning next note (1.2s for smooth flow without bunching)
 		await get_tree().create_timer(1.2).timeout
-
-func _shatter_and_free_note(note: Node, bpm: float) -> void:
-	"""Asynchronously shatter and free a note without blocking the spawn loop."""
-	var shatter_tween = BattleManager.create_fade_out_tween(note, bpm)
-	if shatter_tween:
-		await shatter_tween.finished
-	if is_instance_valid(note):
-		note.queue_free()

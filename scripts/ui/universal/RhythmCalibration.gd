@@ -509,9 +509,19 @@ func _on_done_pressed():
 
 func _load_next_scene():
 	"""Load the next scene in the flow."""
-	if next_scene_path != "":
-		# Mark tutorial calibration as complete
-		GameManager.set_setting("has_calibrated", true)
-		Router.goto_scene_with_fade(next_scene_path, 3.0)
+	# Check if we should return to a battle (from recalibrate flow)
+	var return_battle_path = ""
+	if GameManager.has_meta("return_to_battle"):
+		return_battle_path = GameManager.get_meta("return_to_battle")
+		GameManager.remove_meta("return_to_battle")  # Clear metadata
+
+	# Mark calibration as complete
+	GameManager.set_setting("has_calibrated", true)
+
+	# Determine which scene to load
+	var target_scene = return_battle_path if return_battle_path != "" else next_scene_path
+
+	if target_scene != "":
+		Router.goto_scene_with_fade(target_scene, 3.0)
 	else:
-		push_error("TutorialCalibrationScene: next_scene_path not set!")
+		push_error("RhythmCalibration: No target scene set!")

@@ -75,7 +75,6 @@ func _evict_oldest() -> void:
 		var oldest_id = cache_access_order[0]
 		cache_access_order.remove_at(0)
 		music_cache.erase(oldest_id)
-		print("MusicManager: Evicted '" + oldest_id + "' from cache (LRU)")
 
 func get_music(music_id: String) -> AudioStream:
 	"""Get music stream by ID - loads on-demand if not cached.
@@ -178,7 +177,6 @@ func unload_music(music_id: String) -> void:
 		var idx = cache_access_order.find(music_id)
 		if idx >= 0:
 			cache_access_order.remove_at(idx)
-		print("MusicManager: Manually unloaded '" + music_id + "'")
 
 func clear_cache() -> void:
 	"""Clear entire music cache (except critical music).
