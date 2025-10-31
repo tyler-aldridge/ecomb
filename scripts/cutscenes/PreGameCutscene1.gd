@@ -13,9 +13,10 @@ func _ready():
 	# Set messages for PreGameCutscene1
 	messages = [
 		"Welcome to Muscle Beach, bro.",
-		"The year is 1987. The vibes are immaculate. The gains are... about to be legendary.",
-		"You've just stepped off the bus with nothing but a gym bag and an unstoppable urge to find yourself through the ancient art of flexing.",
-		"But first, let's learn the fundamentals..."
+		"The year is 1987. The sun is blazing, the babes are watching, and every flex could be your moment of glory.",
+		"You've just stepped off the bus with nothing but a gym bag and the unshakeable feeling that you belong here.",
+		"On this beach, respect is earned one perfectly timed flex at a time.",
+		"Time to learn the fundamentals..."
 	]
 
 	# Set next scene path
