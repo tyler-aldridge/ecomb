@@ -9,9 +9,9 @@ extends Control
 ## 3. Future: Overworld options menu (returns to overworld)
 ##
 ## Features:
-## - 75 BPM (balanced speed for UX)
+## - 90 BPM (good speed for timing feel)
 ## - White quarter notes in center lane only
-## - Metronome tone when note centers (440Hz sine wave)
+## - Metronome tone at fixed beat intervals (440Hz sine wave)
 ## - Live timing adjustment slider (-1000 to +1000ms, applies to new notes)
 ## - "Done Calibrating" button
 ## - Smooth 0.5s fade out after notes pass below hitzone
@@ -44,23 +44,19 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 240.0  # Shifted up to avoid UI overlap
-const HITZONE_BOTTOM = 440.0  # Bottom of hitzone (240 + 200)
-const DESPAWN_Y = 490.0  # Start fading when note top is 50px below hitzone
-var bpm: float = 75.0  # Reduced from 85 for better UX
+const HITZONE_Y = 250.0  # Center hitzone position (higher up to avoid UI)
+const HITZONE_BOTTOM = 450.0  # Bottom of hitzone (250 + 200)
+const DESPAWN_Y = 500.0  # Start fading when note top is 50px below hitzone
+var bpm: float = 90.0  # Increased for better note speed feel
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
-var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
+var last_metronome_bar: int = -1  # Track last bar we played metronome on
 var conductor_started: bool = false  # Track if conductor has started (after fade)
 var is_exiting: bool = false  # Track if user pressed Done (stop spawning/metronome)
-var original_offset: int = 0  # Store original offset to restore if user cancels
 
 # Effects
 var effects_layer: Node2D
 
 func _ready():
-	# Store original offset so we can restore if user cancels
-	original_offset = GameManager.get_setting("rhythm_timing_offset", 0)
-
 	setup_audio()
 	setup_ui()
 	fade_from_black()
@@ -135,13 +131,18 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container - anchor to bottom of screen so button is 50px from bottom
+	# UI Container (centered horizontally, anchored to bottom with 50px margin)
 	ui_container = VBoxContainer.new()
-	ui_container.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)  # Anchor to bottom
-	ui_container.grow_vertical = Control.GROW_DIRECTION_BEGIN  # Grow upward from bottom
-	ui_container.offset_left = 210  # Centered (960 - 750)
-	ui_container.offset_right = -210  # Centered (960 + 750 = 1710, screen = 1920)
-	ui_container.offset_bottom = -50  # 50px from bottom
+	ui_container.anchor_left = 0.5
+	ui_container.anchor_right = 0.5
+	ui_container.anchor_top = 1.0  # Anchor to bottom
+	ui_container.anchor_bottom = 1.0  # Anchor to bottom
+	ui_container.offset_left = -750  # Half of 1500px width
+	ui_container.offset_right = 750   # Half of 1500px width
+	ui_container.offset_top = -350   # Height of UI (negative because anchored to bottom)
+	ui_container.offset_bottom = -50  # 50px from bottom of screen
+	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	ui_container.grow_vertical = Control.GROW_DIRECTION_END
 	ui_container.add_theme_constant_override("separation", 15)
 	add_child(ui_container)
 
@@ -198,16 +199,12 @@ func setup_ui():
 	instructions_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ui_container.add_child(instructions_label)
 
-	# Done button (centered, yellow border on hover, 50px font, white text)
+	# Done button (centered, yellow border on hover, 50px font)
 	done_button = Button.new()
-	done_button.text = "Done Calibrating"
+	done_button.text = "Looks good!"
 	done_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done_button.custom_minimum_size = Vector2(400, 80)
 	done_button.add_theme_font_size_override("font_size", 50)
-	done_button.add_theme_color_override("font_color", Color.WHITE)
-	done_button.add_theme_color_override("font_hover_color", Color.WHITE)
-	done_button.add_theme_color_override("font_pressed_color", Color.WHITE)
-	done_button.add_theme_color_override("font_focus_color", Color.WHITE)
 	done_button.focus_mode = Control.FOCUS_ALL
 	done_button.mouse_filter = Control.MOUSE_FILTER_PASS
 
@@ -219,6 +216,10 @@ func setup_ui():
 	button_normal_style.border_width_right = 3
 	button_normal_style.border_width_bottom = 3
 	button_normal_style.border_color = Color.WHITE
+	button_normal_style.content_margin_left = 50
+	button_normal_style.content_margin_right = 50
+	button_normal_style.content_margin_top = 25
+	button_normal_style.content_margin_bottom = 25
 	done_button.add_theme_stylebox_override("normal", button_normal_style)
 
 	var button_hover_style = StyleBoxFlat.new()
@@ -228,6 +229,10 @@ func setup_ui():
 	button_hover_style.border_width_right = 3
 	button_hover_style.border_width_bottom = 3
 	button_hover_style.border_color = Color.YELLOW
+	button_hover_style.content_margin_left = 50
+	button_hover_style.content_margin_right = 50
+	button_hover_style.content_margin_top = 25
+	button_hover_style.content_margin_bottom = 25
 	done_button.add_theme_stylebox_override("hover", button_hover_style)
 
 	var button_pressed_style = StyleBoxFlat.new()
@@ -237,6 +242,10 @@ func setup_ui():
 	button_pressed_style.border_width_right = 3
 	button_pressed_style.border_width_bottom = 3
 	button_pressed_style.border_color = Color.YELLOW
+	button_pressed_style.content_margin_left = 50
+	button_pressed_style.content_margin_right = 50
+	button_pressed_style.content_margin_top = 25
+	button_pressed_style.content_margin_bottom = 25
 	done_button.add_theme_stylebox_override("pressed", button_pressed_style)
 
 	done_button.pressed.connect(_on_done_pressed)
@@ -280,11 +289,12 @@ func create_hit_zones() -> Array:
 	return zones
 
 func setup_conductor():
-	"""Create and configure conductor for 85 BPM with silent audio for timing."""
+	"""Create and configure conductor for 90 BPM with silent audio for timing."""
 	conductor = Conductor.new()
 	conductor.bpm = bpm
 	conductor.sec_per_beat = 60.0 / bpm
 	conductor.subdivision = 2
+	conductor.beats_before_start = 0  # No countdown for calibrator - start immediately!
 	add_child(conductor)
 
 	# Create a silent audio stream for the Conductor to track timing
@@ -303,60 +313,51 @@ func setup_conductor():
 	conductor.play_with_beat_offset()
 
 func fade_from_black():
-	"""Fade in from black, then start conductor."""
+	"""Fade in from black, start conductor immediately so notes can spawn during fade."""
 	fade_overlay.modulate.a = 1.0
+	# Start conductor NOW - await to ensure it's fully ready
+	await setup_conductor()
+	conductor_started = true
+	last_metronome_bar = -1
+	# Wait a tiny bit for conductor to actually start playing
+	await get_tree().create_timer(0.1).timeout
+	# Spawn first note immediately
+	spawn_random_note()
+	last_spawn_bar = 0
+	# Start fade
 	var tween = create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", 0.0, 3.0).set_ease(Tween.EASE_OUT)
-	tween.tween_callback(_start_conductor)
 
 func _start_conductor():
-	"""Start conductor after fade completes."""
-	setup_conductor()
-	conductor_started = true
-	# Spawn first note after a delay so player doesn't wait
-	await get_tree().create_timer(0.5).timeout
-	if conductor and conductor_started:
-		# Set last_spawn_bar BEFORE spawning to prevent _process from spawning duplicate
-		var ticks_per_bar = 4 * conductor.subdivision  # 4 beats per bar * 2 subdivision = 8 ticks
-		last_spawn_bar = int(conductor.song_pos_in_beats / ticks_per_bar)
-		spawn_random_note()
+	"""Deprecated - conductor now starts in fade_from_black."""
+	pass
 
 func _process(_delta):
-	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
+	"""Spawn notes based on Conductor beats and play metronome at fixed intervals."""
 	if not conductor or not conductor_started or is_exiting:
 		return
 
-	# Spawn notes on beat 1 of every bar (every 4 beats)
-	# conductor.song_pos_in_beats is in TICKS (subdivision units), not full beats
-	# With subdivision = 2, 1 bar = 8 ticks (4 beats * 2)
-	var ticks_per_bar = 4 * conductor.subdivision  # 4 beats per bar * 2 subdivision = 8 ticks
-	var current_bar = int(conductor.song_pos_in_beats / ticks_per_bar)
-	if current_bar > last_spawn_bar:
-		# New bar started - spawn a note on beat 1
+	# Spawn notes every 8 beats (2 bars) to prevent overlap
+	# With FALL_BEATS=12 (6 full beats), we need spacing > 6 beats
+	var current_two_bar = int(conductor.song_pos_in_beats / 8.0)
+	if current_two_bar > last_spawn_bar:
+		# New 2-bar period - spawn a note
 		spawn_random_note()
-		last_spawn_bar = current_bar
+		last_spawn_bar = current_two_bar
 
-	# Play metronome when ANY note is centered on hit zone
-	# Check if any note is within a small threshold of being perfectly centered
-	var hitzone_center_y = HITZONE_Y + (BattleManager.HITZONE_HEIGHT / 2.0)
-	var played_metronome_this_frame = false
+	# CRITICAL FIX: Play metronome at FIXED beat intervals when notes SHOULD reach hitzone
+	# Notes spawn every 8 beats (beats 0, 8, 16, 24, etc.)
+	# With zero offset, notes should reach hitzone at: spawn_beat + FALL_BEATS (12 ticks = 6 beats)
+	# So metronome clicks at beats: 6, 14, 22, 30, etc. (every 8 beats starting at 6)
+	var current_beat = conductor.song_pos_in_beats
 
-	for note in active_notes:
-		if not is_instance_valid(note):
-			continue
+	# Calculate which "metronome period" we're in (8-beat periods offset by FALL_BEATS)
+	var metronome_period = int((current_beat - BattleManager.FALL_BEATS) / 8.0)
 
-		var note_center_y = note.position.y + 100.0  # Quarter note is 200px tall
-		var distance_from_center = abs(note_center_y - hitzone_center_y)
-
-		# If note is very close to center (within 5px) and we haven't played yet
-		if distance_from_center < 5.0 and not played_metronome_this_frame:
-			# Check if this is a new note centering (not the same as last frame)
-			var note_id = note.get_instance_id()
-			if last_metronome_beat != note_id:
-				play_metronome_beep()
-				last_metronome_beat = note_id
-				played_metronome_this_frame = true
-				break
+	# Play metronome when we cross into a new metronome period
+	if metronome_period > last_metronome_bar and current_beat >= BattleManager.FALL_BEATS:
+		play_metronome_beep()
+		last_metronome_bar = metronome_period
 
 	# Fade out notes after they pass below the hit zone
 	var i = 0
@@ -384,20 +385,20 @@ func _process(_delta):
 			i += 1
 
 func spawn_random_note():
-	"""Spawn a white note in center lane.
-
-	Notes spawn using conductor.song_pos_in_beats which includes the current offset from GameManager.
-	When slider changes, we update GameManager offset immediately and clear all notes,
-	so new notes spawn with the updated timing. This provides accurate real-time preview.
-	"""
+	"""Spawn a white note in center lane."""
 	if not conductor:
 		return
 
 	var lane = "2"  # Always center lane
 
-	# Spawn note at current beat + lookahead
-	# Conductor.song_pos_in_beats already includes GameManager offset
-	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS
+	# Apply slider offset to note spawn timing
+	# Slider value is in milliseconds, convert to beats
+	var offset_ms = calibration_slider.value
+	var offset_seconds = offset_ms / 1000.0
+	var offset_beats = offset_seconds / conductor.sec_per_beat * conductor.subdivision
+
+	# Add offset to note beat - positive offset means note arrives later
+	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS + offset_beats
 
 	# Load quarter note scene
 	var note_scene = BattleManager.NOTE_TYPE_CONFIG["quarter"]["scene"]
@@ -467,26 +468,11 @@ func check_hit(track_key: String):
 		active_notes.erase(closest_note)
 
 func _on_slider_value_changed(value: float):
-	"""Handle calibration slider value change - updates offset in real-time for accurate preview."""
+	"""Handle calibration slider value change (updates label only - applies to new notes)."""
 	if slider_label:
 		slider_label.text = "Timing Offset: " + str(int(value)) + "ms"
-
-	# Update GameManager offset immediately for real-time preview
-	# This makes the Conductor use the new offset for timing calculations
-	GameManager.set_setting("rhythm_timing_offset", int(value))
-
-	# Clear all existing notes so they respawn with new timing
-	# This prevents notes from jumping around - they despawn cleanly and new ones spawn
-	for note in active_notes:
-		if is_instance_valid(note):
-			note.queue_free()
-	active_notes.clear()
-
-	# Update last_spawn_bar to CURRENT bar to prevent immediate respawn
-	# This ensures notes only spawn on the NEXT bar, not instantly
-	if conductor:
-		var ticks_per_bar = 4 * conductor.subdivision  # 4 beats per bar * 2 subdivision = 8 ticks
-		last_spawn_bar = int(conductor.song_pos_in_beats / ticks_per_bar)
+	# NOTE: Don't update GameManager here! Slider value only affects NEW notes that spawn.
+	# Existing notes on screen should not jump around when slider changes.
 
 func _on_slider_drag_ended(_value_changed: bool):
 	"""Handle slider drag end."""
@@ -501,6 +487,12 @@ func _on_done_pressed():
 	"""Handle Done button press."""
 	# Stop spawning new notes and playing metronome
 	is_exiting = true
+
+	# Hide all active notes immediately
+	for note in active_notes:
+		if is_instance_valid(note):
+			note.queue_free()
+	active_notes.clear()
 
 	# Save the calibrated offset
 	GameManager.set_setting("rhythm_timing_offset", int(calibration_slider.value))
@@ -517,9 +509,19 @@ func _on_done_pressed():
 
 func _load_next_scene():
 	"""Load the next scene in the flow."""
-	if next_scene_path != "":
-		# Mark tutorial calibration as complete
-		GameManager.set_setting("has_calibrated", true)
-		Router.goto_scene_with_fade(next_scene_path, 3.0)
+	# Check if we should return to a battle (from recalibrate flow)
+	var return_battle_path = ""
+	if GameManager.has_meta("return_to_battle"):
+		return_battle_path = GameManager.get_meta("return_to_battle")
+		GameManager.remove_meta("return_to_battle")  # Clear metadata
+
+	# Mark calibration as complete
+	GameManager.set_setting("has_calibrated", true)
+
+	# Determine which scene to load
+	var target_scene = return_battle_path if return_battle_path != "" else next_scene_path
+
+	if target_scene != "":
+		Router.goto_scene_with_fade(target_scene, 3.0)
 	else:
-		push_error("TutorialCalibrationScene: next_scene_path not set!")
+		push_error("RhythmCalibration: No target scene set!")
