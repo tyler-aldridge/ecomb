@@ -44,11 +44,12 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 390.0  # 150px above screen center (540)
-const DESPAWN_Y = 690.0  # 100px below hit zones (390 + 200 + 100)
+const HITZONE_Y = 190.0  # 350px above screen center (540) - moved up 200px
+const DESPAWN_Y = 490.0  # 100px below hit zones (190 + 200 + 100)
 var bpm: float = 60.0
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_beat: int = -1  # Track last beat for metronome
+var conductor_started: bool = false  # Track if conductor has started (after fade)
 
 # Effects
 var effects_layer: Node2D
@@ -56,8 +57,8 @@ var effects_layer: Node2D
 func _ready():
 	setup_audio()
 	setup_ui()
-	setup_conductor()
 	fade_from_black()
+	# Conductor will start after fade completes
 
 func setup_audio():
 	"""Setup audio players and sine wave generator for metronome."""
@@ -135,12 +136,13 @@ func setup_ui():
 	ui_container.add_theme_constant_override("separation", 30)
 	add_child(ui_container)
 
-	# Slider label (50px font, centered)
+	# Slider label (50px font, centered, max width 1500px)
 	slider_label = Label.new()
 	slider_label.text = "Timing Offset: 0ms"
 	slider_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	slider_label.add_theme_font_size_override("font_size", 50)
 	slider_label.add_theme_color_override("font_color", Color.WHITE)
+	slider_label.custom_minimum_size = Vector2(1500, 0)
 	ui_container.add_child(slider_label)
 
 	# Calibration slider (-1000 to +1000ms, default 0)
@@ -154,6 +156,8 @@ func setup_ui():
 	calibration_slider.step = 1.0
 	calibration_slider.value = GameManager.get_setting("rhythm_timing_offset", 0)
 	calibration_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	calibration_slider.focus_mode = Control.FOCUS_CLICK  # Allow clicking
+	calibration_slider.mouse_filter = Control.MOUSE_FILTER_PASS  # Allow mouse interaction
 	calibration_slider.value_changed.connect(_on_slider_changed)
 
 	# Style slider like options menu (white slider with black border)
@@ -175,9 +179,9 @@ func setup_ui():
 
 	slider_container.add_child(calibration_slider)
 
-	# Instructions label (50px font, centered)
+	# Instructions label (50px font, centered, period added)
 	instructions_label = Label.new()
-	instructions_label.text = "Adjust timing until notes feel perfectly synchronized"
+	instructions_label.text = "Adjust timing until notes feel perfectly synchronized."
 	instructions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	instructions_label.add_theme_font_size_override("font_size", 50)
 	instructions_label.add_theme_color_override("font_color", Color.WHITE)
@@ -185,18 +189,30 @@ func setup_ui():
 	instructions_label.custom_minimum_size = Vector2(600, 0)
 	ui_container.add_child(instructions_label)
 
-	# Done button (centered, styled like options menu with 50px font)
+	# Done button (centered, yellow border on hover, 50px font)
 	done_button = Button.new()
 	done_button.text = "Done Calibrating"
 	done_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done_button.custom_minimum_size = Vector2(400, 80)
 	done_button.add_theme_font_size_override("font_size", 50)
 
-	# Style button like options menu
+	# Style button with yellow border on hover
 	var button_hover_style = StyleBoxFlat.new()
+	button_hover_style.bg_color = Color(0.8, 0.8, 0.8, 0.3)
+	button_hover_style.border_width_left = 3
+	button_hover_style.border_width_top = 3
+	button_hover_style.border_width_right = 3
+	button_hover_style.border_width_bottom = 3
+	button_hover_style.border_color = Color.YELLOW
 	done_button.add_theme_stylebox_override("hover", button_hover_style)
 
 	var button_pressed_style = StyleBoxFlat.new()
+	button_pressed_style.bg_color = Color(0.6, 0.6, 0.6, 0.3)
+	button_pressed_style.border_width_left = 3
+	button_pressed_style.border_width_top = 3
+	button_pressed_style.border_width_right = 3
+	button_pressed_style.border_width_bottom = 3
+	button_pressed_style.border_color = Color.YELLOW
 	done_button.add_theme_stylebox_override("pressed", button_pressed_style)
 
 	done_button.pressed.connect(_on_done_pressed)
@@ -267,14 +283,20 @@ func setup_conductor():
 	conductor.play_with_beat_offset()
 
 func fade_from_black():
-	"""Fade in from black."""
+	"""Fade in from black, then start conductor."""
 	fade_overlay.modulate.a = 1.0
 	var tween = create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", 0.0, 3.0).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(_start_conductor)
+
+func _start_conductor():
+	"""Start conductor after fade completes."""
+	setup_conductor()
+	conductor_started = true
 
 func _process(delta):
-	"""Spawn notes based on Conductor beats and play metronome on beat 1."""
-	if not conductor:
+	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
+	if not conductor or not conductor_started:
 		return
 
 	# Spawn notes on beat 1 of every bar (every 4 beats)
@@ -285,10 +307,12 @@ func _process(delta):
 		spawn_random_note()
 		last_spawn_bar = current_bar
 
-	# Play metronome on beat 1 of every measure
+	# Play metronome when notes reach center of hit zone
+	# Notes spawn at FALL_BEATS ahead, so metronome plays at that beat
+	# When conductor.song_pos_in_beats reaches note_beat, note is centered
 	var current_beat = int(conductor.song_pos_in_beats) % 4
-	if current_beat == 0 and last_metronome_beat != 0 and conductor.song_pos_in_beats >= 0:
-		# Beat 1 (first beat of measure) - play metronome sine wave
+	if current_beat == 0 and last_metronome_beat != 0 and conductor.song_pos_in_beats >= BattleManager.FALL_BEATS:
+		# Beat aligned with note center - play metronome sine wave
 		play_metronome_beep()
 	last_metronome_beat = current_beat
 
