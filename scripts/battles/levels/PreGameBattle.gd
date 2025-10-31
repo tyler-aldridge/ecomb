@@ -256,6 +256,10 @@ func _ready():
 		BattleManager.battle_failed.connect(_on_battle_failed)
 
 	# Clear any leftover active notes from previous battle (in case of restart)
+	# CRITICAL: Free the actual note nodes, not just clear the array!
+	for note in active_notes:
+		if is_instance_valid(note):
+			note.queue_free()
 	active_notes.clear()
 
 	# Create fade overlay
@@ -696,6 +700,13 @@ func check_automatic_misses():
 	# Now process the missed notes outside the iteration
 	for note in notes_to_remove:
 		if is_instance_valid(note):
+			# CRITICAL: Stop note movement and hide it IMMEDIATELY to prevent delay!
+			if note.has_method("stop_movement"):
+				note.stop_movement()
+			if note.has_method("set_physics_process"):
+				note.set_physics_process(false)
+			note.visible = false
+
 			# Get note's actual height dynamically
 			var note_height = BattleManager.get_note_height(note)
 
@@ -707,14 +718,14 @@ func check_automatic_misses():
 			# Clamp to keep animation visible on screen
 			effect_pos.y = min(effect_pos.y, screen_bottom)
 
-			# Show explosion and feedback (NO DELAY)
+			# Show explosion and feedback
 			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 
 			# Process miss (updates score, groove, etc.)
 			process_miss()
 
-			# Create shatter effect (same as input misses) - NO DELAY
+			# Create shatter effect (same as input misses)
 			BattleManager.create_miss_fade_tween(note)
 
 			# Remove from active notes
