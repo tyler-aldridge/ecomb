@@ -52,11 +52,15 @@ var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beat
 var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
 var conductor_started: bool = false  # Track if conductor has started (after fade)
 var is_exiting: bool = false  # Track if user pressed Done (stop spawning/metronome)
+var original_offset: int = 0  # Store original offset to restore if user cancels
 
 # Effects
 var effects_layer: Node2D
 
 func _ready():
+	# Store original offset so we can restore if user cancels
+	original_offset = GameManager.get_setting("rhythm_timing_offset", 0)
+
 	setup_audio()
 	setup_ui()
 	fade_from_black()
@@ -382,16 +386,19 @@ func _process(_delta):
 			i += 1
 
 func spawn_random_note():
-	"""Spawn a white note in center lane."""
+	"""Spawn a white note in center lane.
+
+	Notes spawn using conductor.song_pos_in_beats which includes the current offset from GameManager.
+	When slider changes, we update GameManager offset immediately and clear all notes,
+	so new notes spawn with the updated timing. This provides accurate real-time preview.
+	"""
 	if not conductor:
 		return
 
 	var lane = "2"  # Always center lane
 
-	# DON'T modify GameManager offset here - it breaks conductor timing
-	# Instead, we set GameManager offset ONCE when user clicks "Done"
-	# The conductor already applies GameManager offset (which is initial value)
-	# We spawn notes at the current conductor beat + lookahead
+	# Spawn note at current beat + lookahead
+	# Conductor.song_pos_in_beats already includes GameManager offset
 	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS
 
 	# Load quarter note scene
@@ -462,11 +469,23 @@ func check_hit(track_key: String):
 		active_notes.erase(closest_note)
 
 func _on_slider_value_changed(value: float):
-	"""Handle calibration slider value change (updates label only - applies to new notes)."""
+	"""Handle calibration slider value change - updates offset in real-time for accurate preview."""
 	if slider_label:
 		slider_label.text = "Timing Offset: " + str(int(value)) + "ms"
-	# NOTE: Don't update GameManager here! Slider value only affects NEW notes that spawn.
-	# Existing notes on screen should not jump around when slider changes.
+
+	# Update GameManager offset immediately for real-time preview
+	# This makes the Conductor use the new offset for timing calculations
+	GameManager.set_setting("rhythm_timing_offset", int(value))
+
+	# Clear all existing notes so they respawn with new timing
+	# This prevents notes from jumping around - they despawn cleanly and new ones spawn
+	for note in active_notes:
+		if is_instance_valid(note):
+			note.queue_free()
+	active_notes.clear()
+
+	# Reset spawn tracking so notes spawn immediately on next bar
+	last_spawn_bar = -1
 
 func _on_slider_drag_ended(_value_changed: bool):
 	"""Handle slider drag end."""
