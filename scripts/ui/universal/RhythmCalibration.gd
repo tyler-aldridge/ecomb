@@ -320,13 +320,19 @@ func _process(_delta):
 		last_spawn_bar = current_bar
 
 	# Play metronome when notes reach center of hit zone
-	# Notes spawn at FALL_BEATS ahead, so metronome plays at that beat
-	# When conductor.song_pos_in_beats reaches note_beat, note is centered
-	var current_beat = int(conductor.song_pos_in_beats) % 4
-	if current_beat == 0 and last_metronome_beat != 0 and conductor.song_pos_in_beats >= BattleManager.FALL_BEATS:
+	# Notes spawn at bar start (every 4 beats) with note_beat = current + FALL_BEATS
+	# So notes arrive at beat offsets: 6, 10, 14, 18... (all are beat % 4 == 2 for FALL_BEATS=6)
+	# Metronome plays when note centers on hit zone
+	var current_beat = int(conductor.song_pos_in_beats)
+	var beat_in_bar = current_beat % 4
+
+	# Calculate which beat offset notes arrive at (based on FALL_BEATS)
+	var note_arrival_beat_in_bar = int(BattleManager.FALL_BEATS) % 4
+
+	if beat_in_bar == note_arrival_beat_in_bar and last_metronome_beat != note_arrival_beat_in_bar and conductor.song_pos_in_beats >= BattleManager.FALL_BEATS:
 		# Beat aligned with note center - play metronome sine wave
 		play_metronome_beep()
-	last_metronome_beat = current_beat
+	last_metronome_beat = beat_in_bar
 
 	# Clean up despawned notes (100px below hit zones)
 	var i = 0
