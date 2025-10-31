@@ -316,7 +316,8 @@ func _start_conductor():
 	if conductor and conductor_started:
 		spawn_random_note()
 		# Set last_spawn_bar so regular spawning continues from here
-		last_spawn_bar = int(conductor.song_pos_in_beats / 4.0)
+		var ticks_per_bar = 4 * conductor.subdivision  # 4 beats per bar * 2 subdivision = 8 ticks
+		last_spawn_bar = int(conductor.song_pos_in_beats / ticks_per_bar)
 
 func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
@@ -324,8 +325,10 @@ func _process(_delta):
 		return
 
 	# Spawn notes on beat 1 of every bar (every 4 beats)
-	# This uses the Conductor's timing which includes the offset
-	var current_bar = int(conductor.song_pos_in_beats / 4.0)
+	# conductor.song_pos_in_beats is in TICKS (subdivision units), not full beats
+	# With subdivision = 2, 1 bar = 8 ticks (4 beats * 2)
+	var ticks_per_bar = 4 * conductor.subdivision  # 4 beats per bar * 2 subdivision = 8 ticks
+	var current_bar = int(conductor.song_pos_in_beats / ticks_per_bar)
 	if current_bar > last_spawn_bar:
 		# New bar started - spawn a note on beat 1
 		spawn_random_note()
@@ -480,7 +483,8 @@ func _on_slider_value_changed(value: float):
 	# Update last_spawn_bar to CURRENT bar to prevent immediate respawn
 	# This ensures notes only spawn on the NEXT bar, not instantly
 	if conductor:
-		last_spawn_bar = int(conductor.song_pos_in_beats / 4.0)
+		var ticks_per_bar = 4 * conductor.subdivision  # 4 beats per bar * 2 subdivision = 8 ticks
+		last_spawn_bar = int(conductor.song_pos_in_beats / ticks_per_bar)
 
 func _on_slider_drag_ended(_value_changed: bool):
 	"""Handle slider drag end."""
