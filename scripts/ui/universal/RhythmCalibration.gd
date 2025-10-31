@@ -44,9 +44,9 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 390.0  # Center hitzone position
-const HITZONE_BOTTOM = 590.0  # Bottom of hitzone (390 + 200)
-const DESPAWN_Y = 640.0  # Start fading when note top is 50px below hitzone
+const HITZONE_Y = 350.0  # Center hitzone position
+const HITZONE_BOTTOM = 550.0  # Bottom of hitzone (350 + 200)
+const DESPAWN_Y = 600.0  # Start fading when note top is 50px below hitzone
 var bpm: float = 90.0  # Increased for better note speed feel
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_bar: int = -1  # Track last bar we played metronome on
@@ -131,7 +131,7 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container (properly centered using anchors, shifted up 50px to y=700)
+	# UI Container (properly centered using anchors, 50px below hitzone bottom)
 	ui_container = VBoxContainer.new()
 	ui_container.anchor_left = 0.5
 	ui_container.anchor_right = 0.5
@@ -139,11 +139,11 @@ func setup_ui():
 	ui_container.anchor_bottom = 0.0
 	ui_container.offset_left = -750  # Half of 1500px width
 	ui_container.offset_right = 750   # Half of 1500px width
-	ui_container.offset_top = 700     # Shifted up 50px (was 750)
-	ui_container.offset_bottom = 700 + 400  # Enough height for all elements
+	ui_container.offset_top = 600     # 50px below hitzone bottom (550 + 50)
+	ui_container.offset_bottom = 600 + 400  # Enough height for all elements
 	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	ui_container.grow_vertical = Control.GROW_DIRECTION_BOTH
-	ui_container.add_theme_constant_override("separation", 30)
+	ui_container.add_theme_constant_override("separation", 15)  # Reduced from 30 to avoid overlap
 	add_child(ui_container)
 
 	# Slider label (50px font, centered)
