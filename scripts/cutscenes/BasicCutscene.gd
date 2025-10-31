@@ -8,7 +8,7 @@ extends Control
 ##
 ## Features:
 ## - Multiple messages in sequence
-## - 3 second fade in/out between messages
+## - 1 second fade in at start, instant message transitions with 0.5s pause
 ## - Gradient background (panel-gradient-3.png)
 ## - Auto-advances to next scene when complete
 ## ============================================================================
@@ -16,7 +16,7 @@ extends Control
 # Configuration
 @export var messages: Array[String] = []
 @export var next_scene_path: String = ""
-@export var fade_duration: float = 3.0
+@export var fade_duration: float = 1.0  # Reduced from 3.0 to 1.0 (2 second reduction)
 
 # UI elements
 var typewriter: TypewriterText
@@ -89,22 +89,20 @@ func _on_advance_requested():
 		_transition_to_next_scene()
 
 func _transition_to_next_message():
-	"""Fade out current message and show next one."""
+	"""Clear current message and show next one after a slight pause."""
 	is_transitioning = true
 
-	# Fade to black
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 1.0, fade_duration * 0.5).set_ease(Tween.EASE_IN)
-	tween.tween_callback(_show_next_message)
+	# Clear current message immediately
+	typewriter.set_text("")
+
+	# Wait for a slight pause (0.5 seconds) then show next message
+	await get_tree().create_timer(0.5).timeout
+	_show_next_message()
 
 func _show_next_message():
-	"""Show the next message after fade."""
+	"""Show the next message."""
 	typewriter.set_text(messages[current_message_index])
-
-	# Fade from black
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 0.0, fade_duration * 0.5).set_ease(Tween.EASE_OUT)
-	tween.tween_callback(func(): is_transitioning = false)
+	is_transitioning = false
 
 func _transition_to_next_scene():
 	"""Fade to black and load next scene using Router for persistent overlay."""
