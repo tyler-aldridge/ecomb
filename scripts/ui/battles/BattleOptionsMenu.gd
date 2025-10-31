@@ -4,6 +4,7 @@ signal closed
 @onready var master_volume_slider: HSlider = $GameOptionsContainer/MasterVolumeBox/MasterVolumeSlider
 @onready var music_volume_slider: HSlider = $GameOptionsContainer/MusicVolumeBox/MusicVolumeSlider
 @onready var sound_volume_slider: HSlider = $GameOptionsContainer/SoundVolumeBox/SoundVolumeSlider
+@onready var text_volume_slider: HSlider = $GameOptionsContainer/TextVolumeBox/TextVolumeSlider
 @onready var difficulty_slider: HSlider = $GameOptionsContainer/DifficultyBox/DifficultySlider
 @onready var difficulty_value_label: Label = $GameOptionsContainer/DifficultyBox/DifficultyValueLabel
 @onready var fullscreen_checkbox: CheckBox = $GameOptionsContainer/FullScreenContainer/FullScreenCheckbox
@@ -30,6 +31,8 @@ func _ready():
 		music_volume_slider.value_changed.connect(_on_music_volume_changed)
 	if sound_volume_slider:
 		sound_volume_slider.value_changed.connect(_on_sound_volume_changed)
+	if text_volume_slider:
+		text_volume_slider.value_changed.connect(_on_text_volume_changed)
 
 	# Connect difficulty slider
 	if difficulty_slider:
@@ -79,6 +82,9 @@ func _on_music_volume_changed(value):
 
 func _on_sound_volume_changed(value):
 	GameManager.set_setting("sound_volume", value)
+
+func _on_text_volume_changed(value):
+	GameManager.set_setting("text_volume", value)
 
 func _on_difficulty_changed(value):
 	# Convert slider value (0-4) to difficulty string
@@ -150,6 +156,7 @@ func _on_reset_pressed():
 	GameManager.set_setting("master_volume", 85)
 	GameManager.set_setting("music_volume", 75)
 	GameManager.set_setting("sound_volume", 65)
+	GameManager.set_setting("text_volume", 55)
 	GameManager.set_setting("difficulty", "gymbro")
 	GameManager.set_setting("fullscreen", false)
 	GameManager.set_setting("show_fps", false)
@@ -198,6 +205,8 @@ func load_settings():
 		music_volume_slider.value = GameManager.get_setting("music_volume", 100)
 	if sound_volume_slider:
 		sound_volume_slider.value = GameManager.get_setting("sound_volume", 100)
+	if text_volume_slider:
+		text_volume_slider.value = GameManager.get_setting("text_volume", 100)
 	if difficulty_slider:
 		# Convert difficulty string to slider value (0-4)
 		var difficulty = GameManager.get_setting("difficulty", "gymbro")

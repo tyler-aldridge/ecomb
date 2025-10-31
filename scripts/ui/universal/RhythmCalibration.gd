@@ -201,7 +201,7 @@ func setup_ui():
 
 	# Done button (centered, yellow border on hover, 50px font)
 	done_button = Button.new()
-	done_button.text = "Done"
+	done_button.text = "Looks good!"
 	done_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done_button.custom_minimum_size = Vector2(400, 80)
 	done_button.add_theme_font_size_override("font_size", 50)

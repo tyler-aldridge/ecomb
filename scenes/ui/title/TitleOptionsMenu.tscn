@@ -200,6 +200,30 @@ theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
 value = 65.0
 
+[node name="TextVolumeBox" type="HBoxContainer" parent="OptionsContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+
+[node name="TextVolumeLabel" type="Label" parent="OptionsContainer/TextVolumeBox"]
+custom_minimum_size = Vector2(325, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Text Volume:"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="TextVolumeSlider" type="HSlider" parent="OptionsContainer/TextVolumeBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_icons/grabber = ExtResource("3_glr2s")
+theme_override_icons/grabber_highlight = ExtResource("3_glr2s")
+theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
+value = 55.0
+
 [node name="DifficultyBox" type="HBoxContainer" parent="OptionsContainer"]
 custom_minimum_size = Vector2(150, 50)
 layout_mode = 2

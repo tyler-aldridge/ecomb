@@ -690,12 +690,12 @@ func create_fade_out_tween(note: Node, _bpm: float) -> Tween:
 
 func create_miss_fade_tween(note: Node) -> Tween:
 	"""
-	Create a fast fade out tween for missed notes.
+	Create a shatter fade out tween for missed notes.
 
 	Missed notes:
-	- Turn black
+	- Shatter into black pieces
 	- Stop in place (no movement)
-	- Fade out quickly (0.4 seconds)
+	- Fade out quickly (0.6 seconds)
 
 	Args:
 		note: The note node to fade
@@ -713,32 +713,89 @@ func create_miss_fade_tween(note: Node) -> Tween:
 	if note.has_method("set_physics_process"):
 		note.set_physics_process(false)
 
-	# Get parent to create tween on (avoids lambda capture errors)
+	# Get note size from NoteTemplate
+	var note_size = Vector2(200, 200)  # Default
+	if note.has_node("NoteTemplate"):
+		var template = note.get_node("NoteTemplate")
+		note_size = template.size
+
+	# Hide the original note immediately
+	note.modulate.a = 0.0
+
+	# Get the parent to add shards to (should be the battle scene)
 	var parent = note.get_parent()
 	if not is_instance_valid(parent):
 		note.queue_free()
 		return null
 
-	# Capture note first to avoid lambda issues
+	# Create a 3x3 grid of black pieces that shatter
+	var grid_size = 3
+	var piece_size = Vector2(note_size.x / grid_size, note_size.y / grid_size)
+	var note_top_left = note.global_position
+	var explosion_duration = 0.6  # Slightly faster than hit shatter
+
+	for row in range(grid_size):
+		for col in range(grid_size):
+			var piece = ColorRect.new()
+			piece.color = Color.BLACK  # Black pieces for misses
+			piece.size = piece_size
+
+			# Position piece to form the original note shape
+			var piece_x = note_top_left.x + (col * piece_size.x)
+			var piece_y = note_top_left.y + (row * piece_size.y)
+			piece.position = Vector2(piece_x, piece_y)
+
+			parent.add_child(piece)
+
+			# Calculate direction from note center
+			var note_center = note_top_left + note_size / 2.0
+			var piece_center = piece.position + piece_size / 2.0
+			var direction = (piece_center - note_center).normalized()
+
+			# Add some randomness to explosion
+			var random_offset = Vector2(randf_range(-50, 50), randf_range(-50, 50))
+			direction = (direction + random_offset.normalized() * 0.3).normalized()
+
+			# Pieces further from center fly faster
+			var distance_from_center = piece_center.distance_to(note_center)
+			var speed = 200 + (distance_from_center * 2.0)
+			var target_offset = direction * speed
+
+			# Capture piece in local var to avoid lambda capture errors in loop
+			var p = piece
+
+			# Create tween on parent (not piece) to avoid lambda capture errors
+			var piece_tween = parent.create_tween()
+			piece_tween.set_parallel(true)
+
+			# Move outward
+			piece_tween.tween_property(p, "position", p.position + target_offset, explosion_duration)
+
+			# Rotate based on position (edge pieces spin more)
+			var rotation_amount = randf_range(-PI, PI) * (1.0 + distance_from_center / 100.0)
+			piece_tween.tween_property(p, "rotation", rotation_amount, explosion_duration)
+
+			# Fade out
+			piece_tween.tween_property(p, "modulate:a", 0.0, explosion_duration)
+
+			# Scale down slightly
+			piece_tween.tween_property(p, "scale", Vector2(0.5, 0.5), explosion_duration)
+
+			# Clean up piece after animation - wrap queue_free in lambda
+			piece_tween.chain().tween_callback(func():
+				if is_instance_valid(p):
+					p.queue_free()
+			)
+
+	# Clean up original note after a short delay - wrap queue_free in lambda
 	var n = note
-
-	# Turn note black and fade out fast
-	var tween = parent.create_tween()
-	tween.set_parallel(true)
-
-	# Turn black immediately
-	tween.tween_property(n, "modulate", Color(0, 0, 0, 1), 0.0)
-
-	# Fade out quickly
-	tween.tween_property(n, "modulate:a", 0.0, 0.4)
-
-	# Free the note after fade completes - wrap queue_free in lambda
-	tween.chain().tween_callback(func():
+	var cleanup_tween = parent.create_tween()
+	cleanup_tween.tween_callback(func():
 		if is_instance_valid(n):
 			n.queue_free()
-	)
+	).set_delay(explosion_duration)
 
-	return tween
+	return cleanup_tween
 
 # ============================================================================
 # UNIVERSAL UI SETUP
