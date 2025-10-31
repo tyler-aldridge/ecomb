@@ -12,24 +12,25 @@
   "beats_before_start": 32,
   "num_lanes": 3,
   "dialogue": [
-    {"beat_position": 0, "text": "Yo chump! Think you got what it takes? Don't embarrass yourself out there, cupcake!", "character": "opponent", "duration": 5.0},
-    {"beat_position": 78, "text": "Feeling the heat yet? That was just the warm-up!", "character": "opponent", "duration": 3.5},
-    {"beat_position": 148, "text": "Alright, time to see if you can handle the REAL grind!", "character": "opponent", "duration": 3.0},
-    {"beat_position": 396, "text": "Not bad for a rookie... but can you keep up?", "character": "opponent", "duration": 3.0},
-    {"beat_position": 764, "text": "Well I'll be... you might actually survive on this beach, scrub!", "character": "opponent", "duration": 5.0}
+    {"beat_position": 0, "text": "Think you got what it takes, chump?", "character": "opponent", "duration": 5.0},
+    {"beat_position": 104, "text": "Feeling the heat yet, sweaty palms?", "character": "opponent", "duration": 3.5},
+    {"beat_position": 168, "text": "That was just the warm up. Time to see if you can handle the REAL grind!", "character": "opponent", "duration": 4.0},
+    {"beat_position": 392, "text": "Not bad for a rookie, but here comes the curve ball!", "character": "opponent", "duration": 3.5},
+    {"beat_position": 480, "text": "BWAHAHA! Did you get scared for a second there, buttercup?", "character": "opponent", "duration": 4.0},
+    {"beat_position": 766, "text": "Not too shabby, but that was lightweight, baby! See you in the gym.", "character": "opponent", "duration": 5.0}
   ],
   "triggers": [
     {"beat_position": 800, "trigger": "fade_to_title"}
   ],
   "countdowns": [
-    {"beat_position": 182, "type": "single", "text": "3", "duration": 1.0, "size": 600, "color": "white"},
-    {"beat_position": 186, "type": "single", "text": "2", "duration": 1.0, "size": 600, "color": "white"},
-    {"beat_position": 190, "type": "single", "text": "1", "duration": 1.0, "size": 600, "color": "white"},
-    {"beat_position": 194, "type": "single", "text": "GO!", "duration": 1.0, "size": 600, "color": "red"},
-    {"beat_position": 484, "type": "single", "text": "3", "duration": 1.0, "size": 600, "color": "white"},
-    {"beat_position": 488, "type": "single", "text": "2", "duration": 1.0, "size": 600, "color": "white"},
-    {"beat_position": 492, "type": "single", "text": "1", "duration": 1.0, "size": 600, "color": "white"},
-    {"beat_position": 496, "type": "single", "text": "GO!", "duration": 1.0, "size": 600, "color": "red"}
+    {"beat_position": 188, "type": "single", "text": "3", "duration": 1.0, "size": 600, "color": "white"},
+    {"beat_position": 192, "type": "single", "text": "2", "duration": 1.0, "size": 600, "color": "white"},
+    {"beat_position": 196, "type": "single", "text": "1", "duration": 1.0, "size": 600, "color": "white"},
+    {"beat_position": 200, "type": "single", "text": "FLEX!", "duration": 1.0, "size": 600, "color": "red"},
+    {"beat_position": 488, "type": "single", "text": "3", "duration": 1.0, "size": 600, "color": "white"},
+    {"beat_position": 492, "type": "single", "text": "2", "duration": 1.0, "size": 600, "color": "white"},
+    {"beat_position": 496, "type": "single", "text": "1", "duration": 1.0, "size": 600, "color": "white"},
+    {"beat_position": 500, "type": "single", "text": "PUMP!", "duration": 1.0, "size": 600, "color": "red"}
   ],
   "notes": [
     {"bar": 1, "beat": 1, "beat_position": 0, "note": "whole"},
