@@ -9,9 +9,9 @@ extends Control
 ## 3. Future: Overworld options menu (returns to overworld)
 ##
 ## Features:
-## - 75 BPM (balanced speed for UX)
+## - 90 BPM (good speed for timing feel)
 ## - White quarter notes in center lane only
-## - Metronome tone when note centers (440Hz sine wave)
+## - Metronome tone at fixed beat intervals (440Hz sine wave)
 ## - Live timing adjustment slider (-1000 to +1000ms, applies to new notes)
 ## - "Done Calibrating" button
 ## - Smooth 0.5s fade out after notes pass below hitzone
@@ -44,12 +44,12 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 340.0  # Shifted up 50px (was 390)
-const HITZONE_BOTTOM = 540.0  # Bottom of hitzone (340 + 200)
-const DESPAWN_Y = 590.0  # Start fading when note top is 50px below hitzone
-var bpm: float = 75.0  # Reduced from 85 for better UX
+const HITZONE_Y = 390.0  # Center hitzone position
+const HITZONE_BOTTOM = 590.0  # Bottom of hitzone (390 + 200)
+const DESPAWN_Y = 640.0  # Start fading when note top is 50px below hitzone
+var bpm: float = 90.0  # Increased for better note speed feel
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
-var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
+var last_metronome_bar: int = -1  # Track last bar we played metronome on
 var conductor_started: bool = false  # Track if conductor has started (after fade)
 var is_exiting: bool = false  # Track if user pressed Done (stop spawning/metronome)
 
@@ -279,7 +279,7 @@ func create_hit_zones() -> Array:
 	return zones
 
 func setup_conductor():
-	"""Create and configure conductor for 85 BPM with silent audio for timing."""
+	"""Create and configure conductor for 90 BPM with silent audio for timing."""
 	conductor = Conductor.new()
 	conductor.bpm = bpm
 	conductor.sec_per_beat = 60.0 / bpm
@@ -312,47 +312,36 @@ func _start_conductor():
 	"""Start conductor after fade completes."""
 	setup_conductor()
 	conductor_started = true
-	# Spawn first note immediately so player doesn't wait
-	await get_tree().create_timer(0.5).timeout
-	if conductor and conductor_started:
-		spawn_random_note()
-		# Set last_spawn_bar so regular spawning continues from here
-		last_spawn_bar = int(conductor.song_pos_in_beats / 4.0)
+	# Initialize metronome bar to avoid early metronome beep
+	last_metronome_bar = -1
+	# Don't manually spawn first note - let _process handle it naturally
+	# This avoids timing conflicts and overlapping notes
 
 func _process(_delta):
-	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
+	"""Spawn notes based on Conductor beats and play metronome at fixed intervals."""
 	if not conductor or not conductor_started or is_exiting:
 		return
 
 	# Spawn notes on beat 1 of every bar (every 4 beats)
-	# This uses the Conductor's timing which includes the offset
 	var current_bar = int(conductor.song_pos_in_beats / 4.0)
 	if current_bar > last_spawn_bar:
 		# New bar started - spawn a note on beat 1
 		spawn_random_note()
 		last_spawn_bar = current_bar
 
-	# Play metronome when ANY note is centered on hit zone
-	# Check if any note is within a small threshold of being perfectly centered
-	var hitzone_center_y = HITZONE_Y + (BattleManager.HITZONE_HEIGHT / 2.0)
-	var played_metronome_this_frame = false
+	# CRITICAL FIX: Play metronome at FIXED beat intervals when notes SHOULD reach hitzone
+	# Notes spawn at bar boundaries (beats 0, 4, 8, 12, etc.)
+	# With zero offset, notes should reach hitzone at: spawn_beat + FALL_BEATS
+	# So metronome clicks at beats: FALL_BEATS, 4+FALL_BEATS, 8+FALL_BEATS, etc.
+	var current_beat = conductor.song_pos_in_beats
 
-	for note in active_notes:
-		if not is_instance_valid(note):
-			continue
+	# Calculate which "metronome bar" we're in (bars offset by FALL_BEATS)
+	var metronome_bar = int((current_beat - BattleManager.FALL_BEATS) / 4.0)
 
-		var note_center_y = note.position.y + 100.0  # Quarter note is 200px tall
-		var distance_from_center = abs(note_center_y - hitzone_center_y)
-
-		# If note is very close to center (within 5px) and we haven't played yet
-		if distance_from_center < 5.0 and not played_metronome_this_frame:
-			# Check if this is a new note centering (not the same as last frame)
-			var note_id = note.get_instance_id()
-			if last_metronome_beat != note_id:
-				play_metronome_beep()
-				last_metronome_beat = note_id
-				played_metronome_this_frame = true
-				break
+	# Play metronome when we cross into a new metronome bar
+	if metronome_bar > last_metronome_bar and current_beat >= BattleManager.FALL_BEATS:
+		play_metronome_beep()
+		last_metronome_bar = metronome_bar
 
 	# Fade out notes after they pass below the hit zone
 	var i = 0
