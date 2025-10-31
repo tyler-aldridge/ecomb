@@ -24,6 +24,10 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 1, 1, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_RestartHover"]
 bg_color = Color(0, 0, 0, 1)
@@ -32,6 +36,10 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 1, 0, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_RestartPressed"]
 bg_color = Color(0, 0, 0, 1)
@@ -40,6 +48,10 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 1, 0, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ContinueNormal"]
 bg_color = Color(0, 0, 0, 1)
@@ -48,6 +60,10 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 1, 1, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ContinueHover"]
 bg_color = Color(0, 0, 0, 1)
@@ -56,6 +72,10 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 1, 0, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ContinuePressed"]
 bg_color = Color(0, 0, 0, 1)
@@ -64,6 +84,10 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 1, 0, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [node name="BattleResults" type="Control"]
 visible = false

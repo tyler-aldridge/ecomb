@@ -127,6 +127,10 @@ func _connect_dialog_button_sounds():
 			normal_style.border_width_right = 3
 			normal_style.border_width_bottom = 3
 			normal_style.border_color = Color.WHITE
+			normal_style.content_margin_left = 50
+			normal_style.content_margin_right = 50
+			normal_style.content_margin_top = 25
+			normal_style.content_margin_bottom = 25
 			btn.add_theme_stylebox_override("normal", normal_style)
 
 			# Hover style (yellow border)
@@ -137,6 +141,10 @@ func _connect_dialog_button_sounds():
 			hover_style.border_width_right = 3
 			hover_style.border_width_bottom = 3
 			hover_style.border_color = Color.YELLOW
+			hover_style.content_margin_left = 50
+			hover_style.content_margin_right = 50
+			hover_style.content_margin_top = 25
+			hover_style.content_margin_bottom = 25
 			btn.add_theme_stylebox_override("hover", hover_style)
 
 			# Pressed style (yellow border)
@@ -147,6 +155,10 @@ func _connect_dialog_button_sounds():
 			pressed_style.border_width_right = 3
 			pressed_style.border_width_bottom = 3
 			pressed_style.border_color = Color.YELLOW
+			pressed_style.content_margin_left = 50
+			pressed_style.content_margin_right = 50
+			pressed_style.content_margin_top = 25
+			pressed_style.content_margin_bottom = 25
 			btn.add_theme_stylebox_override("pressed", pressed_style)
 
 	# Keep separation between the two buttons

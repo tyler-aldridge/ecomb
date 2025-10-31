@@ -201,7 +201,7 @@ func setup_ui():
 
 	# Done button (centered, yellow border on hover, 50px font)
 	done_button = Button.new()
-	done_button.text = "Done Calibrating"
+	done_button.text = "Done"
 	done_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done_button.custom_minimum_size = Vector2(400, 80)
 	done_button.add_theme_font_size_override("font_size", 50)
@@ -216,6 +216,10 @@ func setup_ui():
 	button_normal_style.border_width_right = 3
 	button_normal_style.border_width_bottom = 3
 	button_normal_style.border_color = Color.WHITE
+	button_normal_style.content_margin_left = 50
+	button_normal_style.content_margin_right = 50
+	button_normal_style.content_margin_top = 25
+	button_normal_style.content_margin_bottom = 25
 	done_button.add_theme_stylebox_override("normal", button_normal_style)
 
 	var button_hover_style = StyleBoxFlat.new()
@@ -225,6 +229,10 @@ func setup_ui():
 	button_hover_style.border_width_right = 3
 	button_hover_style.border_width_bottom = 3
 	button_hover_style.border_color = Color.YELLOW
+	button_hover_style.content_margin_left = 50
+	button_hover_style.content_margin_right = 50
+	button_hover_style.content_margin_top = 25
+	button_hover_style.content_margin_bottom = 25
 	done_button.add_theme_stylebox_override("hover", button_hover_style)
 
 	var button_pressed_style = StyleBoxFlat.new()
@@ -234,6 +242,10 @@ func setup_ui():
 	button_pressed_style.border_width_right = 3
 	button_pressed_style.border_width_bottom = 3
 	button_pressed_style.border_color = Color.YELLOW
+	button_pressed_style.content_margin_left = 50
+	button_pressed_style.content_margin_right = 50
+	button_pressed_style.content_margin_top = 25
+	button_pressed_style.content_margin_bottom = 25
 	done_button.add_theme_stylebox_override("pressed", button_pressed_style)
 
 	done_button.pressed.connect(_on_done_pressed)

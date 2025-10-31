@@ -27,10 +27,40 @@ border_color = Color(1, 1, 1, 1)
 bg_color = Color(1, 1, 1, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_88x8e"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yxu6n"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 0, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tctq1"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 0, 1)
+content_margin_left = 50.0
+content_margin_top = 25.0
+content_margin_right = 50.0
+content_margin_bottom = 25.0
 
 [node name="LoadMenu" type="Control"]
 custom_minimum_size = Vector2(1920, 1080)
@@ -123,6 +153,8 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxFlat_88x8e")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
 text = "Load"
@@ -131,6 +163,8 @@ text = "Load"
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxFlat_88x8e")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
 text = "Delete
@@ -140,6 +174,8 @@ text = "Delete
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxFlat_88x8e")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
 text = "Close"
