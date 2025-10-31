@@ -8,7 +8,7 @@ extends Control
 ##
 ## Features:
 ## - Multiple messages in sequence
-## - 1 second fade in at start, instant message transitions with 0.5s pause
+## - 3 second fade in at start, instant message transitions with 0.5s pause
 ## - Gradient background (panel-gradient-3.png)
 ## - Auto-advances to next scene when complete
 ## ============================================================================
@@ -16,7 +16,7 @@ extends Control
 # Configuration
 @export var messages: Array[String] = []
 @export var next_scene_path: String = ""
-@export var fade_duration: float = 1.0  # Reduced from 3.0 to 1.0 (2 second reduction)
+@export var fade_duration: float = 3.0
 
 # UI elements
 var typewriter: TypewriterText
