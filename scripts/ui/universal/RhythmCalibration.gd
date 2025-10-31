@@ -51,6 +51,7 @@ var bpm: float = 60.0
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
 var conductor_started: bool = false  # Track if conductor has started (after fade)
+var is_exiting: bool = false  # Track if user pressed Done (stop spawning/metronome)
 
 # Effects
 var effects_layer: Node2D
@@ -325,7 +326,7 @@ func _start_conductor():
 
 func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
-	if not conductor or not conductor_started:
+	if not conductor or not conductor_started or is_exiting:
 		return
 
 	# Spawn notes on beat 1 of every bar (every 4 beats)
@@ -368,11 +369,20 @@ func _process(_delta):
 
 		# Start fading when note top passes hitzone bottom
 		if note.position.y > DESPAWN_Y:
-			active_notes.remove_at(i)
-			# Fade out smoothly before freeing
-			var fade_tween = create_tween()
-			fade_tween.tween_property(note, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_OUT)
-			fade_tween.tween_callback(note.queue_free)
+			# Check if already fading (using metadata to track)
+			if not note.has_meta("is_fading"):
+				note.set_meta("is_fading", true)
+				# Stop note movement
+				note.is_active = false
+				# Fade out smoothly over 0.5 seconds
+				var fade_tween = create_tween()
+				fade_tween.tween_property(note, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_OUT)
+				fade_tween.tween_callback(func():
+					if is_instance_valid(note):
+						active_notes.erase(note)
+						note.queue_free()
+				)
+			i += 1
 		else:
 			i += 1
 
@@ -451,14 +461,17 @@ func check_hit(track_key: String):
 		active_notes.erase(closest_note)
 
 func _on_slider_value_changed(value: float):
-	"""Handle calibration slider value change (updates label in real-time)."""
+	"""Handle calibration slider value change (updates label and offset in real-time)."""
 	if slider_label:
 		slider_label.text = "Timing Offset: " + str(int(value)) + "ms"
+	# CRITICAL: Update the setting immediately so Conductor uses new offset
+	# Conductor.song_position reads GameManager.get_timing_offset() every frame
+	GameManager.set_setting("rhythm_timing_offset", int(value))
 
 func _on_slider_drag_ended(_value_changed: bool):
-	"""Handle slider drag end (save the setting)."""
-	GameManager.set_setting("rhythm_timing_offset", int(calibration_slider.value))
-	print("Offset saved: ", int(calibration_slider.value), "ms")
+	"""Handle slider drag end (confirm and log the final value)."""
+	print("Offset finalized: ", int(calibration_slider.value), "ms")
+	GameManager.save_settings()
 
 func _on_button_hover():
 	"""Play hover sound when mouse enters button."""
@@ -469,6 +482,9 @@ func _on_button_hover():
 func _on_done_pressed():
 	"""Handle Done button press."""
 	print("Done button pressed!")
+
+	# Stop spawning new notes and playing metronome
+	is_exiting = true
 
 	# Play click sound
 	if click_sound:
