@@ -647,10 +647,10 @@ func check_automatic_misses():
 
 	for note in active_notes:
 		if is_instance_valid(note):
-			var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[note.track_key].y
-			var note_height = BattleManager.get_note_height(note)
-			# Check if BOTTOM of note has passed the miss window (not just top)
-			if note.position.y + note_height > hit_zone_y + BattleManager.HITZONE_HEIGHT + BattleManager.MISS_WINDOW:
+			# Check if TOP of note has passed BOTTOM OF SCREEN (1080px)
+			# This ensures whole notes (800px), half notes (400px), and quarter notes (200px)
+			# all properly miss when they leave the visible area
+			if note.position.y > 1080:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration

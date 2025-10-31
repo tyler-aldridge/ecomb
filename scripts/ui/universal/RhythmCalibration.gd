@@ -282,6 +282,7 @@ func setup_conductor():
 	conductor.bpm = bpm
 	conductor.sec_per_beat = 60.0 / bpm
 	conductor.subdivision = 2
+	conductor.beats_before_start = 0  # No countdown for calibrator - start immediately!
 	add_child(conductor)
 
 	# Create a silent audio stream for the Conductor to track timing
@@ -302,10 +303,12 @@ func setup_conductor():
 func fade_from_black():
 	"""Fade in from black, start conductor immediately so notes can spawn during fade."""
 	fade_overlay.modulate.a = 1.0
-	# Start conductor NOW so it's running during the fade
-	setup_conductor()
+	# Start conductor NOW - await to ensure it's fully ready
+	await setup_conductor()
 	conductor_started = true
 	last_metronome_bar = -1
+	# Wait a tiny bit for conductor to actually start playing
+	await get_tree().create_timer(0.1).timeout
 	# Spawn first note immediately
 	spawn_random_note()
 	last_spawn_bar = 0
@@ -322,26 +325,27 @@ func _process(_delta):
 	if not conductor or not conductor_started or is_exiting:
 		return
 
-	# Spawn notes on beat 1 of every bar (every 4 beats)
-	var current_bar = int(conductor.song_pos_in_beats / 4.0)
-	if current_bar > last_spawn_bar:
-		# New bar started - spawn a note on beat 1
+	# Spawn notes every 8 beats (2 bars) to prevent overlap
+	# With FALL_BEATS=12 (6 full beats), we need spacing > 6 beats
+	var current_two_bar = int(conductor.song_pos_in_beats / 8.0)
+	if current_two_bar > last_spawn_bar:
+		# New 2-bar period - spawn a note
 		spawn_random_note()
-		last_spawn_bar = current_bar
+		last_spawn_bar = current_two_bar
 
 	# CRITICAL FIX: Play metronome at FIXED beat intervals when notes SHOULD reach hitzone
-	# Notes spawn at bar boundaries (beats 0, 4, 8, 12, etc.)
-	# With zero offset, notes should reach hitzone at: spawn_beat + FALL_BEATS
-	# So metronome clicks at beats: FALL_BEATS, 4+FALL_BEATS, 8+FALL_BEATS, etc.
+	# Notes spawn every 8 beats (beats 0, 8, 16, 24, etc.)
+	# With zero offset, notes should reach hitzone at: spawn_beat + FALL_BEATS (12 ticks = 6 beats)
+	# So metronome clicks at beats: 6, 14, 22, 30, etc. (every 8 beats starting at 6)
 	var current_beat = conductor.song_pos_in_beats
 
-	# Calculate which "metronome bar" we're in (bars offset by FALL_BEATS)
-	var metronome_bar = int((current_beat - BattleManager.FALL_BEATS) / 4.0)
+	# Calculate which "metronome period" we're in (8-beat periods offset by FALL_BEATS)
+	var metronome_period = int((current_beat - BattleManager.FALL_BEATS) / 8.0)
 
-	# Play metronome when we cross into a new metronome bar
-	if metronome_bar > last_metronome_bar and current_beat >= BattleManager.FALL_BEATS:
+	# Play metronome when we cross into a new metronome period
+	if metronome_period > last_metronome_bar and current_beat >= BattleManager.FALL_BEATS:
 		play_metronome_beep()
-		last_metronome_bar = metronome_bar
+		last_metronome_bar = metronome_period
 
 	# Fade out notes after they pass below the hit zone
 	var i = 0
