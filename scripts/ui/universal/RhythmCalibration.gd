@@ -137,16 +137,9 @@ func setup_ui():
 
 	# UI Container (positioned 50px from bottom of screen)
 	ui_container = VBoxContainer.new()
-	ui_container.anchor_left = 0.5
-	ui_container.anchor_right = 0.5
-	ui_container.anchor_top = 1.0  # Anchor to bottom
-	ui_container.anchor_bottom = 1.0  # Anchor to bottom
-	ui_container.offset_left = -750  # Half of 1500px width
-	ui_container.offset_right = 750   # Half of 1500px width
-	ui_container.offset_top = -450   # 400px height + 50px gap from bottom
-	ui_container.offset_bottom = -50  # 50px up from screen bottom
-	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	ui_container.grow_vertical = Control.GROW_DIRECTION_END
+	ui_container.custom_minimum_size = Vector2(1500, 400)
+	ui_container.size = Vector2(1500, 400)
+	ui_container.position = Vector2(960 - 750, 1080 - 450)  # Centered horizontally, 50px from bottom
 	ui_container.add_theme_constant_override("separation", 15)
 	add_child(ui_container)
 
@@ -484,8 +477,10 @@ func _on_slider_value_changed(value: float):
 			note.queue_free()
 	active_notes.clear()
 
-	# Reset spawn tracking so notes spawn immediately on next bar
-	last_spawn_bar = -1
+	# Update last_spawn_bar to CURRENT bar to prevent immediate respawn
+	# This ensures notes only spawn on the NEXT bar, not instantly
+	if conductor:
+		last_spawn_bar = int(conductor.song_pos_in_beats / 4.0)
 
 func _on_slider_drag_ended(_value_changed: bool):
 	"""Handle slider drag end."""
