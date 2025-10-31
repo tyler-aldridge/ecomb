@@ -254,7 +254,6 @@ func _ready():
 
 	# Create fade overlay
 	create_fade_overlay()
-	fade_from_black()
 
 	# Create effects layer
 	effects_layer = Node2D.new()
@@ -272,8 +271,11 @@ func _ready():
 
 	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
-	# Start with beat offset
-	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
+	# Fade from black and wait for it to complete
+	fade_from_black()
+	await get_tree().create_timer(BattleManager.FADE_FROM_BLACK_DURATION + 0.5).timeout  # Wait for fade + 0.5s buffer
+
+	# Start conductor after fade completes
 	conductor.play_with_beat_offset()
 
 func create_battle_ui():
@@ -357,20 +359,9 @@ func fade_from_black():
 
 func setup_hit_zone_borders():
 	"""Add white borders to all hit zones using universal BattleManager constants."""
-	for i in range(hit_zones.size()):
-		var hit_zone = hit_zones[i]
-		if is_instance_valid(hit_zone):
-			hit_zone.color = Color(1, 1, 1, 0)
-
-			var border = Line2D.new()
-			border.width = BattleManager.HITZONE_BORDER_WIDTH
-			border.default_color = BattleManager.HITZONE_BORDER_COLOR
-			border.add_point(Vector2(0, 0))
-			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, 0))
-			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, BattleManager.HITZONE_HEIGHT))
-			border.add_point(Vector2(0, BattleManager.HITZONE_HEIGHT))
-			border.add_point(Vector2(0, 0))
-			hit_zone.add_child(border)
+	# Hit zones are already created by BattleManager with borders
+	# This function is now deprecated - borders are handled in BattleManager
+	pass
 
 func prepare_notes():
 	"""Prepare notes for position interpolation spawning (resolve random lanes)."""
@@ -384,8 +375,6 @@ func prepare_notes():
 			lane = BattleManager.choose_lane_avoiding_overlap(note_data["beat_position"])
 			# Update the note data with resolved lane
 			note_data["lane"] = lane
-
-	print("Notes prepared for spawning: ", sorted_notes.size(), " notes")
 
 func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""

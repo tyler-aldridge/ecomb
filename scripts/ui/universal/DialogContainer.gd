@@ -72,7 +72,7 @@ func _setup_audio_generator():
 	audio_player = AudioStreamPlayer.new()
 	audio_player.stream = audio_generator
 	audio_player.bus = "SFX"
-	audio_player.volume_db = -10.0  # Lower volume by 10dB
+	audio_player.volume_db = -16.0  # Reduced volume for typewriter effect
 	add_child(audio_player)
 
 	# Start playback to get playback instance

@@ -14,10 +14,10 @@ var coach_sprite: AnimatedSprite2D
 func _ready():
 	# Set messages for PreGameCutscene2
 	messages = [
-		"You approach the legendary Muscle Beach Gym.\n\nThe neon sign pulses with pure summer energy and absolute confidence in the power of gains.",
-		"Through the golden haze of protein powder and coconut oil, a figure emerges from the shadows...\n\nActually, he emerges from the squat rack. Because he was squatting. Obviously.",
-		"\"YO! Fresh meat!\"\n\nThe voice booms like thunder wrapped in compression shorts and unstoppable motivation.",
-		"Coach Flex Galaxy steps into the light, biceps gleaming with the wisdom of a thousand reps.\n\nYour first test begins..."
+		"You approach the legendary Muscle Beach Gym. The neon sign pulses with pure summer energy and absolute confidence in the power of gains.",
+		"Through the golden haze of protein powder and coconut oil, a figure emerges from the shadows... Actually, he emerges from the squat rack. Because he was squatting. Obviously.",
+		"\"YO! Fresh meat!\" The voice booms like thunder wrapped in compression shorts and unstoppable motivation.",
+		"Coach Flex Galaxy steps into the light, biceps gleaming with the wisdom of a thousand reps. Your first test begins..."
 	]
 
 	# Set next scene path
