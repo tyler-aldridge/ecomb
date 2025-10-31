@@ -1,7 +1,7 @@
 {
   "battle_id": "PreGameBattle",
   "battle_level": 1,
-  "battle_type": "tutorial",
+  "battle_type": "lesson",
   "groove_start": 50.0,
   "groove_miss_penalty": 10.0,
   "song_name": "Divine Fox Play by Ender Alders - 152BPM",
