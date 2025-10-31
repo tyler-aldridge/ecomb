@@ -340,12 +340,16 @@ func load_level_data():
 		push_error("Failed to load level data from: " + level_data_path)
 
 func create_fade_overlay():
+	# Create CanvasLayer for fade so it renders above all other CanvasLayers
+	var fade_layer = CanvasLayer.new()
+	fade_layer.layer = 200  # Above ui_layer (100)
+	add_child(fade_layer)
+
 	fade_overlay = ColorRect.new()
 	fade_overlay.color = Color.BLACK
-	fade_overlay.z_index = 1000
 	fade_overlay.size = get_viewport().get_visible_rect().size
 	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(fade_overlay)
+	fade_layer.add_child(fade_overlay)
 
 func fade_from_black():
 	"""Fade from black overlay with smooth easing."""
@@ -393,22 +397,13 @@ func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
 	if conductor:
-		# Check for automatic misses
+		# Check for automatic misses (this also removes notes)
 		check_automatic_misses()
 
 		# Spawn notes using polling (not signals)
 		spawn_notes_polling()
 
-	# Clean up notes that have gone off-screen
-	var i = 0
-	while i < active_notes.size():
-		var note = active_notes[i]
-		if note.is_past_despawn_threshold():
-			active_notes.remove_at(i)
-			note.queue_free()
-			# Don't increment i - we removed an element
-		else:
-			i += 1
+	# NOTE: No separate despawn cleanup needed - check_automatic_misses() handles removal
 
 func start_character_animations():
 	# Store original positions FIRST before any animation changes
