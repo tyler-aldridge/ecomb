@@ -412,6 +412,9 @@ func spawn_random_note():
 	if color_rect:
 		color_rect.color = Color.WHITE
 
+	# Prevent note from becoming invisible prematurely (default is 1.2, we need higher)
+	note.despawn_progress = 2.0
+
 	active_notes.append(note)
 
 func _input(event):
