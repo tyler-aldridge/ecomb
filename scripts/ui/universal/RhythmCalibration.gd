@@ -159,7 +159,7 @@ func setup_ui():
 	calibration_slider.step = 1.0
 	calibration_slider.value = GameManager.get_setting("rhythm_timing_offset", 0)
 	calibration_slider.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	calibration_slider.custom_minimum_size = Vector2(100, 50)
+	calibration_slider.custom_minimum_size = Vector2(1000, 50)
 	calibration_slider.editable = true
 	calibration_slider.scrollable = true
 	calibration_slider.focus_mode = Control.FOCUS_CLICK
@@ -315,6 +315,10 @@ func _start_conductor():
 	"""Start conductor after fade completes."""
 	setup_conductor()
 	conductor_started = true
+	# Spawn first note immediately so player doesn't wait
+	await get_tree().create_timer(0.5).timeout
+	if conductor and conductor_started:
+		spawn_random_note()
 
 func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
