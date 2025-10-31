@@ -31,7 +31,7 @@ var settings = {
 	"master_volume": 85,
 	"music_volume": 75,
 	"sound_volume": 65,
-	"text_volume": 55,
+	"text_volume": 45,
 	"rhythm_timing_offset": 0,  # For audio latency compensation (milliseconds, positive = notes spawn later/arrive later)
 	"fullscreen": false,
 	"show_fps": false,

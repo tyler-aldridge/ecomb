@@ -107,7 +107,7 @@ func _on_reset_pressed():
 	GameManager.set_setting("master_volume", 85)
 	GameManager.set_setting("music_volume", 75)
 	GameManager.set_setting("sound_volume", 65)
-	GameManager.set_setting("text_volume", 55)
+	GameManager.set_setting("text_volume", 45)
 	GameManager.set_setting("difficulty", "gymbro")
 	GameManager.set_setting("fullscreen", false)
 	GameManager.set_setting("show_fps", false)

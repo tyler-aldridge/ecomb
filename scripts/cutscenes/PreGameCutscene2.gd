@@ -17,7 +17,7 @@ func _ready():
 		"You enter the legendary Muscle Beach Gym. Bronze gods flex in the California sun while admirers gather to witness greatness.",
 		"Through the haze of tanning oil and testosterone, a massive figure approaches from behind the gym equipment.",
 		"\"Ayo look, fresh meat!\"\n\nA voice cuts through the sound of clinking iron and impressed gasps.",
-		"The gym's head trainer steps forward, muscles glistening with earned respect. Time for your first flex-off!",
+		"The gym's head trainer steps forward, muscles glistening with earned respect. Time for your first flex off!",
 		"\"On this beach, we settle everything through the ancient art of synchronized flexing. Miss the beat, lose your rep.\"",
 		"The crowd gathers. This is serious business. Prepare yourself!"
 	]

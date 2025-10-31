@@ -543,6 +543,7 @@ func spawn_note_interpolation(note_data: Dictionary):
 	var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_type]["scene"]
 	var note = note_scene.instantiate()
 	note.z_index = 50
+	note.modulate.a = 0.0  # Start invisible, will fade in during spawn
 	add_child(note)
 
 	# Read note height from NoteTemplate
@@ -558,6 +559,10 @@ func spawn_note_interpolation(note_data: Dictionary):
 	# Setup note with position interpolation (NEW SYSTEM)
 	note.setup_interpolation(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_BEATS)
 	active_notes.append(note)
+
+	# Fade in note over 0.2 seconds
+	var fade_tween = create_tween()
+	fade_tween.tween_property(note, "modulate:a", 1.0, 0.2)
 
 
 func handle_trigger(trigger_name: String):
@@ -626,6 +631,10 @@ func fade_to_title():
 
 func _show_battle_results_after_fade(succeeded: bool, results_copy: Dictionary, br: Control):
 	"""Callback after fade to black - show results or go to title."""
+	# Hide fade overlay so battle results are visible
+	if is_instance_valid(fade_overlay):
+		fade_overlay.visible = false
+
 	if succeeded and is_instance_valid(br):
 		br.show_battle_results(results_copy)
 	elif is_instance_valid(self):
@@ -665,35 +674,43 @@ func check_automatic_misses():
 	# Never modify an array while iterating over it!
 	var notes_to_remove = []
 
-	# Hitzone: Y=650, Height=200, Bottom=850
-	# Trigger miss when NOTE TOP fully passes hitzone bottom
-	# This ensures note is completely out of hitzone before missing
-	var hitzone_bottom = 850.0
+	# Screen height is 1080px
+	# Trigger miss when note BOTTOM fully exits screen bottom
+	var screen_bottom = 1080.0
 
 	for note in active_notes:
 		if is_instance_valid(note):
-			# Check if TOP of note (note.position.y) has passed hitzone bottom
-			# This means entire note is below the hitzone
-			if note.position.y > hitzone_bottom:
+			# Get note height dynamically
+			var note_height = BattleManager.get_note_height(note)
+			# Calculate note's bottom edge
+			var note_bottom = note.position.y + note_height
+
+			# Check if BOTTOM of note has fully passed screen bottom
+			# This ensures note is completely off-screen before missing
+			if note_bottom > screen_bottom:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration
 	for note in notes_to_remove:
 		if is_instance_valid(note):
-			# Get note's actual height dynamically using universal helper
+			# Get note's actual height dynamically
 			var note_height = BattleManager.get_note_height(note)
 
-			# Calculate effect position at note's center (dynamic for any note size)
+			# Calculate effect position at note's center
 			var effect_pos = note.position + Vector2(100, note_height / 2.0)
 
-			# Show explosion and feedback
+			# Clamp effect position to screen bounds (bottom edge)
+			# This ensures shatter animation is visible even if note is off-screen
+			effect_pos.y = clamp(effect_pos.y, 0, screen_bottom - 50)
+
+			# Show explosion and feedback (NO DELAY)
 			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 
 			# Process miss (updates score, groove, etc.)
 			process_miss()
 
-			# Create shatter effect (same as input misses)
+			# Create shatter effect (same as input misses) - NO DELAY
 			BattleManager.create_miss_fade_tween(note)
 
 			# Remove from active notes

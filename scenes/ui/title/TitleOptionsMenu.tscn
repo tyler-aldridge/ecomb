@@ -222,7 +222,7 @@ theme_override_icons/grabber = ExtResource("3_glr2s")
 theme_override_icons/grabber_highlight = ExtResource("3_glr2s")
 theme_override_styles/slider = SubResource("StyleBoxFlat_glr2s")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_f2l25")
-value = 55.0
+value = 45.0
 
 [node name="DifficultyBox" type="HBoxContainer" parent="OptionsContainer"]
 custom_minimum_size = Vector2(150, 50)
