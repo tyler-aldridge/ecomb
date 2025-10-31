@@ -357,20 +357,9 @@ func fade_from_black():
 
 func setup_hit_zone_borders():
 	"""Add white borders to all hit zones using universal BattleManager constants."""
-	for i in range(hit_zones.size()):
-		var hit_zone = hit_zones[i]
-		if is_instance_valid(hit_zone):
-			hit_zone.color = Color(1, 1, 1, 0)
-
-			var border = Line2D.new()
-			border.width = BattleManager.HITZONE_BORDER_WIDTH
-			border.default_color = BattleManager.HITZONE_BORDER_COLOR
-			border.add_point(Vector2(0, 0))
-			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, 0))
-			border.add_point(Vector2(BattleManager.HITZONE_HEIGHT, BattleManager.HITZONE_HEIGHT))
-			border.add_point(Vector2(0, BattleManager.HITZONE_HEIGHT))
-			border.add_point(Vector2(0, 0))
-			hit_zone.add_child(border)
+	# Hit zones are already created by BattleManager with borders
+	# This function is now deprecated - borders are handled in BattleManager
+	pass
 
 func prepare_notes():
 	"""Prepare notes for position interpolation spawning (resolve random lanes)."""

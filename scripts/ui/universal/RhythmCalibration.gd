@@ -44,9 +44,9 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 340.0  # Shifted up 50px (was 390)
-const HITZONE_BOTTOM = 540.0  # Bottom of hitzone (340 + 200)
-const DESPAWN_Y = 590.0  # Start fading when note top is 50px below hitzone
+const HITZONE_Y = 240.0  # Shifted up to avoid UI overlap
+const HITZONE_BOTTOM = 440.0  # Bottom of hitzone (240 + 200)
+const DESPAWN_Y = 490.0  # Start fading when note top is 50px below hitzone
 var bpm: float = 75.0  # Reduced from 85 for better UX
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
@@ -131,7 +131,7 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container (properly centered using anchors, shifted up 50px to y=700)
+	# UI Container (properly centered using anchors, positioned below hitzone)
 	ui_container = VBoxContainer.new()
 	ui_container.anchor_left = 0.5
 	ui_container.anchor_right = 0.5
@@ -139,11 +139,11 @@ func setup_ui():
 	ui_container.anchor_bottom = 0.0
 	ui_container.offset_left = -750  # Half of 1500px width
 	ui_container.offset_right = 750   # Half of 1500px width
-	ui_container.offset_top = 700     # Shifted up 50px (was 750)
-	ui_container.offset_bottom = 700 + 400  # Enough height for all elements
+	ui_container.offset_top = 550     # Below hitzone (240 + 200 + 110px gap)
+	ui_container.offset_bottom = 550 + 400  # Enough height for all elements
 	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	ui_container.grow_vertical = Control.GROW_DIRECTION_BOTH
-	ui_container.add_theme_constant_override("separation", 30)
+	ui_container.add_theme_constant_override("separation", 15)  # Reduced from 30 to 15
 	add_child(ui_container)
 
 	# Slider label (50px font, centered)
@@ -384,14 +384,19 @@ func spawn_random_note():
 
 	var lane = "2"  # Always center lane
 
-	# Apply slider offset to note spawn timing
-	# Slider value is in milliseconds, convert to beats
-	var offset_ms = calibration_slider.value
-	var offset_seconds = offset_ms / 1000.0
-	var offset_beats = offset_seconds / conductor.sec_per_beat * conductor.subdivision
+	# Calculate offset difference: slider value vs GameManager value
+	# Conductor already applies GameManager offset, so we only apply the DIFFERENCE
+	var gm_offset_ms = GameManager.get_setting("rhythm_timing_offset", 0)
+	var gm_offset_seconds = gm_offset_ms / 1000.0
+	var gm_offset_beats = gm_offset_seconds / conductor.sec_per_beat * conductor.subdivision
 
-	# Add offset to note beat - positive offset means note arrives later
-	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS + offset_beats
+	var slider_offset_ms = calibration_slider.value
+	var slider_offset_seconds = slider_offset_ms / 1000.0
+	var slider_offset_beats = slider_offset_seconds / conductor.sec_per_beat * conductor.subdivision
+
+	# Apply only the difference to avoid double-application
+	var offset_diff_beats = slider_offset_beats - gm_offset_beats
+	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS + offset_diff_beats
 
 	# Load quarter note scene
 	var note_scene = BattleManager.NOTE_TYPE_CONFIG["quarter"]["scene"]
