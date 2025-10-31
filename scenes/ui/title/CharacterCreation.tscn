@@ -1,7 +1,7 @@
 [gd_scene load_steps=13 format=3 uid="uid://d0rti8do8rhgl"]
 
 [ext_resource type="Script" uid="uid://co75rxqi8oa51" path="res://scripts/ui/title/CharacterCreation.gd" id="1_cbx6h"]
-[ext_resource type="Texture2D" uid="uid://7mjvc5l1r2sf" path="res://assets/interface/ui/panel-gradient-3.png" id="2_l5yrd"]
+[ext_resource type="Texture2D" uid="uid://dylllg1j0ew1t" path="res://assets/interface/ui/panel-gradient-5.png" id="2_l5yrd"]
 [ext_resource type="Texture2D" uid="uid://cfvlcvrc6ylsq" path="res://assets/characters/muscle_man/RipJackson_idel2size.png" id="3_iwtsb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kd0gt"]
@@ -106,7 +106,7 @@ offset_right = 571.5
 offset_bottom = 372.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(1, 1, 1, 0.36862746)
+color = Color(1, 1, 1, 0.5)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -128,6 +128,7 @@ layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 85
 text = "Gym Application"
 horizontal_alignment = 1
@@ -184,6 +185,7 @@ layout_mode = 2
 [node name="NameLabel" type="Label" parent="CenterContainer/VBoxContainer/InputSection/NameContainer"]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "Name:"
 horizontal_alignment = 2
 
@@ -201,6 +203,7 @@ layout_mode = 2
 [node name="FavoriteLabel" type="Label" parent="CenterContainer/VBoxContainer/InputSection/FavoriteContainer"]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "Favorite Thing:"
 horizontal_alignment = 2
 

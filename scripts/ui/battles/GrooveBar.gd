@@ -18,6 +18,7 @@ var is_full: bool = false
 var is_warning_active: bool = false
 var warning_color_tween: Tween = null
 var warning_scale_tween: Tween = null
+var tutorial_highlight_tween: Tween = null
 
 # Cache stylebox to avoid expensive get_theme_stylebox() every frame
 var cached_fill_style: StyleBoxFlat = null
@@ -164,3 +165,41 @@ func stop_low_groove_warning():
 func _exit_tree():
 	"""Ensure all infinite loop tweens are properly cleaned up when node is removed."""
 	stop_low_groove_warning()
+
+func set_groove(percentage: float):
+	"""Manually set groove percentage (for tutorials)."""
+	if not progress_bar:
+		return
+	progress_bar.value = percentage
+	current_percentage = percentage
+	update_bar_color(percentage)
+
+func set_tutorial_highlight(enabled: bool):
+	"""Enable/disable yellow flashing border for tutorial."""
+	if not cached_fill_style:
+		return
+
+	if enabled:
+		# Set border to 10px and start yellow flashing
+		cached_fill_style.border_width_left = 10
+		cached_fill_style.border_width_top = 10
+		cached_fill_style.border_width_right = 10
+		cached_fill_style.border_width_bottom = 10
+
+		# Create flashing yellow animation (large number of loops to avoid infinite loop errors)
+		tutorial_highlight_tween = create_tween()
+		tutorial_highlight_tween.set_loops(1000)
+		tutorial_highlight_tween.tween_property(cached_fill_style, "border_color", Color(1, 1, 0, 0.3), 0.5).set_ease(Tween.EASE_IN_OUT)
+		tutorial_highlight_tween.tween_property(cached_fill_style, "border_color", Color(1, 1, 0, 1.0), 0.5).set_ease(Tween.EASE_IN_OUT)
+	else:
+		# Stop the flashing animation
+		if tutorial_highlight_tween:
+			tutorial_highlight_tween.kill()
+			tutorial_highlight_tween = null
+
+		# Reset border to default
+		cached_fill_style.border_width_left = 5
+		cached_fill_style.border_width_top = 5
+		cached_fill_style.border_width_right = 5
+		cached_fill_style.border_width_bottom = 5
+		cached_fill_style.border_color = Color(1, 1, 1, 1)

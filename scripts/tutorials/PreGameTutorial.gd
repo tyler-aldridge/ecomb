@@ -1,20 +1,21 @@
-extends Control
+extends Node2D
 
 ## ============================================================================
 ## PRE-GAME TUTORIAL
 ## ============================================================================
 ## Step-by-step tutorial explaining game mechanics with visual highlights.
-## First-time player tutorial before entering the main game.
+## Uses REAL battle UI components (GrooveBar, player sprite, hit zones) with
+## centered DialogBox displays (rainbow border, 48px font).
 ##
 ## Steps:
 ## 1. Groove Bar Explanation (yellow border around groove bar)
 ## 2. XP System Explanation (yellow border around player sprite)
 ## 3. Hit Zones Explanation (yellow indicators on hit zones)
-## 4. Combo System (visual demonstration with fake notes)
+## 4. Combo System (visual demonstration)
 ##
 ## Each step has:
 ## - Yellow flashing border around relevant UI element
-## - Centered typewriter text explanation
+## - Centered DialogBox with rainbow border
 ## - 5 second auto-advance or player input to skip
 ## ============================================================================
 
@@ -22,217 +23,264 @@ extends Control
 @export var next_scene_path: String = "res://scenes/ui/universal/RhythmCalibration.tscn"
 @export var fade_duration: float = 3.0
 
-# UI elements
-var background: ColorRect
+# Scene references
+@onready var player_sprite = $TutorialUI/Player
+
+# UI elements (created dynamically like PreGameBattle)
+var ui_layer: CanvasLayer
 var groove_bar: Control
-var player_sprite: AnimatedSprite2D
+var combo_display: Control
+var xp_gain_display: Control
 var hit_zones: Array = []
-var typewriter: TypewriterText
-var fade_overlay: ColorRect
 
 # Tutorial borders
 var current_border: Control
 var border_tween: Tween
+var hit_zone_indicators: Array = []  # Track hit zone indicators for cleanup
 
 # State
 var current_step: int = 0
+var current_message_index: int = 0
 var is_transitioning: bool = false
+var auto_advance_timer: SceneTreeTimer = null
+var xp_simulation_active: bool = false  # Track if XP simulation should continue
+var note_spawning_active: bool = false  # Track if note spawning should continue
 
 # Tutorial steps data
 var tutorial_steps = [
 	{
-		"title": "THE GROOVE BAR",
 		"messages": [
-			"This shows your rhythm consistency.",
+			"The groove bar on the top shows your rhythm consistency and acts like your health bar.",
 			"Perfect timing fills the groove bar. Miss too many beats and it empties.",
-			"If it hits zero, you lose the battle!"
+			"Don't let it get to zero, or you lose the battle!"
 		],
 		"highlight": "groove_bar"
 	},
 	{
-		"title": "XP & PROGRESSION",
 		"messages": [
 			"Your XP gains will show here over your character.",
-			"Perfect hits = Maximum XP, Good hits = Decent XP, Okay hits = Some XP, Misses = Zero XP",
+			"Perfect hits give maximum XP, good hits give decent XP, okay hits give some XP, and misses give no XP.",
 			"Every battle has a maximum XP you can gain. The better your timing, the better your gains!"
 		],
-		"highlight": "player_sprite"
+		"highlight": "player_sprite",
+		"simulate": "xp_gains"
 	},
 	{
-		"title": "HIT ZONES",
 		"messages": [
-			"These are the note hit zones. Hit 1, 2, or 3 on your keyboard when notes reach the zone in time with the beat!",
-			"Perfect hits will line up exactly or dead center with these areas.",
+			"These are the note hit zones. Press 1, 2, or 3 on your keyboard when notes reach the zone in time with the beat!",
+			"Perfect hits will line up exactly on center with these areas.",
 			"Move to the groove of the song and you'll get some great gains!"
 		],
-		"highlight": "hit_zones"
+		"highlight": "hit_zones",
+		"simulate": "hit_zone_notes"
 	},
 	{
-		"title": "COMBO SYSTEM",
 		"messages": [
 			"Chain perfect hits for bonus XP! The longer your combos, the more XP rewards you'll receive.",
 			"Break the combo, and you're back to square one. Master the rhythm, master the rewards!",
-			"Now let's take a second to calibrate your system with the rhythm of the game."
+			"Now let's take a second to calibrate your system with the rhythm of the game..."
 		],
-		"highlight": "none"
+		"highlight": "none",
+		"simulate": "combo"
 	}
 ]
 
 func _ready():
-	setup_ui()
-	fade_from_black()
+	# Set background to pure black
+	var background = $TutorialUI/Background
+	if background and background is ColorRect:
+		background.color = Color.BLACK
+		background.visible = true
 
-func setup_ui():
-	"""Create the tutorial UI elements."""
-	# Black background
-	background = ColorRect.new()
-	background.color = Color.BLACK
-	background.size = get_viewport().get_visible_rect().size
-	background.position = Vector2.ZERO
-	add_child(background)
+	# Setup battle UI components
+	# Router handles scene fade, so we start directly
+	setup_battle_ui()
 
-	# Create groove bar (simplified version)
-	groove_bar = create_mock_groove_bar()
-	add_child(groove_bar)
+	# Wait for Router fade-in to complete before showing dialog
+	# Router fade is 3 seconds, reduced buffer
+	await get_tree().create_timer(2.0).timeout
 
-	# Create player sprite placeholder
-	player_sprite = create_mock_player_sprite()
-	add_child(player_sprite)
+	# Start first tutorial step
+	_start_first_step()
 
-	# Create hit zones
-	hit_zones = create_mock_hit_zones()
+func setup_battle_ui():
+	"""Create battle UI using REAL components (same as PreGameBattle)."""
+	# Start player sprite invisible for smooth fade-in
+	player_sprite.modulate.a = 0.0
+
+	# Create UI layer for proper screen-space rendering
+	ui_layer = CanvasLayer.new()
+	ui_layer.layer = 100
+	add_child(ui_layer)
+
+	# REAL Groove bar (full width at top)
+	var groove_bar_scene = preload("res://scenes/ui/battles/GrooveBar.tscn")
+	groove_bar = groove_bar_scene.instantiate()
+
+	# Start invisible for smooth fade-in with scene
+	groove_bar.modulate.a = 0.0
+
+	ui_layer.add_child(groove_bar)
+
+	# Fade in the groove bar (longer duration, no delay)
+	var groove_fade = create_tween()
+	groove_fade.tween_property(groove_bar, "modulate:a", 1.0, 1.5).set_ease(Tween.EASE_OUT).set_delay(0.5)
+
+	# Fade in the player sprite (longer duration, no delay)
+	var sprite_fade = create_tween()
+	sprite_fade.tween_property(player_sprite, "modulate:a", 1.0, 1.5).set_ease(Tween.EASE_OUT).set_delay(0.5)
+
+	# Set groove bar to tutorial starting value (50%)
+	if groove_bar.has_method("set_groove"):
+		groove_bar.set_groove(50.0)
+
+	# Universal character displays (combo below groove bar, XP on player, hit zones)
+	# Uses BattleManager's universal setup for consistent positioning
+	var displays = BattleManager.setup_battle_character_displays(player_sprite, null, ui_layer)
+	combo_display = displays.get("combo_display")
+	xp_gain_display = displays.get("xp_display")
+	hit_zones = displays.get("hitzones", [])
+
+	# Fade in hit zones (longer duration, visible fade)
 	for zone in hit_zones:
-		add_child(zone)
-
-	# Create typewriter text
-	typewriter = TypewriterText.new()
-	typewriter.size = get_viewport().get_visible_rect().size
-	typewriter.auto_advance_delay = 5.0  # 5 seconds for tutorial
-	add_child(typewriter)
-
-	# Connect signals
-	typewriter.advance_requested.connect(_on_advance_requested)
-
-	# Create fade overlay
-	fade_overlay = ColorRect.new()
-	fade_overlay.color = Color.BLACK
-	fade_overlay.size = get_viewport().get_visible_rect().size
-	fade_overlay.position = Vector2.ZERO
-	fade_overlay.z_index = 100
-	add_child(fade_overlay)
-
-func create_mock_groove_bar() -> Control:
-	"""Create simplified groove bar for tutorial."""
-	var container = Control.new()
-	container.position = Vector2(0, 20)
-	container.size = Vector2(1920, 60)
-
-	var bar_bg = ColorRect.new()
-	bar_bg.color = Color(0.2, 0.2, 0.2)
-	bar_bg.size = Vector2(1200, 40)
-	bar_bg.position = Vector2(360, 10)
-	container.add_child(bar_bg)
-
-	var bar_fill = ColorRect.new()
-	bar_fill.color = Color.CYAN
-	bar_fill.size = Vector2(600, 40)  # 50% filled
-	bar_fill.position = Vector2(360, 10)
-	container.add_child(bar_fill)
-
-	return container
-
-func create_mock_player_sprite() -> AnimatedSprite2D:
-	"""Create player sprite placeholder."""
-	var sprite = AnimatedSprite2D.new()
-	sprite.position = Vector2(300, 800)
-	# TODO: Load actual player sprite
-	return sprite
-
-func create_mock_hit_zones() -> Array:
-	"""Create hit zones matching Lesson1Battle layout."""
-	var zones = []
-
-	# Use same positions as BattleManager.HIT_ZONE_POSITIONS
-	var lane_positions = [
-		Vector2(610.0, 650.0),   # Lane 1
-		Vector2(860.0, 650.0),   # Lane 2
-		Vector2(1110.0, 650.0)   # Lane 3
-	]
-
-	for i in range(3):
-		var zone = ColorRect.new()
-		zone.color = Color(1, 1, 1, 0.1)  # Subtle white
-		zone.size = Vector2(200, 200)  # BattleManager.HITZONE_HEIGHT
-		zone.position = lane_positions[i]
-
-		# Add border
-		var border = Line2D.new()
-		border.width = 3.0
-		border.default_color = Color.WHITE
-		border.add_point(Vector2(0, 0))
-		border.add_point(Vector2(200, 0))
-		border.add_point(Vector2(200, 200))
-		border.add_point(Vector2(0, 200))
-		border.add_point(Vector2(0, 0))
-		zone.add_child(border)
-
-		zones.append(zone)
-
-	return zones
-
-func fade_from_black():
-	"""Fade in from black overlay."""
-	fade_overlay.modulate.a = 1.0
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 0.0, fade_duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_callback(_start_first_step)
+		if zone and is_instance_valid(zone):
+			zone.modulate.a = 0.0
+			var zone_fade = create_tween()
+			zone_fade.tween_property(zone, "modulate:a", 1.0, 1.5).set_ease(Tween.EASE_OUT).set_delay(0.5)
 
 func _start_first_step():
 	"""Start the first tutorial step."""
 	show_tutorial_step(0)
 
 func show_tutorial_step(step_index: int):
-	"""Show a tutorial step with highlighted element and text."""
+	"""Show a tutorial step with highlighted element and centered dialog."""
 	if step_index >= tutorial_steps.size():
 		_transition_to_next_scene()
 		return
 
+	current_step = step_index
+	current_message_index = 0
 	var step = tutorial_steps[step_index]
 
-	# Remove previous border
+	# Stop any active simulations when changing steps
+	xp_simulation_active = false
+	# Note: note_spawning_active continues from hit zone to combo section
+
+	# Hide XP gain display when not on XP step (step 1)
+	if xp_gain_display:
+		xp_gain_display.visible = (step_index == 1)
+
+	# Remove previous highlighting
 	if current_border:
 		current_border.queue_free()
 		current_border = null
 
-	# Create flashing border for highlighted element
+	# Remove hit zone indicators from previous step
+	if hit_zone_indicators.size() > 0:
+		BattleManager.stop_hit_zone_indicators(hit_zone_indicators, self)
+		hit_zone_indicators.clear()
+
+	# Disable groove bar highlighting from previous steps
+	if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
+		groove_bar.set_tutorial_highlight(false)
+
+	# Enable highlighting for current element
 	match step["highlight"]:
 		"groove_bar":
-			current_border = create_flashing_border(groove_bar.get_rect(), 10)
+			# Use groove bar's built-in border highlighting
+			if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
+				groove_bar.set_tutorial_highlight(true)
 		"player_sprite":
-			var rect = Rect2(player_sprite.position - Vector2(100, 100), Vector2(200, 200))
-			current_border = create_flashing_border(rect, 100)
+			# Create yellow border around player sprite extending vertically
+			# Top: 175px above sprite (reduced by 25px), Bottom: raised 25px total from screen
+			var sprite_top = player_sprite.global_position.y - 175  # Reduced from -200
+			var sprite_bottom = 1055  # Raised 25px total from screen height (1080)
+			var border_height = sprite_bottom - sprite_top
+			var rect = Rect2(
+				player_sprite.global_position.x - 125,  # Center horizontally around sprite
+				sprite_top,
+				250,  # Width
+				border_height
+			)
+			current_border = create_flashing_border(rect, 20)
 		"hit_zones":
-			# Use existing yellow indicator system
-			show_hit_zone_indicators()
+			# Create keyboard indicators (1, 2, 3) with yellow flashing borders
+			hit_zone_indicators = BattleManager.create_hit_zone_indicators(ui_layer, self, ["1", "2", "3"])
+		"none":
+			# Combo section - create flashing border around combo display
+			# 50px left/right padding, 25px top/bottom padding
+			if step.has("simulate") and step["simulate"] == "combo":
+				if combo_display:
+					var combo_pos = combo_display.global_position
+					var combo_size = combo_display.size
+					# Manually apply different padding: 50px horizontal, 25px vertical
+					var rect = Rect2(
+						combo_pos.x - 50,  # Left padding
+						combo_pos.y - 25,  # Top padding
+						combo_size.x + 100,  # Width + left/right padding
+						combo_size.y + 50   # Height + top/bottom padding
+					)
+					current_border = create_flashing_border(rect, 0)  # No additional padding
 
 	if current_border:
 		add_child(current_border)
 
-	# Show title and messages
-	var full_text = step["title"] + "\n\n" + "\n".join(step["messages"])
-	typewriter.set_text(full_text)
+	# Show first message
+	show_message(step, 0)
+
+func show_message(step: Dictionary, message_index: int):
+	"""Show a single message from the current step."""
+	if message_index >= step["messages"].size():
+		# Move to next step
+		current_step += 1
+		if current_step < tutorial_steps.size():
+			show_tutorial_step(current_step)
+		else:
+			_transition_to_next_scene()
+		return
+
+	current_message_index = message_index
+	var message = step["messages"][message_index]
+
+	# Run simulation IMMEDIATELY for first message of certain steps
+	if message_index == 0 and step.has("simulate"):
+		match step["simulate"]:
+			"xp_gains":
+				_simulate_xp_gains()
+			"hit_zone_notes":
+				_simulate_hit_zone_notes()
+			"combo":
+				_simulate_combo()
+
+	# Show centered dialog with rainbow border (48px font, auto-sized)
+	# Using "center" character positions dialog in center of screen
+	# AWAIT the typing to complete, then pause 3 seconds
+	await DialogManager.show_dialog(message, "center", 0.0)
+
+	# Pause for 3.5 seconds after typing finishes before advancing to next message
+	auto_advance_timer = get_tree().create_timer(3.5)
+	await auto_advance_timer.timeout
+
+	# Only advance if we're still on the same message (not manually advanced)
+	if not is_transitioning and current_message_index == message_index:
+		_on_advance_requested()
+	auto_advance_timer = null
 
 func create_flashing_border(rect: Rect2, padding: float) -> Control:
 	"""Create a flashing yellow border around a UI element."""
 	var container = Control.new()
 	container.position = rect.position - Vector2(padding, padding)
 	container.size = rect.size + Vector2(padding * 2, padding * 2)
+	container.z_index = 900
 
 	# Create border lines
 	var border = Line2D.new()
 	border.width = 10.0
 	border.default_color = Color.YELLOW
 	border.z_index = 90
+
+	# Start invisible for fade-in
+	border.modulate.a = 0.0
 
 	# Border points
 	var w = container.size.x
@@ -245,53 +293,236 @@ func create_flashing_border(rect: Rect2, padding: float) -> Control:
 
 	container.add_child(border)
 
-	# Flashing animation
+	# Fade in, then flash
+	var fade_tween = create_tween()
+	fade_tween.tween_property(border, "modulate:a", 1.0, 0.3).set_ease(Tween.EASE_OUT)
+
+	# Flashing animation (large number of loops instead of infinite to avoid errors)
 	var tween = create_tween()
-	tween.set_loops()
+	tween.set_loops(1000)
 	tween.tween_property(border, "modulate:a", 0.3, 0.5).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(border, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_IN_OUT)
 
 	return container
 
-func show_hit_zone_indicators():
-	"""Show yellow indicators on hit zones using BattleManager system."""
-	# Use existing BattleManager.create_hit_zone_indicators if available
-	# For now, create simple indicators
-	for i in range(hit_zones.size()):
-		var zone = hit_zones[i]
-		var indicator = create_flashing_border(Rect2(zone.position, zone.size), 10)
-		add_child(indicator)
-
-func _on_advance_requested():
-	"""Handle advance to next tutorial step."""
+func _input(event):
+	"""Handle player input to skip typing and advance tutorial."""
 	if is_transitioning:
 		return
 
-	current_step += 1
-
-	if current_step < tutorial_steps.size():
-		# Next tutorial step
-		show_tutorial_step(current_step)
-	else:
-		# Tutorial complete, go to calibration
+	# ESC key skips entire tutorial
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		# Stop dialog typing immediately
+		get_tree().root.set_meta("skip_dialog_typing", true)
 		_transition_to_next_scene()
+		return
+
+	# Allow click or spacebar to skip typing and advance to next message
+	if event is InputEventMouseButton and event.pressed:
+		# Set skip flag for DialogManager to skip typing
+		get_tree().root.set_meta("skip_dialog_typing", true)
+		# Advance to next message
+		_on_advance_requested()
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
+		# Set skip flag for DialogManager to skip typing
+		get_tree().root.set_meta("skip_dialog_typing", true)
+		# Advance to next message
+		_on_advance_requested()
+
+func _on_advance_requested():
+	"""Handle advance to next message or step."""
+	if is_transitioning:
+		return
+
+	# Cancel auto-advance timer if manually advancing
+	if auto_advance_timer:
+		# Timer is already running, will be cancelled naturally
+		pass
+
+	var step = tutorial_steps[current_step]
+	current_message_index += 1
+
+	if current_message_index < step["messages"].size():
+		# Show next message in current step
+		show_message(step, current_message_index)
+	else:
+		# Move to next step
+		current_step += 1
+		if current_step < tutorial_steps.size():
+			show_tutorial_step(current_step)
+		else:
+			_transition_to_next_scene()
 
 func _transition_to_next_scene():
-	"""Fade to black and load next scene."""
+	"""Fade to black and load next scene using Router."""
 	is_transitioning = true
 
-	# Remove borders
+	# Stop all active simulations
+	xp_simulation_active = false
+	note_spawning_active = false
+
+	# Remove borders and highlighting
 	if current_border:
 		current_border.queue_free()
 
-	# Fade to black
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 1.0, fade_duration).set_ease(Tween.EASE_IN)
-	tween.tween_callback(_load_next_scene)
+	# Remove hit zone indicators
+	if hit_zone_indicators.size() > 0:
+		BattleManager.stop_hit_zone_indicators(hit_zone_indicators, self)
+		hit_zone_indicators.clear()
+
+	# Disable groove bar highlighting
+	if groove_bar and groove_bar.has_method("set_tutorial_highlight"):
+		groove_bar.set_tutorial_highlight(false)
+
+	# Use Router for scene transition with fade
+	if next_scene_path != "":
+		Router.goto_scene_with_fade(next_scene_path, fade_duration)
+	else:
+		push_error("PreGameTutorial: next_scene_path not set!")
 
 func _load_next_scene():
-	"""Load the next scene."""
-	if next_scene_path != "":
-		get_tree().change_scene_to_file(next_scene_path)
-	else:
-		push_error("TutorialExplanationScene: next_scene_path not set!")
+	"""Deprecated - now using Router.goto_scene_with_fade()."""
+	pass
+
+# ============================================================================
+# TUTORIAL SIMULATIONS
+# ============================================================================
+
+func _simulate_xp_gains():
+	"""Simulate XP gain feedback over player sprite continuously."""
+	# Enable continuous XP simulation
+	xp_simulation_active = true
+
+	# XP quality types to cycle through
+	var xp_types = [
+		{"quality": "PERFECT", "xp": 10, "multiplier": 5.0},
+		{"quality": "GOOD", "xp": 7, "multiplier": 3.0},
+		{"quality": "OKAY", "xp": 4, "multiplier": 1.0}
+	]
+	var type_index = 0
+
+	# Initial delay before starting
+	await get_tree().create_timer(0.5).timeout
+
+	# Loop continuously while on XP step
+	while xp_simulation_active:
+		# Check flag before emitting (in case we just stopped)
+		if not xp_simulation_active:
+			break
+
+		var xp_data = xp_types[type_index]
+		BattleManager.hit_registered.emit(xp_data["quality"], xp_data["xp"], xp_data["multiplier"])
+
+		# Move to next XP type (cycle through PERFECT → GOOD → OKAY → repeat)
+		type_index = (type_index + 1) % xp_types.size()
+
+		# Wait before next XP gain
+		await get_tree().create_timer(1.2).timeout
+
+func _simulate_hit_zone_notes():
+	"""Start continuous note spawning - hides combo display."""
+	# Hide combo display during this section
+	if combo_display:
+		combo_display.visible = false
+
+	# Initialize BattleManager for combo/groove tracking
+	BattleManager.start_battle({
+		"battle_id": "tutorial_simulation",
+		"battle_level": 1,
+		"battle_type": "tutorial",
+		"groove_start": 50.0,
+		"groove_miss_penalty": 0.0,
+		"max_strength": 100
+	})
+
+	# Start continuous note spawning
+	note_spawning_active = true
+	_spawn_notes_continuously()
+
+func _simulate_combo():
+	"""Show combo display - note spawning continues from previous section."""
+	# Show combo display for this section
+	await get_tree().create_timer(0.5).timeout
+	if combo_display:
+		combo_display.visible = true
+
+func _spawn_notes_continuously():
+	"""Continuously spawn notes in random lanes until stopped."""
+	while note_spawning_active:
+		# Pick random lane (0, 1, or 2) and convert to lane key
+		var lane_index = randi() % 3
+		var lane_key = str(lane_index + 1)
+
+		# Get hit zone position from BattleManager constants
+		var hit_zone_pos = BattleManager.HIT_ZONE_POSITIONS[lane_key]
+
+		# Half notes are 200x400 (width x height), Hit zones are 200x200
+		# For dead center: note center aligns with hit zone center
+		# Note center Y = note.position.y + 200 (half of 400px)
+		# Hit zone center Y = hit_zone_pos.y + 100 (half of 200px)
+		# So: note.position.y + 200 = hit_zone_pos.y + 100
+		# Therefore: note.position.y = hit_zone_pos.y - 100
+		# This means 100px extends above hit zone, 200px aligns, 100px extends below
+		var note_x = hit_zone_pos.x  # Align left edges (both 200px wide)
+		var note_target_y = hit_zone_pos.y - 100  # Center note on hit zone
+		var hitzone_center_y = hit_zone_pos.y + 100  # Hit zone center for effects
+		var note_center_x = hit_zone_pos.x + 100  # Note center X for effects
+
+		# Use the proper note scene from BattleManager
+		var note_scene = BattleManager.NOTE_TYPE_CONFIG["half"]["scene"]
+		var note = note_scene.instantiate()
+
+		# Get NoteTemplate to set color BEFORE adding to scene
+		if note.has_node("NoteTemplate"):
+			var template = note.get_node("NoteTemplate")
+			# Set CMY colors based on lane
+			match lane_key:
+				"1":
+					template.color = Color.CYAN
+				"2":
+					template.color = Color.MAGENTA
+				"3":
+					template.color = Color.YELLOW
+
+		# Position note off-screen above, aligned with hit zone
+		note.position = Vector2(note_x, -600)  # Start off-screen
+		note.z_index = 50  # Below dialogs (which are z_index 1000)
+		add_child(note)
+
+		# Animate note falling to perfect center (2.0s for smooth, slower fall)
+		var tween = create_tween()
+		tween.tween_property(note, "position:y", note_target_y, 2.0).set_ease(Tween.EASE_IN)
+
+		# After reaching center, show perfect feedback and explosion
+		# Note: Don't await inside the callback - let shatter happen asynchronously
+		tween.tween_callback(func():
+			var effect_pos = Vector2(note_center_x, hitzone_center_y)
+
+			# Register the hit with BattleManager (updates combo, groove)
+			BattleManager.register_hit("PERFECT")
+
+			# Keep combo display hidden during hit zone section
+			if current_step == 2 and combo_display:  # Step 2 is hit zones
+				combo_display.visible = false
+
+			# Show random feedback text
+			var feedback_text = BattleManager.get_random_feedback_text("PERFECT")
+			BattleManager.show_feedback_at_position(feedback_text, effect_pos, false, self, self)
+
+			# Perfect hit: rainbow explosion
+			BattleManager.explode_note_at_position(note, "rainbow", 5, effect_pos, self, self)
+
+			# Create shatter effect and free note asynchronously
+			_shatter_and_free_note(note, 120.0)
+		)
+
+		# Wait before spawning next note (1.2s for smooth flow without bunching)
+		await get_tree().create_timer(1.2).timeout
+
+func _shatter_and_free_note(note: Node, bpm: float) -> void:
+	"""Asynchronously shatter and free a note without blocking the spawn loop."""
+	var shatter_tween = BattleManager.create_fade_out_tween(note, bpm)
+	if shatter_tween:
+		await shatter_tween.finished
+	if is_instance_valid(note):
+		note.queue_free()

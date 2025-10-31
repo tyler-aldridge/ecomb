@@ -14,14 +14,17 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		current_dialog = null  # Clear reference immediately
 
 		# SUPER FAST fade out (0.1s) to minimize overlap
-		var fade_tween = create_tween()
-		fade_tween.tween_property(old_dialog, "modulate:a", 0.0, 0.1)
-		fade_tween.tween_callback(func():
+		var old_dialog_fade = create_tween()
+		old_dialog_fade.tween_property(old_dialog, "modulate:a", 0.0, 0.1)
+		old_dialog_fade.tween_callback(func():
 			if is_instance_valid(old_dialog):
 				old_dialog.queue_free()
 		)
 
 	current_dialog = dialog_box_scene.instantiate()
+
+	# Start invisible for fade-in
+	current_dialog.modulate.a = 0.0
 
 	# Set high z-index to appear above everything else
 	current_dialog.z_index = 1000
@@ -46,29 +49,26 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 		# Set the text
 		_set_text(text_node, text)
 
-		# Calculate desired width based on text length and character position
-		# Side dialogs (opponent/player) should be narrower to avoid blocking gameplay
-		var char_count = text.length()
-		var estimated_width = char_count * 15
-		var min_width = 300.0
-		var max_width = 600.0 if (_character == "opponent" or _character == "player") else get_viewport().get_visible_rect().size.x * 0.8
-		var desired_width = clamp(estimated_width + 60, min_width, max_width)
-
-		# Set the size of the main dialog container - let the children follow
-		current_dialog.size.x = desired_width
-
-		# Enable text wrapping for better readability
 		text_node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-		# Calculate height dynamically based on text length
-		# Estimate lines needed: char_count / chars_per_line
-		var chars_per_line = (desired_width - 100) / 12  # Rough estimate
-		var estimated_lines = ceil(float(char_count) / chars_per_line)
-		var line_height = 25  # Approximate height per line
-		var base_height = 60  # Padding
-		var calculated_height = base_height + (estimated_lines * line_height)
-		current_dialog.size.y = clamp(calculated_height, 80, 200)
-	
+		var char_count = text.length()
+		var desired_width: float
+
+		if _character == "center":
+			# Tutorial dialogs: DYNAMIC width with 1200px max
+			# Use font to measure actual text width, then clamp to range
+			# 48px font, estimate ~25px per char average
+			var estimated_width = char_count * 25
+			desired_width = clamp(estimated_width + 100, 500.0, 1200.0)
+		else:
+			# Side dialogs: dynamic width based on text length
+			var estimated_width = char_count * 15
+			desired_width = clamp(estimated_width + 60, 300.0, 600.0)
+
+		# Set the container width for wrapping
+		current_dialog.custom_minimum_size.x = desired_width
+		current_dialog.size.x = desired_width
+
 	# Wait for the dialog to process its new size
 	await get_tree().process_frame
 
@@ -106,20 +106,29 @@ func show_dialog(text: String, _character: String, _auto_close_time: float, _dia
 			top_y = 600.0 - current_dialog.size.y
 
 		dialog_pos = Vector2(center_x, top_y)
+	elif _character == "center":
+		# Center of screen (for tutorials), moved up 100px
+		var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
+		var center_y = (viewport_size.y - current_dialog.size.y) * 0.5 - 100
+		dialog_pos = Vector2(center_x, center_y)
 	else:
-		# Default: center at top
+		# Default: center horizontally at top
 		var center_x = (viewport_size.x - current_dialog.size.x) * 0.5
 		var top_margin = 300.0
 		dialog_pos = Vector2(center_x, top_margin)
 
 	current_dialog.position = dialog_pos
-	
+
 	# Reset anchors to ensure proper positioning
 	current_dialog.anchor_left = 0.0
 	current_dialog.anchor_right = 0.0
 	current_dialog.anchor_top = 0.0
 	current_dialog.anchor_bottom = 0.0
-	
+
+	# Fade in the dialog
+	var dialog_fade_in = create_tween()
+	dialog_fade_in.tween_property(current_dialog, "modulate:a", 1.0, 0.2).set_ease(Tween.EASE_OUT)
+
 	# Now animate the text typing
 	if text_node:
 		_set_text(text_node, "")
@@ -164,10 +173,30 @@ func _set_text(node: Node, value: String) -> void:
 		node.text = value
 
 func _type_text(node: Node, full_text: String) -> void:
+	# Clear skip flag
+	get_tree().root.set_meta("skip_dialog_typing", false)
+
+	# Get the DialogContainer to play audio
+	var dialog_container = null
+	if node and node.get_parent() and node.get_parent().has_method("play_character_tone"):
+		dialog_container = node.get_parent()
+
 	for i in range(full_text.length() + 1):
 		if not is_instance_valid(node):
 			return
+
+		# Check if skip was requested
+		if get_tree().root.get_meta("skip_dialog_typing", false):
+			_set_text(node, full_text)
+			return
+
 		_set_text(node, full_text.substr(0, i))
+
+		# Play audio for character (skip for first iteration when text is empty)
+		if i > 0 and dialog_container:
+			var is_last_char = (i >= full_text.length())
+			dialog_container.play_character_tone(is_last_char)
+
 		await get_tree().create_timer(0.02).timeout
 
 func _close_dialog_after_timer(dialog_ref: Control, expected_id: int):

@@ -12,6 +12,7 @@ class_name TypewriterText
 ## - Click to fast-forward typing
 ## - Click again to skip to next message instantly
 ## - Centered text in 1000px container with auto-wrapping
+## - Procedural audio tones (random notes, highest at end)
 ## ============================================================================
 
 signal typing_complete
@@ -21,11 +22,22 @@ signal advance_requested
 @export var text_content: String = ""
 @export var typing_speed: float = 0.03  # Seconds per character
 @export var auto_advance_delay: float = 3.0  # Seconds after typing completes
-@export var max_width: int = 1000
+@export var max_width: int = 1500  # Cutscene container width
+@export var font_size: int = 100  # Font size in pixels (100px for cutscenes)
+
+# Audio configuration
+@export var enable_audio: bool = true
+@export var min_frequency: float = 300.0  # Lowest random tone
+@export var max_frequency: float = 600.0  # Highest random tone
+@export var final_frequency: float = 800.0  # Final character tone
+@export var tone_duration: float = 0.05  # Duration of each beep
 
 # UI elements
 var label: Label
 var container: CenterContainer
+var audio_player: AudioStreamPlayer
+var audio_generator: AudioStreamGenerator
+var playback: AudioStreamGeneratorPlayback
 
 # State
 var current_char_index: int = 0
@@ -33,6 +45,7 @@ var is_typing: bool = false
 var typing_complete_flag: bool = false
 var auto_advance_timer: float = 0.0
 var full_text: String = ""
+var char_timer: float = 0.0
 
 func _ready():
 	# Create container for centering
@@ -50,10 +63,14 @@ func _ready():
 	label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	# Style the label (white pixel font)
-	label.add_theme_font_size_override("font_size", 32)
+	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Color.WHITE)
 
 	container.add_child(label)
+
+	# Setup audio generator for procedural tones
+	if enable_audio:
+		_setup_audio_generator()
 
 	# Set initial text
 	if text_content != "":
@@ -86,13 +103,16 @@ func _type_next_character(delta):
 		return
 
 	# Simple timing (not perfect but sufficient)
-	static var char_timer: float = 0.0
 	char_timer += delta
 
 	if char_timer >= typing_speed:
 		char_timer = 0.0
 		label.text += full_text[current_char_index]
 		current_char_index += 1
+
+		# Play audio tone for character
+		if enable_audio:
+			_play_character_tone()
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed:
@@ -121,3 +141,49 @@ func reset():
 	typing_complete_flag = false
 	auto_advance_timer = 0.0
 	full_text = ""
+
+func _setup_audio_generator():
+	"""Initialize procedural audio generator for typing sounds."""
+	# Create audio stream generator
+	audio_generator = AudioStreamGenerator.new()
+	audio_generator.mix_rate = 22050  # Low mix rate for efficiency
+	audio_generator.buffer_length = 0.1  # Short buffer for low latency
+
+	# Create audio player
+	audio_player = AudioStreamPlayer.new()
+	audio_player.stream = audio_generator
+	audio_player.bus = "SFX"
+	audio_player.volume_db = -10.0  # Lower volume by 10dB
+	add_child(audio_player)
+
+	# Start playback to get playback instance
+	audio_player.play()
+	playback = audio_player.get_stream_playback()
+
+func _play_character_tone():
+	"""Play a procedural tone for the current character."""
+	if not playback:
+		return
+
+	# Determine if this is the last character
+	var is_last_char = (current_char_index >= full_text.length())
+
+	# Choose frequency: random for all but last, highest for last
+	var frequency = final_frequency if is_last_char else randf_range(min_frequency, max_frequency)
+
+	# Generate tone samples
+	var sample_count = int(audio_generator.mix_rate * tone_duration)
+	var increment = frequency / audio_generator.mix_rate
+
+	for i in range(sample_count):
+		# Generate square wave sample (switches between -1 and 1)
+		var phase = i * increment
+		var sample = 1.0 if fmod(phase, 1.0) < 0.5 else -1.0
+
+		# Apply envelope (fade out to prevent clicks)
+		var envelope = 1.0
+		if i > sample_count * 0.7:
+			envelope = 1.0 - ((i - sample_count * 0.7) / (sample_count * 0.3))
+
+		# Push stereo frame
+		playback.push_frame(Vector2(sample * envelope * 0.3, sample * envelope * 0.3))
