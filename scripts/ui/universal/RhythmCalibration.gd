@@ -131,7 +131,7 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container (properly centered using anchors, positioned below hitzone)
+	# UI Container (positioned 50px from bottom of screen)
 	ui_container = VBoxContainer.new()
 	ui_container.anchor_left = 0.5
 	ui_container.anchor_right = 0.5
@@ -139,11 +139,11 @@ func setup_ui():
 	ui_container.anchor_bottom = 0.0
 	ui_container.offset_left = -750  # Half of 1500px width
 	ui_container.offset_right = 750   # Half of 1500px width
-	ui_container.offset_top = 550     # Below hitzone (240 + 200 + 110px gap)
-	ui_container.offset_bottom = 550 + 400  # Enough height for all elements
+	ui_container.offset_top = 630     # 1080 - 400 - 50 = 630 (container bottom 50px from screen bottom)
+	ui_container.offset_bottom = 1030  # Bottom at 1030 (50px from screen bottom at 1080)
 	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	ui_container.grow_vertical = Control.GROW_DIRECTION_BOTH
-	ui_container.add_theme_constant_override("separation", 15)  # Reduced from 30 to 15
+	ui_container.add_theme_constant_override("separation", 15)
 	add_child(ui_container)
 
 	# Slider label (50px font, centered)
@@ -199,12 +199,16 @@ func setup_ui():
 	instructions_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ui_container.add_child(instructions_label)
 
-	# Done button (centered, yellow border on hover, 50px font)
+	# Done button (centered, yellow border on hover, 50px font, white text)
 	done_button = Button.new()
 	done_button.text = "Done Calibrating"
 	done_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done_button.custom_minimum_size = Vector2(400, 80)
 	done_button.add_theme_font_size_override("font_size", 50)
+	done_button.add_theme_color_override("font_color", Color.WHITE)
+	done_button.add_theme_color_override("font_hover_color", Color.WHITE)
+	done_button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	done_button.add_theme_color_override("font_focus_color", Color.WHITE)
 	done_button.focus_mode = Control.FOCUS_ALL
 	done_button.mouse_filter = Control.MOUSE_FILTER_PASS
 
@@ -384,19 +388,13 @@ func spawn_random_note():
 
 	var lane = "2"  # Always center lane
 
-	# Calculate offset difference: slider value vs GameManager value
-	# Conductor already applies GameManager offset, so we only apply the DIFFERENCE
-	var gm_offset_ms = GameManager.get_setting("rhythm_timing_offset", 0)
-	var gm_offset_seconds = gm_offset_ms / 1000.0
-	var gm_offset_beats = gm_offset_seconds / conductor.sec_per_beat * conductor.subdivision
+	# Temporarily update GameManager offset to slider value for real-time preview
+	# This makes the conductor use the slider offset for timing calculations
+	var slider_offset_ms = int(calibration_slider.value)
+	GameManager.set_setting("rhythm_timing_offset", slider_offset_ms)
 
-	var slider_offset_ms = calibration_slider.value
-	var slider_offset_seconds = slider_offset_ms / 1000.0
-	var slider_offset_beats = slider_offset_seconds / conductor.sec_per_beat * conductor.subdivision
-
-	# Apply only the difference to avoid double-application
-	var offset_diff_beats = slider_offset_beats - gm_offset_beats
-	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS + offset_diff_beats
+	# Spawn note at standard position (conductor now uses slider offset)
+	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS
 
 	# Load quarter note scene
 	var note_scene = BattleManager.NOTE_TYPE_CONFIG["quarter"]["scene"]

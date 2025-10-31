@@ -254,7 +254,6 @@ func _ready():
 
 	# Create fade overlay
 	create_fade_overlay()
-	fade_from_black()
 
 	# Create effects layer
 	effects_layer = Node2D.new()
@@ -272,8 +271,11 @@ func _ready():
 
 	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
-	# Start with beat offset
-	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
+	# Fade from black and wait for it to complete
+	fade_from_black()
+	await get_tree().create_timer(BattleManager.FADE_FROM_BLACK_DURATION + 0.5).timeout  # Wait for fade + 0.5s buffer
+
+	# Start conductor after fade completes
 	conductor.play_with_beat_offset()
 
 func create_battle_ui():

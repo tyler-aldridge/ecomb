@@ -31,7 +31,7 @@ var conductor = null
 var is_active: bool = false
 
 # Screen bounds for despawn
-var despawn_progress: float = 1.2  # Despawn when 20% past target (configurable)
+var despawn_progress: float = 1.5  # Despawn when note reaches bottom of screen (50% past target)
 
 func setup_interpolation(p_lane: String, p_note_beat: float, p_note_type: String, p_conductor, p_spawn_y: float, p_target_y: float, p_beats_advance: float):
 	"""Initialize note with position interpolation movement.

@@ -43,12 +43,14 @@ func goto_scene_with_fade(path: String, fade_duration: float = 1.5) -> void:
 	# Fade to black
 	var tween = create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", 1.0, fade_duration).set_ease(Tween.EASE_IN)
-	tween.tween_callback(func():
-		# Change scene while black overlay is up
-		get_tree().change_scene_to_file(path)
-		# Wait a frame for new scene to load
-		await get_tree().process_frame
-		# Fade from black
-		var fade_in_tween = create_tween()
-		fade_in_tween.tween_property(fade_overlay, "modulate:a", 0.0, fade_duration).set_ease(Tween.EASE_OUT)
-	)
+	tween.tween_callback(_change_scene_and_fade_in.bind(path, fade_duration))
+
+func _change_scene_and_fade_in(path: String, fade_duration: float):
+	"""Helper function to change scene and fade in (can't use await in lambda)."""
+	# Change scene while black overlay is up
+	get_tree().change_scene_to_file(path)
+	# Wait a frame for new scene to load
+	await get_tree().process_frame
+	# Fade from black
+	var fade_in_tween = create_tween()
+	fade_in_tween.tween_property(fade_overlay, "modulate:a", 0.0, fade_duration).set_ease(Tween.EASE_OUT)
