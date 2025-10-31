@@ -385,8 +385,6 @@ func prepare_notes():
 			# Update the note data with resolved lane
 			note_data["lane"] = lane
 
-	print("Notes prepared for spawning: ", sorted_notes.size(), " notes")
-
 func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
