@@ -44,8 +44,8 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 190.0  # 350px above screen center (540) - moved up 200px
-const DESPAWN_Y = 490.0  # 100px below hit zones (190 + 200 + 100)
+const HITZONE_Y = 390.0  # Back at 150px above center (540 - 150)
+const DESPAWN_Y = 690.0  # 100px below hit zones (390 + 200 + 100)
 var bpm: float = 60.0
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_beat: int = -1  # Track last beat for metronome
@@ -129,36 +129,45 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container (centered below hit zones)
+	# UI Container (properly centered using anchors, moved down 100px to y=750)
 	ui_container = VBoxContainer.new()
-	ui_container.position = Vector2(960 - 300, 650)  # Centered at screen X, below hit zones
-	ui_container.custom_minimum_size = Vector2(600, 0)
+	ui_container.anchor_left = 0.5
+	ui_container.anchor_right = 0.5
+	ui_container.anchor_top = 0.0
+	ui_container.anchor_bottom = 0.0
+	ui_container.offset_left = -750  # Half of 1500px width
+	ui_container.offset_right = 750   # Half of 1500px width
+	ui_container.offset_top = 750     # Moved down 100px from 650
+	ui_container.offset_bottom = 750 + 400  # Enough height for all elements
+	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	ui_container.grow_vertical = Control.GROW_DIRECTION_BOTH
 	ui_container.add_theme_constant_override("separation", 30)
 	add_child(ui_container)
 
-	# Slider label (50px font, centered, max width 1500px)
+	# Slider label (50px font, centered)
 	slider_label = Label.new()
 	slider_label.text = "Timing Offset: 0ms"
 	slider_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	slider_label.add_theme_font_size_override("font_size", 50)
 	slider_label.add_theme_color_override("font_color", Color.WHITE)
-	slider_label.custom_minimum_size = Vector2(1500, 0)
 	ui_container.add_child(slider_label)
 
 	# Calibration slider (-1000 to +1000ms, default 0)
-	var slider_container = HBoxContainer.new()
-	slider_container.custom_minimum_size = Vector2(600, 50)
-	ui_container.add_child(slider_container)
-
 	calibration_slider = HSlider.new()
 	calibration_slider.min_value = -1000.0
 	calibration_slider.max_value = 1000.0
 	calibration_slider.step = 1.0
 	calibration_slider.value = GameManager.get_setting("rhythm_timing_offset", 0)
 	calibration_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	calibration_slider.focus_mode = Control.FOCUS_CLICK  # Allow clicking
-	calibration_slider.mouse_filter = Control.MOUSE_FILTER_PASS  # Allow mouse interaction
-	calibration_slider.value_changed.connect(_on_slider_changed)
+	calibration_slider.custom_minimum_size = Vector2(1200, 50)
+	calibration_slider.editable = true
+	calibration_slider.scrollable = true
+	calibration_slider.focus_mode = Control.FOCUS_CLICK
+	calibration_slider.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	# CRITICAL: Use drag_started/drag_ended instead of just value_changed
+	calibration_slider.value_changed.connect(_on_slider_value_changed)
+	calibration_slider.drag_ended.connect(_on_slider_drag_ended)
 
 	# Style slider like options menu (white slider with black border)
 	var slider_style = StyleBoxFlat.new()
@@ -177,16 +186,17 @@ func setup_ui():
 	calibration_slider.add_theme_icon_override("grabber", grabber_texture)
 	calibration_slider.add_theme_icon_override("grabber_highlight", grabber_texture)
 
-	slider_container.add_child(calibration_slider)
+	ui_container.add_child(calibration_slider)
 
-	# Instructions label (50px font, centered, period added)
+	print("Slider created: editable=", calibration_slider.editable, " scrollable=", calibration_slider.scrollable, " value=", calibration_slider.value)
+
+	# Instructions label (50px font, centered)
 	instructions_label = Label.new()
 	instructions_label.text = "Adjust timing until notes feel perfectly synchronized."
 	instructions_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	instructions_label.add_theme_font_size_override("font_size", 50)
 	instructions_label.add_theme_color_override("font_color", Color.WHITE)
 	instructions_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	instructions_label.custom_minimum_size = Vector2(600, 0)
 	ui_container.add_child(instructions_label)
 
 	# Done button (centered, yellow border on hover, 50px font)
@@ -195,6 +205,8 @@ func setup_ui():
 	done_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	done_button.custom_minimum_size = Vector2(400, 80)
 	done_button.add_theme_font_size_override("font_size", 50)
+	done_button.focus_mode = Control.FOCUS_ALL
+	done_button.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	# Style button with yellow border on hover
 	var button_hover_style = StyleBoxFlat.new()
@@ -220,7 +232,7 @@ func setup_ui():
 	ui_container.add_child(done_button)
 
 	# Update slider label with initial value
-	_on_slider_changed(calibration_slider.value)
+	_on_slider_value_changed(calibration_slider.value)
 
 	# Fade overlay
 	fade_overlay = ColorRect.new()
@@ -345,7 +357,7 @@ func spawn_random_note():
 	note.z_index = 50
 	add_child(note)
 
-	# Setup note with new hit zone Y position
+	# Setup note with hit zone Y position - notes should center on hit zone at zero offset
 	var spawn_y = BattleManager.calculate_note_spawn_y(200.0)
 	var target_y = BattleManager.calculate_note_target_y(HITZONE_Y, 200.0)
 
@@ -405,21 +417,26 @@ func check_hit(track_key: String):
 		BattleManager.create_fade_out_tween(closest_note, bpm)
 		active_notes.erase(closest_note)
 
-func _on_slider_changed(value: float):
-	"""Handle calibration slider change."""
-	GameManager.set_setting("rhythm_timing_offset", int(value))
-
-	# Update label
+func _on_slider_value_changed(value: float):
+	"""Handle calibration slider value change (updates label in real-time)."""
 	if slider_label:
 		slider_label.text = "Timing Offset: " + str(int(value)) + "ms"
 
+func _on_slider_drag_ended(_value_changed: bool):
+	"""Handle slider drag end (save the setting)."""
+	GameManager.set_setting("rhythm_timing_offset", int(calibration_slider.value))
+	print("Offset saved: ", int(calibration_slider.value), "ms")
+
 func _on_button_hover():
 	"""Play hover sound when mouse enters button."""
+	print("Button hover detected!")
 	if hover_sound:
 		hover_sound.play()
 
 func _on_done_pressed():
 	"""Handle Done button press."""
+	print("Done button pressed!")
+
 	# Play click sound
 	if click_sound:
 		click_sound.play()
