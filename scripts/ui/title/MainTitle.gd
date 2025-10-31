@@ -87,22 +87,8 @@ func _on_hit_timer_timeout() -> void:
 	if button_anim.has_animation("buttons_enter"):
 		button_anim.play("buttons_enter")
 
-func _unhandled_input(event: InputEvent) -> void:
+func _unhandled_input(_event: InputEvent) -> void:
 	# ESC key disabled on title screen
-	# if not event.is_action_pressed("ui_cancel"):
-	# 	return
-	#
-	# # Don't stack dialogs
-	# if quit_dialog.visible or delete_dialog.visible:
-	# 	return
-	#
-	# # If modal is open, close it
-	# if current_modal != null:
-	# 	_close_modal()
-	# 	return
-	#
-	# # Otherwise show quit dialog
-	# _show_dialog_with_overlay(quit_dialog)
 	pass
 
 # --- Modal Management ---
