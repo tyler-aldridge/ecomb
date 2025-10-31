@@ -9,7 +9,7 @@ extends Control
 ## Features:
 ## - Multiple messages in sequence
 ## - 3 second fade in/out between messages
-## - Black background
+## - Gradient background (panel-gradient-3.png)
 ## - Auto-advances to next scene when complete
 ## ============================================================================
 
@@ -21,18 +21,20 @@ extends Control
 # UI elements
 var typewriter: TypewriterText
 var fade_overlay: ColorRect
-var background: ColorRect
+var background: TextureRect
 
 # State
 var current_message_index: int = 0
 var is_transitioning: bool = false
 
 func _ready():
-	# Create black background
-	background = ColorRect.new()
-	background.color = Color.BLACK
+	# Create gradient background
+	background = TextureRect.new()
+	background.texture = preload("res://assets/interface/ui/panel-gradient-3.png")
 	background.size = get_viewport().get_visible_rect().size
 	background.position = Vector2.ZERO
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_SCALE
 	add_child(background)
 
 	# Create TypewriterText component
