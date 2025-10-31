@@ -432,7 +432,7 @@ func spawn_notes_polling():
 	This function checks if notes should spawn based on the current beat position.
 	Uses while loop to catch up if frames were dropped.
 	"""
-	if not conductor:
+	if not conductor or not conductor.playing:
 		return
 
 	# Get current beat position from conductor (DSP time)

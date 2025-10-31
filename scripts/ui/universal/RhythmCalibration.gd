@@ -300,21 +300,19 @@ func setup_conductor():
 	conductor.play_with_beat_offset()
 
 func fade_from_black():
-	"""Fade in from black, then start conductor."""
+	"""Fade in from black, start conductor immediately so notes can spawn during fade."""
 	fade_overlay.modulate.a = 1.0
-	var tween = create_tween()
-	tween.tween_property(fade_overlay, "modulate:a", 0.0, 3.0).set_ease(Tween.EASE_OUT)
-	tween.tween_callback(_start_conductor)
-
-func _start_conductor():
-	"""Start conductor after fade completes."""
+	# Start conductor NOW so it's running during the fade
 	setup_conductor()
 	conductor_started = true
-	# Initialize metronome bar to avoid early metronome beep
 	last_metronome_bar = -1
-	# Spawn first note immediately so player doesn't wait, then prevent duplicate
-	spawn_random_note()
-	last_spawn_bar = int(conductor.song_pos_in_beats / 4.0)
+	# Start fade
+	var tween = create_tween()
+	tween.tween_property(fade_overlay, "modulate:a", 0.0, 3.0).set_ease(Tween.EASE_OUT)
+
+func _start_conductor():
+	"""Deprecated - conductor now starts in fade_from_black."""
+	pass
 
 func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome at fixed intervals."""
