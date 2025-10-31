@@ -261,37 +261,38 @@ text = "Gymbro"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="FullScreenContainer" type="HBoxContainer" parent="GameOptionsContainer"]
+[node name="CheckboxesContainer" type="HBoxContainer" parent="GameOptionsContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 100
+
+[node name="FullScreenContainer" type="HBoxContainer" parent="GameOptionsContainer/CheckboxesContainer"]
 layout_mode = 2
 
-[node name="FullScreenLabel" type="Label" parent="GameOptionsContainer/FullScreenContainer"]
-custom_minimum_size = Vector2(325, 0)
+[node name="FullScreenLabel" type="Label" parent="GameOptionsContainer/CheckboxesContainer/FullScreenContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 50
-text = "Fullscreen"
-horizontal_alignment = 2
+text = "Fullscreen:"
 vertical_alignment = 1
 
-[node name="FullScreenCheckbox" type="CheckBox" parent="GameOptionsContainer/FullScreenContainer"]
+[node name="FullScreenCheckbox" type="CheckBox" parent="GameOptionsContainer/CheckboxesContainer/FullScreenContainer"]
 layout_mode = 2
 theme_override_styles/hover = SubResource("StyleBoxTexture_88x8e")
 theme_override_styles/disabled = SubResource("StyleBoxTexture_tctq1")
 icon_alignment = 1
 
-[node name="FramerateContainer" type="HBoxContainer" parent="GameOptionsContainer"]
+[node name="FramerateContainer" type="HBoxContainer" parent="GameOptionsContainer/CheckboxesContainer"]
 layout_mode = 2
 
-[node name="FramerateLabel" type="Label" parent="GameOptionsContainer/FramerateContainer"]
-custom_minimum_size = Vector2(325, 0)
+[node name="FramerateLabel" type="Label" parent="GameOptionsContainer/CheckboxesContainer/FramerateContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 50
 text = "Show FPS:"
-horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="FramerateCheckbox" type="CheckBox" parent="GameOptionsContainer/FramerateContainer"]
+[node name="FramerateCheckbox" type="CheckBox" parent="GameOptionsContainer/CheckboxesContainer/FramerateContainer"]
 layout_mode = 2
 theme_override_styles/hover = SubResource("StyleBoxTexture_glr2s")
 theme_override_styles/disabled = SubResource("StyleBoxTexture_f2l25")
@@ -315,7 +316,7 @@ theme_override_font_sizes/font_size = 50
 theme_override_styles/normal = SubResource("StyleBoxFlat_88x8e")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tctq1")
-text = "Close"
+text = "Save and Close"
 icon_alignment = 1
 
 [node name="ResetButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
@@ -373,5 +374,5 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
-[connection signal="toggled" from="GameOptionsContainer/FullScreenContainer/FullScreenCheckbox" to="." method="_on_fullscreen_toggled"]
-[connection signal="toggled" from="GameOptionsContainer/FramerateContainer/FramerateCheckbox" to="." method="_on_framerate_toggled"]
+[connection signal="toggled" from="GameOptionsContainer/CheckboxesContainer/FullScreenContainer/FullScreenCheckbox" to="." method="_on_fullscreen_toggled"]
+[connection signal="toggled" from="GameOptionsContainer/CheckboxesContainer/FramerateContainer/FramerateCheckbox" to="." method="_on_framerate_toggled"]
