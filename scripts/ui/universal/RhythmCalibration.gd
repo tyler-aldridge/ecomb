@@ -44,8 +44,8 @@ var metronome_generator: AudioStreamGenerator
 var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
-const HITZONE_Y = 390.0  # Back at 150px above center (540 - 150)
-const DESPAWN_Y = 690.0  # 100px below hit zones (390 + 200 + 100)
+const HITZONE_Y = 340.0  # Shifted up 50px (was 390)
+const DESPAWN_Y = 640.0  # 100px below hit zones (340 + 200 + 100)
 var bpm: float = 60.0
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_beat: int = -1  # Track last beat for metronome
@@ -129,7 +129,7 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container (properly centered using anchors, moved down 100px to y=750)
+	# UI Container (properly centered using anchors, shifted up 50px to y=700)
 	ui_container = VBoxContainer.new()
 	ui_container.anchor_left = 0.5
 	ui_container.anchor_right = 0.5
@@ -137,8 +137,8 @@ func setup_ui():
 	ui_container.anchor_bottom = 0.0
 	ui_container.offset_left = -750  # Half of 1500px width
 	ui_container.offset_right = 750   # Half of 1500px width
-	ui_container.offset_top = 750     # Moved down 100px from 650
-	ui_container.offset_bottom = 750 + 400  # Enough height for all elements
+	ui_container.offset_top = 700     # Shifted up 50px (was 750)
+	ui_container.offset_bottom = 700 + 400  # Enough height for all elements
 	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	ui_container.grow_vertical = Control.GROW_DIRECTION_BOTH
 	ui_container.add_theme_constant_override("separation", 30)
@@ -158,8 +158,8 @@ func setup_ui():
 	calibration_slider.max_value = 1000.0
 	calibration_slider.step = 1.0
 	calibration_slider.value = GameManager.get_setting("rhythm_timing_offset", 0)
-	calibration_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	calibration_slider.custom_minimum_size = Vector2(1200, 50)
+	calibration_slider.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	calibration_slider.custom_minimum_size = Vector2(100, 50)
 	calibration_slider.editable = true
 	calibration_slider.scrollable = true
 	calibration_slider.focus_mode = Control.FOCUS_CLICK
@@ -208,9 +208,9 @@ func setup_ui():
 	done_button.focus_mode = Control.FOCUS_ALL
 	done_button.mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# Style button with white border normally, yellow on hover/press
+	# Style button with black background, white border normally, yellow on hover/press
 	var button_normal_style = StyleBoxFlat.new()
-	button_normal_style.bg_color = Color(0.7, 0.7, 0.7, 0.3)
+	button_normal_style.bg_color = Color.BLACK
 	button_normal_style.border_width_left = 3
 	button_normal_style.border_width_top = 3
 	button_normal_style.border_width_right = 3
@@ -219,7 +219,7 @@ func setup_ui():
 	done_button.add_theme_stylebox_override("normal", button_normal_style)
 
 	var button_hover_style = StyleBoxFlat.new()
-	button_hover_style.bg_color = Color(0.8, 0.8, 0.8, 0.3)
+	button_hover_style.bg_color = Color.BLACK
 	button_hover_style.border_width_left = 3
 	button_hover_style.border_width_top = 3
 	button_hover_style.border_width_right = 3
@@ -228,7 +228,7 @@ func setup_ui():
 	done_button.add_theme_stylebox_override("hover", button_hover_style)
 
 	var button_pressed_style = StyleBoxFlat.new()
-	button_pressed_style.bg_color = Color(0.6, 0.6, 0.6, 0.3)
+	button_pressed_style.bg_color = Color.BLACK
 	button_pressed_style.border_width_left = 3
 	button_pressed_style.border_width_top = 3
 	button_pressed_style.border_width_right = 3
@@ -243,11 +243,12 @@ func setup_ui():
 	# Update slider label with initial value
 	_on_slider_value_changed(calibration_slider.value)
 
-	# Fade overlay
+	# Fade overlay (CRITICAL: must not block mouse input!)
 	fade_overlay = ColorRect.new()
 	fade_overlay.color = Color.BLACK
 	fade_overlay.size = get_viewport().get_visible_rect().size
 	fade_overlay.z_index = 200
+	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block clicks!
 	add_child(fade_overlay)
 
 func create_hit_zones() -> Array:
@@ -343,7 +344,7 @@ func _process(_delta):
 		play_metronome_beep()
 	last_metronome_beat = beat_in_bar
 
-	# Clean up despawned notes (100px below hit zones)
+	# Clean up despawned notes (100px below hit zones) with smooth fade
 	var i = 0
 	while i < active_notes.size():
 		var note = active_notes[i]
@@ -354,7 +355,10 @@ func _process(_delta):
 		# Despawn if 100px below bottom of hit zones
 		if note.position.y > DESPAWN_Y:
 			active_notes.remove_at(i)
-			note.queue_free()
+			# Fade out smoothly before freeing
+			var fade_tween = create_tween()
+			fade_tween.tween_property(note, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_OUT)
+			fade_tween.tween_callback(note.queue_free)
 		else:
 			i += 1
 
