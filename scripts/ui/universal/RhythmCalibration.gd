@@ -294,7 +294,7 @@ func _start_conductor():
 	setup_conductor()
 	conductor_started = true
 
-func _process(delta):
+func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
 	if not conductor or not conductor_started:
 		return

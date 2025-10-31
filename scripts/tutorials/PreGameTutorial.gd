@@ -257,8 +257,8 @@ func show_message(step: Dictionary, message_index: int):
 	# AWAIT the typing to complete, then pause 3 seconds
 	await DialogManager.show_dialog(message, "center", 0.0)
 
-	# Pause for 3 seconds after typing finishes before advancing to next message
-	auto_advance_timer = get_tree().create_timer(3.0)
+	# Pause for 3.5 seconds after typing finishes before advancing to next message
+	auto_advance_timer = get_tree().create_timer(3.5)
 	await auto_advance_timer.timeout
 
 	# Only advance if we're still on the same message (not manually advanced)
@@ -492,6 +492,7 @@ func _spawn_notes_continuously():
 		tween.tween_property(note, "position:y", note_target_y, 2.0).set_ease(Tween.EASE_IN)
 
 		# After reaching center, show perfect feedback and explosion
+		# Note: Don't await inside the callback - let shatter happen asynchronously
 		tween.tween_callback(func():
 			var effect_pos = Vector2(note_center_x, hitzone_center_y)
 
@@ -509,12 +510,17 @@ func _spawn_notes_continuously():
 			# Perfect hit: rainbow explosion
 			BattleManager.explode_note_at_position(note, "rainbow", 5, effect_pos, self, self)
 
-			# Create shatter effect (use 120 BPM as tutorial speed)
-			var shatter_tween = BattleManager.create_fade_out_tween(note, 120.0)
-			if shatter_tween:
-				await shatter_tween.finished
-			note.queue_free()
+			# Create shatter effect and free note asynchronously
+			_shatter_and_free_note(note, 120.0)
 		)
 
 		# Wait before spawning next note (1.2s for smooth flow without bunching)
 		await get_tree().create_timer(1.2).timeout
+
+func _shatter_and_free_note(note: Node, bpm: float) -> void:
+	"""Asynchronously shatter and free a note without blocking the spawn loop."""
+	var shatter_tween = BattleManager.create_fade_out_tween(note, bpm)
+	if shatter_tween:
+		await shatter_tween.finished
+	if is_instance_valid(note):
+		note.queue_free()
