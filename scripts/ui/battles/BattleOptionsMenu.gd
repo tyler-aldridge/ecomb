@@ -281,18 +281,24 @@ func _on_button_hover():
 
 func _create_battle_buttons():
 	"""Create a second row of buttons for battle-specific actions."""
+	# Get the main VBoxContainer
+	var main_container = $GameOptionsContainer
+	if not main_container:
+		return
+
+	# Add 50px spacer between button rows
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 50)
+	main_container.add_child(spacer)
+	main_container.move_child(spacer, main_container.get_child_count() - 1)
+
 	# Create container for battle action buttons
 	battle_buttons_container = HBoxContainer.new()
 	battle_buttons_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	battle_buttons_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	battle_buttons_container.add_theme_constant_override("separation", 50)
 
-	# Get the main VBoxContainer
-	var main_container = $GameOptionsContainer
-	if not main_container:
-		return
-
-	# Add battle buttons container after the first ButtonsContainer
+	# Add battle buttons container after the spacer
 	main_container.add_child(battle_buttons_container)
 	main_container.move_child(battle_buttons_container, main_container.get_child_count() - 1)
 
@@ -364,6 +370,8 @@ func _create_restart_dialog():
 	"""Create confirmation dialog for restarting battle."""
 	restart_dialog = ConfirmationDialog.new()
 	restart_dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
+	restart_dialog.size = Vector2i(600, 375)  # Match Exit dialog size
+	restart_dialog.always_on_top = true
 	restart_dialog.dialog_text = "Are you sure you want to start at square one?"
 	restart_dialog.dialog_autowrap = true
 	restart_dialog.confirmed.connect(_on_restart_confirmed)
@@ -375,6 +383,8 @@ func _create_recalibrate_dialog():
 	"""Create confirmation dialog for recalibrating."""
 	recalibrate_dialog = ConfirmationDialog.new()
 	recalibrate_dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
+	recalibrate_dialog.size = Vector2i(600, 375)  # Match Exit dialog size
+	recalibrate_dialog.always_on_top = true
 	recalibrate_dialog.dialog_text = "Are you sure you want end this battle to recalibrate?"
 	recalibrate_dialog.dialog_autowrap = true
 	recalibrate_dialog.confirmed.connect(_on_recalibrate_confirmed)

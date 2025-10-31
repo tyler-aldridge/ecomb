@@ -418,8 +418,8 @@ func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
 	if conductor:
-		# Activate backend at beat -30 (2 beats after start)
-		if not conductor_started and conductor.song_pos_in_beats >= -30:
+		# Activate backend immediately when conductor starts
+		if not conductor_started:
 			conductor_started = true
 
 		# Check for automatic misses (this also removes notes)
@@ -665,21 +665,16 @@ func check_automatic_misses():
 	# Never modify an array while iterating over it!
 	var notes_to_remove = []
 
-	# Hitzone bottom = 650 + 200 = 850
-	# Trigger miss when note bottom passes hitzone bottom + MISS_WINDOW (150px)
-	# This keeps the shatter effect visible on screen
-	var miss_threshold = 850.0 + BattleManager.MISS_WINDOW
+	# Hitzone: Y=650, Height=200, Bottom=850
+	# Trigger miss when NOTE TOP fully passes hitzone bottom
+	# This ensures note is completely out of hitzone before missing
+	var hitzone_bottom = 850.0
 
 	for note in active_notes:
 		if is_instance_valid(note):
-			# Get note height dynamically
-			var note_height = BattleManager.get_note_height(note)
-			# Calculate note's bottom edge
-			var note_bottom = note.position.y + note_height
-
-			# Check if BOTTOM of note has passed the miss threshold
-			# This triggers while note is still partially visible for shatter effect
-			if note_bottom > miss_threshold:
+			# Check if TOP of note (note.position.y) has passed hitzone bottom
+			# This means entire note is below the hitzone
+			if note.position.y > hitzone_bottom:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration
