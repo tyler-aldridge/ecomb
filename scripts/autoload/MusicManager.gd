@@ -25,10 +25,10 @@ var cache_access_order: Array = []  # LRU tracking (most recent at end)
 # Music registry - add new songs here (NOT preloaded, just paths)
 const MUSIC_FILES = {
 	"main_title": "res://assets/audio/music/Main Title Song.ogg",
-	"lesson1": "res://assets/audio/music/DivineFoxPlay-152BPM.ogg",
+	"PreGameBattleMusic": "res://assets/audio/music/DivineFoxPlay-152BPM.ogg",
 	# Add more songs here as you create them - they won't load until needed
-	# "lesson2": "res://assets/audio/music/Lesson2Song.ogg",
-	# "overworld1": "res://assets/audio/music/OverworldTheme.ogg",
+	# "SomeBattleMusic": "res://assets/audio/music/SomeBattle.ogg",
+	# "OverworldTheme": "res://assets/audio/music/OverworldTheme.ogg",
 	# ... hundreds more songs can go here
 }
 
@@ -75,7 +75,6 @@ func _evict_oldest() -> void:
 		var oldest_id = cache_access_order[0]
 		cache_access_order.remove_at(0)
 		music_cache.erase(oldest_id)
-		print("MusicManager: Evicted '" + oldest_id + "' from cache (LRU)")
 
 func get_music(music_id: String) -> AudioStream:
 	"""Get music stream by ID - loads on-demand if not cached.
@@ -87,13 +86,13 @@ func get_music(music_id: String) -> AudioStream:
 	- Evicts old songs if cache is full
 
 	Args:
-		music_id: String - ID from MUSIC_FILES (e.g., "lesson1")
+		music_id: String - ID from MUSIC_FILES (e.g., "PreGameBattleMusic")
 
 	Returns:
 		AudioStream - Music stream, or null if ID not found
 
 	Example:
-		var battle_music = MusicManager.get_music("lesson1")
+		var battle_music = MusicManager.get_music("PreGameBattleMusic")
 		conductor.stream = battle_music
 	"""
 	# Check if music ID exists in registry
@@ -178,7 +177,6 @@ func unload_music(music_id: String) -> void:
 		var idx = cache_access_order.find(music_id)
 		if idx >= 0:
 			cache_access_order.remove_at(idx)
-		print("MusicManager: Manually unloaded '" + music_id + "'")
 
 func clear_cache() -> void:
 	"""Clear entire music cache (except critical music).

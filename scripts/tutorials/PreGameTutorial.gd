@@ -50,35 +50,35 @@ var note_spawning_active: bool = false  # Track if note spawning should continue
 var tutorial_steps = [
 	{
 		"messages": [
-			"The groove bar on the top shows your rhythm consistency and acts like your health bar.",
-			"Perfect timing fills the groove bar. Miss too many beats and it empties.",
-			"Don't let it get to zero, or you lose the battle!"
+			"The groove bar on the top acts as your health while in rhythm battles.",
+			"Perfect timing fills the groove bar. Missing beats drains it. Slightly off beat hits have no effect.",
+			"Always keep an eye on your groove bar. If it reaches zero, you lose the battle!"
 		],
 		"highlight": "groove_bar"
 	},
 	{
 		"messages": [
-			"Your XP gains will show here over your character.",
-			"Perfect hits give maximum XP, good hits give decent XP, okay hits give some XP, and misses give no XP.",
-			"Every battle has a maximum XP you can gain. The better your timing, the better your gains!"
+			"Your XP gains appear above your character during each battle.",
+			"Perfect hits give maximum XP. Good hits give decent XP. Okay hits give some XP. Misses give nothing.",
+			"Each battle has maximum XP available. Better timing means better gains!"
 		],
 		"highlight": "player_sprite",
 		"simulate": "xp_gains"
 	},
 	{
 		"messages": [
-			"These are the note hit zones. Press 1, 2, or 3 on your keyboard when notes reach the zone in time with the beat!",
-			"Perfect hits will line up exactly on center with these areas.",
-			"Move to the groove of the song and you'll get some great gains!"
+			"These are the note hit zones. Press 1, 2, or 3 when notes reach the center of the zone in time with the beat.",
+			"Perfect hits line up exactly with the center of these zones.",
+			"Feel the groove and nail the timing to outflex your opponent!"
 		],
 		"highlight": "hit_zones",
 		"simulate": "hit_zone_notes"
 	},
 	{
 		"messages": [
-			"Chain perfect hits for bonus XP! The longer your combos, the more XP rewards you'll receive.",
-			"Break the combo, and you're back to square one. Master the rhythm, master the rewards!",
-			"Now let's take a second to calibrate your system with the rhythm of the game..."
+			"Chain perfect hits for bonus XP! Longer combos give bigger rewards.",
+			"Break the combo and you start over. Master the rhythm, master the rewards.",
+			"Now that you know the basics, let's calibrate your system with the game's rhythm..."
 		],
 		"highlight": "none",
 		"simulate": "combo"
@@ -496,6 +496,9 @@ func _spawn_notes_continuously():
 		# After reaching center, show perfect feedback and explosion
 		# Note: Don't await inside the callback - let shatter happen asynchronously
 		tween.tween_callback(func():
+			if not is_instance_valid(note):
+				return
+
 			var effect_pos = Vector2(note_center_x, hitzone_center_y)
 
 			# Register the hit with BattleManager (updates combo, groove)
@@ -512,17 +515,9 @@ func _spawn_notes_continuously():
 			# Perfect hit: rainbow explosion
 			BattleManager.explode_note_at_position(note, "rainbow", 5, effect_pos, self, self)
 
-			# Create shatter effect and free note asynchronously
-			_shatter_and_free_note(note, 120.0)
+			# Create shatter effect and free note asynchronously (don't await!)
+			BattleManager.create_fade_out_tween(note, 120.0)
 		)
 
 		# Wait before spawning next note (1.2s for smooth flow without bunching)
 		await get_tree().create_timer(1.2).timeout
-
-func _shatter_and_free_note(note: Node, bpm: float) -> void:
-	"""Asynchronously shatter and free a note without blocking the spawn loop."""
-	var shatter_tween = BattleManager.create_fade_out_tween(note, bpm)
-	if shatter_tween:
-		await shatter_tween.finished
-	if is_instance_valid(note):
-		note.queue_free()

@@ -31,6 +31,7 @@ var settings = {
 	"master_volume": 85,
 	"music_volume": 75,
 	"sound_volume": 65,
+	"text_volume": 45,
 	"rhythm_timing_offset": 0,  # For audio latency compensation (milliseconds, positive = notes spawn later/arrive later)
 	"fullscreen": false,
 	"show_fps": false,
@@ -331,6 +332,7 @@ func apply_audio_settings():
 	var master_vol = get_setting("master_volume", 100) / 100.0
 	var music_vol = get_setting("music_volume", 100) / 100.0
 	var sound_vol = get_setting("sound_volume", 100) / 100.0
+	var text_vol = get_setting("text_volume", 100) / 100.0
 
 	# Convert to decibels (AudioServer uses dB, not linear values)
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(master_vol))
@@ -338,6 +340,8 @@ func apply_audio_settings():
 		AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"), linear_to_db(music_vol))
 	if AudioServer.get_bus_index("SFX") != -1:
 		AudioServer.set_bus_volume_db(AudioServer.get_bus_index("SFX"), linear_to_db(sound_vol))
+	if AudioServer.get_bus_index("Text") != -1:
+		AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Text"), linear_to_db(text_vol))
 
 # ===== DISPLAY SETTINGS =====
 func apply_display_settings():
@@ -365,9 +369,9 @@ func get_setting(key: String, default_value = null):
 func set_setting(key: String, value):
 	settings[key] = value
 	save_settings()
-	
+
 	# Apply settings immediately when changed
-	if key in ["master_volume", "music_volume", "sound_volume"]:
+	if key in ["master_volume", "music_volume", "sound_volume", "text_volume"]:
 		apply_audio_settings()
 	elif key in ["fullscreen", "show_fps"]:
 		apply_display_settings()

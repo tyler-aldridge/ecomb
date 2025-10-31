@@ -152,8 +152,7 @@ func _setup_audio_generator():
 	# Create audio player
 	audio_player = AudioStreamPlayer.new()
 	audio_player.stream = audio_generator
-	audio_player.bus = "SFX"
-	audio_player.volume_db = -10.0  # Lower volume by 10dB
+	audio_player.bus = "Text"
 	add_child(audio_player)
 
 	# Start playback to get playback instance
@@ -171,6 +170,10 @@ func _play_character_tone():
 	# Choose frequency: random for all but last, highest for last
 	var frequency = final_frequency if is_last_char else randf_range(min_frequency, max_frequency)
 
+	# Get amplitude from universal text volume setting (0-100 -> 0.0-0.3)
+	var text_volume = GameManager.get_setting("text_volume", 100)
+	var amplitude = (text_volume / 100.0) * 0.3
+
 	# Generate tone samples
 	var sample_count = int(audio_generator.mix_rate * tone_duration)
 	var increment = frequency / audio_generator.mix_rate
@@ -185,5 +188,5 @@ func _play_character_tone():
 		if i > sample_count * 0.7:
 			envelope = 1.0 - ((i - sample_count * 0.7) / (sample_count * 0.3))
 
-		# Push stereo frame
-		playback.push_frame(Vector2(sample * envelope * 0.3, sample * envelope * 0.3))
+		# Push stereo frame with amplitude from universal settings
+		playback.push_frame(Vector2(sample * envelope * amplitude, sample * envelope * amplitude))

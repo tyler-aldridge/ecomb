@@ -21,6 +21,9 @@ var next_countdown_index: int = 0
 var next_trigger_index: int = 0
 var next_note_index: int = 0
 
+# Conductor state
+var conductor_started: bool = false  # Track if conductor has started playback
+
 # ============================================================================
 # UNIVERSAL BATTLE MECHANICS - See BattleManager autoload
 # ============================================================================
@@ -252,6 +255,13 @@ func _ready():
 	if not BattleManager.battle_failed.is_connected(_on_battle_failed):
 		BattleManager.battle_failed.connect(_on_battle_failed)
 
+	# Clear any leftover active notes from previous battle (in case of restart)
+	# CRITICAL: Free the actual note nodes, not just clear the array!
+	for note in active_notes:
+		if is_instance_valid(note):
+			note.queue_free()
+	active_notes.clear()
+
 	# Create fade overlay
 	create_fade_overlay()
 
@@ -272,11 +282,17 @@ func _ready():
 	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
 	# Fade from black and wait for it to complete
+	# TIMELINE (at 152 BPM, beats_before_start=33):
+	#   0.0s: Scene starts, fade begins
+	#   3.0s: Fade finishes (2.5s + 0.5s buffer), conductor starts
+	#   ~3.5s: First note spawns (beat -12, with FALL_BEATS=12 advance)
+	#   ~5.84s: Music starts (beat 0), dialogue appears, first note reaches hitzone
 	fade_from_black()
 	await get_tree().create_timer(BattleManager.FADE_FROM_BLACK_DURATION + 0.5).timeout  # Wait for fade + 0.5s buffer
 
 	# Start conductor after fade completes
 	conductor.play_with_beat_offset()
+	# conductor_started will be set to true in _physics_process when conductor is playing
 
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
@@ -296,6 +312,11 @@ func create_battle_ui():
 	combo_display = displays.get("combo_display")
 	xp_gain_display = displays.get("xp_display")
 	hit_zones = displays.get("hitzones", [])
+
+	# Song credit label (fades in at start, fades out after 10 seconds)
+	# Position: 50px from left edge, 50px below groove bar
+	if level_data.has("song_name"):
+		BattleManager.create_song_credit_label(level_data.get("song_name"), ui_layer, self)
 
 	# Battle results menu (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/battles/BattleResults.tscn")
@@ -342,12 +363,16 @@ func load_level_data():
 		push_error("Failed to load level data from: " + level_data_path)
 
 func create_fade_overlay():
+	# Create CanvasLayer for fade so it renders above all other CanvasLayers
+	var fade_layer = CanvasLayer.new()
+	fade_layer.layer = 200  # Above ui_layer (100)
+	add_child(fade_layer)
+
 	fade_overlay = ColorRect.new()
 	fade_overlay.color = Color.BLACK
-	fade_overlay.z_index = 1000
 	fade_overlay.size = get_viewport().get_visible_rect().size
 	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(fade_overlay)
+	fade_layer.add_child(fade_overlay)
 
 func fade_from_black():
 	"""Fade from black overlay with smooth easing."""
@@ -379,23 +404,19 @@ func prepare_notes():
 func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
-	if conductor:
-		# Check for automatic misses
+	# CRITICAL: Only process if conductor is actually playing, not just existing!
+	if conductor and conductor.playing:
+		# Activate backend when conductor is playing
+		if not conductor_started:
+			conductor_started = true
+
+		# Check for automatic misses (this also removes notes)
 		check_automatic_misses()
 
 		# Spawn notes using polling (not signals)
 		spawn_notes_polling()
 
-	# Clean up notes that have gone off-screen
-	var i = 0
-	while i < active_notes.size():
-		var note = active_notes[i]
-		if note.is_past_despawn_threshold():
-			active_notes.remove_at(i)
-			note.queue_free()
-			# Don't increment i - we removed an element
-		else:
-			i += 1
+	# NOTE: No separate despawn cleanup needed - check_automatic_misses() handles removal
 
 func start_character_animations():
 	# Store original positions FIRST before any animation changes
@@ -419,10 +440,11 @@ func spawn_notes_polling():
 	This function checks if notes should spawn based on the current beat position.
 	Uses while loop to catch up if frames were dropped.
 	"""
-	if not conductor:
+	if not conductor or not conductor_started:
 		return
 
 	# Get current beat position from conductor (DSP time)
+	# NOTE: This works during negative countdown too! Allows notes to spawn in advance.
 	var current_beat = conductor.song_pos_in_beats
 
 	# Spawn all notes that should be visible now
@@ -501,6 +523,10 @@ func spawn_note_interpolation(note_data: Dictionary):
 	Args:
 		note_data: Dictionary containing note information
 	"""
+	# CRITICAL: Only spawn if conductor is playing
+	if not conductor or not conductor.playing:
+		return
+
 	var lane = note_data.get("lane", "1")
 	var note_beat = float(note_data.get("beat_position", 0))
 	var note_type = note_data.get("note", "quarter")
@@ -509,6 +535,8 @@ func spawn_note_interpolation(note_data: Dictionary):
 	var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_type]["scene"]
 	var note = note_scene.instantiate()
 	note.z_index = 50
+	note.modulate.a = 0.0  # Start invisible
+	note.visible = false  # Double protection - keep hidden until fade starts
 	add_child(note)
 
 	# Read note height from NoteTemplate
@@ -524,6 +552,11 @@ func spawn_note_interpolation(note_data: Dictionary):
 	# Setup note with position interpolation (NEW SYSTEM)
 	note.setup_interpolation(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_BEATS)
 	active_notes.append(note)
+
+	# Make visible and fade in note over 0.2 seconds
+	note.visible = true
+	var fade_tween = create_tween()
+	fade_tween.tween_property(note, "modulate:a", 1.0, 0.2)
 
 
 func handle_trigger(trigger_name: String):
@@ -560,14 +593,14 @@ func fade_to_title():
 		var strength_awarded = results.get("strength_awarded", 0)
 		GameManager.add_strength(strength_awarded)
 
-		# Record story/lesson battle completion
-		if results.get("battle_type", "") == "story" or results.get("battle_type", "") == "lesson":
+		# Record event/tutorial battle completion
+		if results.get("battle_type", "") == "event" or results.get("battle_type", "") == "tutorial":
 			var battle_id = results.get("battle_id", "")
 			var strength_total = results.get("strength_total", 0)
 			GameManager.record_story_battle_completion(battle_id, strength_total)
 
 		# Mark tutorial as completed
-		if results.get("battle_id", "") == "battle_tutorial":
+		if results.get("battle_id", "") == "PreGameBattle":
 			GameManager.complete_tutorial()
 
 	# Fade to black using universal BattleManager duration
@@ -592,6 +625,18 @@ func fade_to_title():
 
 func _show_battle_results_after_fade(succeeded: bool, results_copy: Dictionary, br: Control):
 	"""Callback after fade to black - show results or go to title."""
+	# Hide fade overlay so battle results are visible
+	if is_instance_valid(fade_overlay):
+		fade_overlay.visible = false
+
+	# Ensure sprites continue idle animations during battle results
+	if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
+		if not player_sprite.is_playing() or player_sprite.animation != "idle":
+			player_sprite.play("idle")
+	if is_instance_valid(opponent_sprite) and opponent_sprite.sprite_frames:
+		if not opponent_sprite.is_playing() or opponent_sprite.animation != "idle":
+			opponent_sprite.play("idle")
+
 	if succeeded and is_instance_valid(br):
 		br.show_battle_results(results_copy)
 	elif is_instance_valid(self):
@@ -631,25 +676,43 @@ func check_automatic_misses():
 	# Never modify an array while iterating over it!
 	var notes_to_remove = []
 
+	# Screen height is 1080px
+	# Trigger miss when note TOP edge reaches/passes screen bottom
+	var screen_bottom = 1080.0
+
 	for note in active_notes:
 		if is_instance_valid(note):
-			var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[note.track_key].y
-			if note.position.y > hit_zone_y + BattleManager.MISS_WINDOW:
+			# Check if TOP of note (position.y) has reached screen bottom
+			# position.y is the TOP-LEFT of the note
+			if note.position.y >= screen_bottom:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration
 	for note in notes_to_remove:
 		if is_instance_valid(note):
-			# Get note's actual height dynamically using universal helper
+			# CRITICAL: Stop note movement IMMEDIATELY!
+			if note.has_method("stop_movement"):
+				note.stop_movement()
+			if note.has_method("set_physics_process"):
+				note.set_physics_process(false)
+
+			# Get note's actual height dynamically
 			var note_height = BattleManager.get_note_height(note)
 
-			# Calculate effect position at note's center (dynamic for any note size)
-			var effect_pos = note.position + Vector2(100, note_height / 2.0)
+			# Calculate effect position - note center at screen bottom
+			var effect_pos = Vector2(note.position.x + 100, screen_bottom)
 
+			# Create shatter effect IMMEDIATELY (this hides note and creates shards simultaneously)
+			BattleManager.create_miss_fade_tween(note)
+
+			# Show explosion and feedback at the SAME time
 			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
+
+			# Process miss (updates score, groove, etc.)
 			process_miss()
-			BattleManager.create_miss_fade_tween(note)
+
+			# Remove from active notes
 			active_notes.erase(note)
 
 func _unhandled_input(event):
@@ -766,3 +829,24 @@ func process_miss():
 	# Register miss with BattleManager (handles combo reset, groove penalty, etc.)
 	BattleManager.register_hit("MISS")
 	BattleManager.animate_opponent_miss(opponent_sprite, opponent_original_pos, self)
+
+	# Play hurt sound
+	var hurt_sound = AudioStreamPlayer.new()
+	hurt_sound.stream = preload("res://assets/audio/sfx/hurt.ogg")
+	hurt_sound.bus = "SFX"
+	add_child(hurt_sound)
+	hurt_sound.play()
+	hurt_sound.finished.connect(func(): hurt_sound.queue_free())
+
+	# Flash screen red
+	var screen_flash = ColorRect.new()
+	screen_flash.color = Color(1.0, 0.0, 0.0, 0.3)  # Red with 30% opacity
+	screen_flash.size = get_viewport().get_visible_rect().size
+	screen_flash.z_index = 999
+	screen_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui_layer.add_child(screen_flash)
+
+	# Fade out the red flash
+	var flash_tween = create_tween()
+	flash_tween.tween_property(screen_flash, "modulate:a", 0.0, 0.3)
+	flash_tween.tween_callback(func(): screen_flash.queue_free())

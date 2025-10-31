@@ -110,6 +110,57 @@ func _connect_dialog_button_sounds():
 	if cancel_btn and button_hover_sound:
 		cancel_btn.mouse_entered.connect(_on_button_hover)
 
+	# Standardize button styling to match game-wide standards
+	for btn in [ok_btn, cancel_btn]:
+		if btn:
+			# Font size
+			btn.add_theme_font_size_override("font_size", 50)
+
+			# Minimum size
+			btn.custom_minimum_size = Vector2(200, 80)
+
+			# Normal style (white border)
+			var normal_style = StyleBoxFlat.new()
+			normal_style.bg_color = Color.BLACK
+			normal_style.border_width_left = 3
+			normal_style.border_width_top = 3
+			normal_style.border_width_right = 3
+			normal_style.border_width_bottom = 3
+			normal_style.border_color = Color.WHITE
+			normal_style.content_margin_left = 50
+			normal_style.content_margin_right = 50
+			normal_style.content_margin_top = 25
+			normal_style.content_margin_bottom = 25
+			btn.add_theme_stylebox_override("normal", normal_style)
+
+			# Hover style (yellow border)
+			var hover_style = StyleBoxFlat.new()
+			hover_style.bg_color = Color.BLACK
+			hover_style.border_width_left = 3
+			hover_style.border_width_top = 3
+			hover_style.border_width_right = 3
+			hover_style.border_width_bottom = 3
+			hover_style.border_color = Color.YELLOW
+			hover_style.content_margin_left = 50
+			hover_style.content_margin_right = 50
+			hover_style.content_margin_top = 25
+			hover_style.content_margin_bottom = 25
+			btn.add_theme_stylebox_override("hover", hover_style)
+
+			# Pressed style (yellow border)
+			var pressed_style = StyleBoxFlat.new()
+			pressed_style.bg_color = Color.BLACK
+			pressed_style.border_width_left = 3
+			pressed_style.border_width_top = 3
+			pressed_style.border_width_right = 3
+			pressed_style.border_width_bottom = 3
+			pressed_style.border_color = Color.YELLOW
+			pressed_style.content_margin_left = 50
+			pressed_style.content_margin_right = 50
+			pressed_style.content_margin_top = 25
+			pressed_style.content_margin_bottom = 25
+			btn.add_theme_stylebox_override("pressed", pressed_style)
+
 	# Keep separation between the two buttons
 	if ok_btn and ok_btn.get_parent() is HBoxContainer:
 		var button_container = ok_btn.get_parent() as HBoxContainer
