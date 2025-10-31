@@ -157,7 +157,7 @@ func calculate_note_target_y(hitzone_y: float, note_height: float) -> float:
 var battle_active: bool = false
 var battle_id: String = ""
 var battle_level: int = 1
-var battle_type: String = "story"  # "story", "lesson", or "random"
+var battle_type: String = "event"  # "tutorial", "event", or "random"
 var player_quit_to_title: bool = false  # Set to true when player quits to title from battle
 
 # Groove bar (health system)
@@ -217,9 +217,9 @@ func start_battle(battle_data: Dictionary):
 
 	Args:
 		battle_data: Dictionary with keys:
-			- battle_id: String (unique identifier for story/lesson battles)
+			- battle_id: String (unique identifier for tutorial/event battles)
 			- battle_level: int (1-10, for XP scaling)
-			- battle_type: String ("story", "lesson", or "random")
+			- battle_type: String ("tutorial", "event", or "random")
 			- groove_miss_penalty: float (optional, default 10.0)
 			- groove_start: float (optional, default 50.0)
 			- max_strength: int (optional, max possible strength from all PERFECT hits)
@@ -227,7 +227,7 @@ func start_battle(battle_data: Dictionary):
 	battle_active = true
 	battle_id = battle_data.get("battle_id", "")
 	battle_level = battle_data.get("battle_level", 1)
-	battle_type = battle_data.get("battle_type", "story")
+	battle_type = battle_data.get("battle_type", "event")
 	player_quit_to_title = false  # Reset quit flag for new battle
 
 	# Groove settings
@@ -410,7 +410,7 @@ func get_combo_multiplier() -> float:
 func calculate_awarded_strength() -> int:
 	"""Calculate actual XP awarded after applying level scaling.
 
-	For story and lesson battles that have been completed before, players can only
+	For event and tutorial battles that have been completed before, players can only
 	improve on their previous score (tracked in GameManager).
 
 	For random battles, XP is scaled based on player level vs battle level.
@@ -425,8 +425,8 @@ func calculate_awarded_strength() -> int:
 	if battle_type == "random":
 		awarded_strength = apply_level_scaling(base_strength)
 
-	# Check if this is a replay of a story or lesson battle
-	elif (battle_type == "story" or battle_type == "lesson") and battle_id != "":
+	# Check if this is a replay of an event or tutorial battle
+	elif (battle_type == "event" or battle_type == "tutorial") and battle_id != "":
 		awarded_strength = GameManager.calculate_battle_strength_improvement(
 			battle_id,
 			base_strength
@@ -1045,6 +1045,66 @@ func apply_opponent_shader(opponent_sprite: AnimatedSprite2D):
 	var invert_material = ShaderMaterial.new()
 	invert_material.shader = OPPONENT_INVERT_SHADER
 	opponent_sprite.material = invert_material
+
+func create_song_credit_label(song_name: String, ui_layer: CanvasLayer, tween_parent: Node) -> Label:
+	"""
+	Universal song credit display that fades in at battle start and out after 10 seconds.
+
+	Displays the song name, artist, and BPM in a label positioned near the top-left
+	of the screen, below the groove bar.
+
+	Args:
+		song_name: Display name of the song (e.g., "Divine Fox Play by Ender Alders - 152BPM")
+		ui_layer: The CanvasLayer to add the label to
+		tween_parent: The node to create tweens on (prevents lambda capture errors)
+
+	Returns:
+		Label: The created label node
+
+	Example:
+		var song_credit = BattleManager.create_song_credit_label(
+			level_data.get("song_name"),
+			ui_layer,
+			self
+		)
+	"""
+	# Create label for song credit
+	var credit_label = Label.new()
+	credit_label.text = song_name
+	credit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	credit_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	credit_label.add_theme_font_size_override("font_size", 32)
+	credit_label.add_theme_color_override("font_color", Color.WHITE)
+
+	# Position: 50px from left edge, 125px from top (50px below 75px groove bar)
+	credit_label.position = Vector2(50, 125)
+	credit_label.size = Vector2(800, 50)  # Wide enough for long song titles
+	credit_label.z_index = 100
+
+	# Start invisible for fade in
+	credit_label.modulate.a = 0.0
+
+	# Add to UI layer
+	ui_layer.add_child(credit_label)
+
+	# Capture label to avoid lambda issues
+	var lbl = credit_label
+
+	# Fade in over 1 second
+	var fade_in_tween = tween_parent.create_tween()
+	fade_in_tween.tween_property(lbl, "modulate:a", 1.0, 1.0)
+
+	# Fade out after 10 seconds (1 second fade out duration)
+	var fade_out_tween = tween_parent.create_tween()
+	fade_out_tween.tween_property(lbl, "modulate:a", 0.0, 1.0).set_delay(10.0)
+
+	# Clean up label after fade out completes
+	fade_out_tween.chain().tween_callback(func():
+		if is_instance_valid(lbl):
+			lbl.queue_free()
+	)
+
+	return credit_label
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================

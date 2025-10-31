@@ -308,6 +308,11 @@ func create_battle_ui():
 	xp_gain_display = displays.get("xp_display")
 	hit_zones = displays.get("hitzones", [])
 
+	# Song credit label (fades in at start, fades out after 10 seconds)
+	# Position: 50px from left edge, 50px below groove bar
+	if level_data.has("song_name"):
+		BattleManager.create_song_credit_label(level_data.get("song_name"), ui_layer, self)
+
 	# Battle results menu (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/battles/BattleResults.tscn")
 	battle_results = battle_results_scene.instantiate()
@@ -586,14 +591,14 @@ func fade_to_title():
 		var strength_awarded = results.get("strength_awarded", 0)
 		GameManager.add_strength(strength_awarded)
 
-		# Record story/lesson battle completion
-		if results.get("battle_type", "") == "story" or results.get("battle_type", "") == "lesson":
+		# Record event/tutorial battle completion
+		if results.get("battle_type", "") == "event" or results.get("battle_type", "") == "tutorial":
 			var battle_id = results.get("battle_id", "")
 			var strength_total = results.get("strength_total", 0)
 			GameManager.record_story_battle_completion(battle_id, strength_total)
 
 		# Mark tutorial as completed
-		if results.get("battle_id", "") == "battle_tutorial":
+		if results.get("battle_id", "") == "PreGameBattle":
 			GameManager.complete_tutorial()
 
 	# Fade to black using universal BattleManager duration
