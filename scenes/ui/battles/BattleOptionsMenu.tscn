@@ -261,7 +261,6 @@ vertical_alignment = 1
 
 [node name="CheckboxesContainer" type="HBoxContainer" parent="GameOptionsContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
 theme_override_constants/separation = 100
 
 [node name="FullScreenContainer" type="HBoxContainer" parent="GameOptionsContainer/CheckboxesContainer"]
@@ -302,14 +301,10 @@ theme_override_styles/separator = SubResource("StyleBoxFlat_Separator")
 
 [node name="ButtonsContainer" type="HBoxContainer" parent="GameOptionsContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 theme_override_constants/separation = 50
 
 [node name="CloseButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 50
 theme_override_styles/normal = SubResource("StyleBoxFlat_88x8e")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
@@ -319,8 +314,6 @@ icon_alignment = 1
 
 [node name="ResetButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 50
 theme_override_styles/normal = SubResource("StyleBoxFlat_88x8e")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")
@@ -330,8 +323,6 @@ icon_alignment = 1
 
 [node name="ExitButton" type="Button" parent="GameOptionsContainer/ButtonsContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 theme_override_font_sizes/font_size = 50
 theme_override_styles/normal = SubResource("StyleBoxFlat_88x8e")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_yxu6n")

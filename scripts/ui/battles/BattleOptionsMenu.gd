@@ -292,10 +292,8 @@ func _create_battle_buttons():
 	main_container.add_child(spacer)
 	main_container.move_child(spacer, main_container.get_child_count() - 1)
 
-	# Create container for battle action buttons
+	# Create container for battle action buttons (left aligned)
 	battle_buttons_container = HBoxContainer.new()
-	battle_buttons_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	battle_buttons_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	battle_buttons_container.add_theme_constant_override("separation", 50)
 
 	# Add battle buttons container after the spacer
@@ -318,8 +316,6 @@ func _create_styled_button(button_text: String) -> Button:
 	"""Create a button with consistent styling matching existing buttons."""
 	var button = Button.new()
 	button.text = button_text
-	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	button.add_theme_font_size_override("font_size", 50)
 
 	# Normal style (white border)

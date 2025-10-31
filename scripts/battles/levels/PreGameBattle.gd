@@ -635,6 +635,14 @@ func _show_battle_results_after_fade(succeeded: bool, results_copy: Dictionary, 
 	if is_instance_valid(fade_overlay):
 		fade_overlay.visible = false
 
+	# Ensure sprites continue idle animations during battle results
+	if is_instance_valid(player_sprite) and player_sprite.sprite_frames:
+		if not player_sprite.is_playing() or player_sprite.animation != "idle":
+			player_sprite.play("idle")
+	if is_instance_valid(opponent_sprite) and opponent_sprite.sprite_frames:
+		if not opponent_sprite.is_playing() or opponent_sprite.animation != "idle":
+			opponent_sprite.play("idle")
+
 	if succeeded and is_instance_valid(br):
 		br.show_battle_results(results_copy)
 	elif is_instance_valid(self):
@@ -675,19 +683,14 @@ func check_automatic_misses():
 	var notes_to_remove = []
 
 	# Screen height is 1080px
-	# Trigger miss when note BOTTOM fully exits screen bottom
+	# Trigger miss when note TOP edge hits screen bottom
 	var screen_bottom = 1080.0
 
 	for note in active_notes:
 		if is_instance_valid(note):
-			# Get note height dynamically
-			var note_height = BattleManager.get_note_height(note)
-			# Calculate note's bottom edge
-			var note_bottom = note.position.y + note_height
-
-			# Check if BOTTOM of note has fully passed screen bottom
-			# This ensures note is completely off-screen before missing
-			if note_bottom > screen_bottom:
+			# Check if TOP of note (position.y) has passed screen bottom
+			# This triggers miss as soon as note starts exiting screen
+			if note.position.y > screen_bottom:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration
@@ -699,9 +702,10 @@ func check_automatic_misses():
 			# Calculate effect position at note's center
 			var effect_pos = note.position + Vector2(100, note_height / 2.0)
 
-			# Clamp effect position to screen bounds (bottom edge)
-			# This ensures shatter animation is visible even if note is off-screen
-			effect_pos.y = clamp(effect_pos.y, 0, screen_bottom - 50)
+			# Clamp effect position to bottom of screen
+			# Since note.position.y is just past 1080px, effect is at ~1080 + note_height/2
+			# Clamp to keep animation visible on screen
+			effect_pos.y = min(effect_pos.y, screen_bottom)
 
 			# Show explosion and feedback (NO DELAY)
 			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)

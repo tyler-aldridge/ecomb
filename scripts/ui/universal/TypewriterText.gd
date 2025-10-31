@@ -184,5 +184,5 @@ func _play_character_tone():
 		if i > sample_count * 0.7:
 			envelope = 1.0 - ((i - sample_count * 0.7) / (sample_count * 0.3))
 
-		# Push stereo frame
-		playback.push_frame(Vector2(sample * envelope * 0.3, sample * envelope * 0.3))
+		# Push stereo frame (reduced amplitude from 0.3 to 0.15 for quieter sound)
+		playback.push_frame(Vector2(sample * envelope * 0.15, sample * envelope * 0.15))

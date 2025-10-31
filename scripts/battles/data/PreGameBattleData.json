@@ -9,7 +9,7 @@
   "bpm": 152,
   "time_signature_numerator": 4,
   "time_signature_denominator": 4,
-  "beats_before_start": 32,
+  "beats_before_start": 33,
   "num_lanes": 3,
   "dialogue": [
     {"beat_position": 32, "text": "Think you got what it takes, chump?", "character": "opponent", "duration": 5.0},
