@@ -45,10 +45,11 @@ var metronome_playback: AudioStreamGeneratorPlayback
 
 # Calibration state
 const HITZONE_Y = 340.0  # Shifted up 50px (was 390)
-const DESPAWN_Y = 640.0  # 100px below hit zones (340 + 200 + 100)
+const HITZONE_BOTTOM = 540.0  # Bottom of hitzone (340 + 200)
+const DESPAWN_Y = 540.0  # Start fading when note top passes hitzone bottom
 var bpm: float = 60.0
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
-var last_metronome_beat: int = -1  # Track last beat for metronome
+var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
 var conductor_started: bool = false  # Track if conductor has started (after fade)
 
 # Effects
@@ -335,23 +336,29 @@ func _process(_delta):
 		spawn_random_note()
 		last_spawn_bar = current_bar
 
-	# Play metronome when notes reach center of hit zone
-	# Notes spawn at bar start (every 4 beats) with note_beat = current + FALL_BEATS
-	# So notes arrive at beat offsets: 6, 10, 14, 18... (all are beat % 4 == 2 for FALL_BEATS=6)
-	# Metronome plays when note centers on hit zone
-	var current_beat = int(conductor.song_pos_in_beats)
-	var beat_in_bar = current_beat % 4
+	# Play metronome when ANY note is centered on hit zone
+	# Check if any note is within a small threshold of being perfectly centered
+	var hitzone_center_y = HITZONE_Y + (BattleManager.HITZONE_HEIGHT / 2.0)
+	var played_metronome_this_frame = false
 
-	# Calculate which beat offset notes arrive at (based on FALL_BEATS)
-	var note_arrival_beat_in_bar = int(BattleManager.FALL_BEATS) % 4
+	for note in active_notes:
+		if not is_instance_valid(note):
+			continue
 
-	# Play metronome on every note arrival (removed >= FALL_BEATS check for continuous play)
-	if beat_in_bar == note_arrival_beat_in_bar and last_metronome_beat != note_arrival_beat_in_bar:
-		# Beat aligned with note center - play metronome sine wave
-		play_metronome_beep()
-	last_metronome_beat = beat_in_bar
+		var note_center_y = note.position.y + 100.0  # Quarter note is 200px tall
+		var distance_from_center = abs(note_center_y - hitzone_center_y)
 
-	# Clean up despawned notes (100px below hit zones) with smooth fade
+		# If note is very close to center (within 5px) and we haven't played yet
+		if distance_from_center < 5.0 and not played_metronome_this_frame:
+			# Check if this is a new note centering (not the same as last frame)
+			var note_id = note.get_instance_id()
+			if last_metronome_beat != note_id:
+				play_metronome_beep()
+				last_metronome_beat = note_id
+				played_metronome_this_frame = true
+				break
+
+	# Fade out notes after they pass the bottom of the hit zone
 	var i = 0
 	while i < active_notes.size():
 		var note = active_notes[i]
@@ -359,7 +366,7 @@ func _process(_delta):
 			active_notes.remove_at(i)
 			continue
 
-		# Despawn if 100px below bottom of hit zones
+		# Start fading when note top passes hitzone bottom
 		if note.position.y > DESPAWN_Y:
 			active_notes.remove_at(i)
 			# Fade out smoothly before freeing
