@@ -135,14 +135,14 @@ func setup_ui():
 	ui_container = VBoxContainer.new()
 	ui_container.anchor_left = 0.5
 	ui_container.anchor_right = 0.5
-	ui_container.anchor_top = 0.0
-	ui_container.anchor_bottom = 0.0
+	ui_container.anchor_top = 1.0  # Anchor to bottom
+	ui_container.anchor_bottom = 1.0  # Anchor to bottom
 	ui_container.offset_left = -750  # Half of 1500px width
 	ui_container.offset_right = 750   # Half of 1500px width
-	ui_container.offset_top = 630     # 1080 - 400 - 50 = 630 (container bottom 50px from screen bottom)
-	ui_container.offset_bottom = 1030  # Bottom at 1030 (50px from screen bottom at 1080)
+	ui_container.offset_top = -450   # 400px height + 50px gap from bottom
+	ui_container.offset_bottom = -50  # 50px up from screen bottom
 	ui_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	ui_container.grow_vertical = Control.GROW_DIRECTION_BOTH
+	ui_container.grow_vertical = Control.GROW_DIRECTION_END
 	ui_container.add_theme_constant_override("separation", 15)
 	add_child(ui_container)
 
@@ -388,12 +388,10 @@ func spawn_random_note():
 
 	var lane = "2"  # Always center lane
 
-	# Temporarily update GameManager offset to slider value for real-time preview
-	# This makes the conductor use the slider offset for timing calculations
-	var slider_offset_ms = int(calibration_slider.value)
-	GameManager.set_setting("rhythm_timing_offset", slider_offset_ms)
-
-	# Spawn note at standard position (conductor now uses slider offset)
+	# DON'T modify GameManager offset here - it breaks conductor timing
+	# Instead, we set GameManager offset ONCE when user clicks "Done"
+	# The conductor already applies GameManager offset (which is initial value)
+	# We spawn notes at the current conductor beat + lookahead
 	var note_beat = conductor.song_pos_in_beats + BattleManager.FALL_BEATS
 
 	# Load quarter note scene
