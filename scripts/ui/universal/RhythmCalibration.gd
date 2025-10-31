@@ -9,12 +9,12 @@ extends Control
 ## 3. Future: Overworld options menu (returns to overworld)
 ##
 ## Features:
-## - 85 BPM (faster for better UX)
+## - 75 BPM (balanced speed for UX)
 ## - White quarter notes in center lane only
 ## - Metronome tone when note centers (440Hz sine wave)
 ## - Live timing adjustment slider (-1000 to +1000ms, applies to new notes)
 ## - "Done Calibrating" button
-## - Real-time feedback with explosions
+## - Smooth 0.5s fade out after notes pass below hitzone
 ##
 ## Usage:
 ## Set next_scene_path before instantiating to control where to go after calibration.
@@ -46,8 +46,8 @@ var metronome_playback: AudioStreamGeneratorPlayback
 # Calibration state
 const HITZONE_Y = 340.0  # Shifted up 50px (was 390)
 const HITZONE_BOTTOM = 540.0  # Bottom of hitzone (340 + 200)
-const DESPAWN_Y = 540.0  # Start fading when note top passes hitzone bottom
-var bpm: float = 85.0  # Increased from 60 for better UX
+const DESPAWN_Y = 590.0  # Start fading when note top is 50px below hitzone
+var bpm: float = 75.0  # Reduced from 85 for better UX
 var last_spawn_bar: int = -1  # Track last bar we spawned on (spawn every 4 beats)
 var last_metronome_beat: int = -1  # Track last note ID that triggered metronome
 var conductor_started: bool = false  # Track if conductor has started (after fade)
@@ -354,7 +354,7 @@ func _process(_delta):
 				played_metronome_this_frame = true
 				break
 
-	# Fade out notes after they pass the bottom of the hit zone
+	# Fade out notes after they pass below the hit zone
 	var i = 0
 	while i < active_notes.size():
 		var note = active_notes[i]
@@ -362,22 +362,20 @@ func _process(_delta):
 			active_notes.remove_at(i)
 			continue
 
-		# Start fading when note top passes hitzone bottom
+		# Start fading when note top is 50px below hitzone bottom
 		if note.position.y > DESPAWN_Y:
-			# Check if already fading (using metadata to track)
-			if not note.has_meta("is_fading"):
-				note.set_meta("is_fading", true)
-				# Stop note movement
-				note.is_active = false
-				# Fade out smoothly over 0.5 seconds
-				var fade_tween = create_tween()
-				fade_tween.tween_property(note, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_OUT)
-				fade_tween.tween_callback(func():
-					if is_instance_valid(note):
-						active_notes.erase(note)
-						note.queue_free()
-				)
-			i += 1
+			# Remove from active_notes immediately
+			active_notes.remove_at(i)
+			# Stop note movement
+			note.is_active = false
+			# Fade out smoothly over 0.5 seconds
+			var fade_tween = create_tween()
+			fade_tween.tween_property(note, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_OUT)
+			fade_tween.tween_callback(func():
+				if is_instance_valid(note):
+					note.queue_free()
+			)
+			# Don't increment i since we removed an element
 		else:
 			i += 1
 
