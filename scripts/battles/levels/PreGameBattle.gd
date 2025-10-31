@@ -421,8 +421,9 @@ func prepare_notes():
 func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
-	if conductor:
-		# Activate backend immediately when conductor starts
+	# CRITICAL: Only process if conductor is actually playing, not just existing!
+	if conductor and conductor.playing:
+		# Activate backend when conductor is playing
 		if not conductor_started:
 			conductor_started = true
 
@@ -539,6 +540,10 @@ func spawn_note_interpolation(note_data: Dictionary):
 	Args:
 		note_data: Dictionary containing note information
 	"""
+	# CRITICAL: Only spawn if conductor is playing
+	if not conductor or not conductor.playing:
+		return
+
 	var lane = note_data.get("lane", "1")
 	var note_beat = float(note_data.get("beat_position", 0))
 	var note_type = note_data.get("note", "quarter")
@@ -547,7 +552,8 @@ func spawn_note_interpolation(note_data: Dictionary):
 	var note_scene = BattleManager.NOTE_TYPE_CONFIG[note_type]["scene"]
 	var note = note_scene.instantiate()
 	note.z_index = 50
-	note.modulate.a = 0.0  # Start invisible, will fade in during spawn
+	note.modulate.a = 0.0  # Start invisible
+	note.visible = false  # Double protection - keep hidden until fade starts
 	add_child(note)
 
 	# Read note height from NoteTemplate
@@ -564,7 +570,8 @@ func spawn_note_interpolation(note_data: Dictionary):
 	note.setup_interpolation(lane, note_beat, note_type, conductor, spawn_y, target_y, BattleManager.FALL_BEATS)
 	active_notes.append(note)
 
-	# Fade in note over 0.2 seconds
+	# Make visible and fade in note over 0.2 seconds
+	note.visible = true
 	var fade_tween = create_tween()
 	fade_tween.tween_property(note, "modulate:a", 1.0, 0.2)
 
@@ -687,46 +694,40 @@ func check_automatic_misses():
 	var notes_to_remove = []
 
 	# Screen height is 1080px
-	# Trigger miss when note TOP edge hits screen bottom
+	# Trigger miss when note TOP edge reaches/passes screen bottom
 	var screen_bottom = 1080.0
 
 	for note in active_notes:
 		if is_instance_valid(note):
-			# Check if TOP of note (position.y) has passed screen bottom
-			# This triggers miss as soon as note starts exiting screen
-			if note.position.y > screen_bottom:
+			# Check if TOP of note (position.y) has reached screen bottom
+			# position.y is the TOP-LEFT of the note
+			if note.position.y >= screen_bottom:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration
 	for note in notes_to_remove:
 		if is_instance_valid(note):
-			# CRITICAL: Stop note movement and hide it IMMEDIATELY to prevent delay!
+			# CRITICAL: Stop note movement IMMEDIATELY!
 			if note.has_method("stop_movement"):
 				note.stop_movement()
 			if note.has_method("set_physics_process"):
 				note.set_physics_process(false)
-			note.visible = false
 
 			# Get note's actual height dynamically
 			var note_height = BattleManager.get_note_height(note)
 
-			# Calculate effect position at note's center
-			var effect_pos = note.position + Vector2(100, note_height / 2.0)
+			# Calculate effect position - note center at screen bottom
+			var effect_pos = Vector2(note.position.x + 100, screen_bottom)
 
-			# Clamp effect position to bottom of screen
-			# Since note.position.y is just past 1080px, effect is at ~1080 + note_height/2
-			# Clamp to keep animation visible on screen
-			effect_pos.y = min(effect_pos.y, screen_bottom)
+			# Create shatter effect IMMEDIATELY (this hides note and creates shards simultaneously)
+			BattleManager.create_miss_fade_tween(note)
 
-			# Show explosion and feedback
+			# Show explosion and feedback at the SAME time
 			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 
 			# Process miss (updates score, groove, etc.)
 			process_miss()
-
-			# Create shatter effect (same as input misses)
-			BattleManager.create_miss_fade_tween(note)
 
 			# Remove from active notes
 			active_notes.erase(note)
