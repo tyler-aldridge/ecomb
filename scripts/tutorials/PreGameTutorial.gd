@@ -429,7 +429,7 @@ func _simulate_hit_zone_notes():
 	BattleManager.start_battle({
 		"battle_id": "tutorial_simulation",
 		"battle_level": 1,
-		"battle_type": "tutorial",
+		"battle_type": "lesson",
 		"groove_start": 50.0,
 		"groove_miss_penalty": 0.0,
 		"max_strength": 100

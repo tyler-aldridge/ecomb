@@ -593,8 +593,8 @@ func fade_to_title():
 		var strength_awarded = results.get("strength_awarded", 0)
 		GameManager.add_strength(strength_awarded)
 
-		# Record event/tutorial battle completion
-		if results.get("battle_type", "") == "event" or results.get("battle_type", "") == "tutorial":
+		# Record story/lesson battle completion
+		if results.get("battle_type", "") == "story" or results.get("battle_type", "") == "lesson":
 			var battle_id = results.get("battle_id", "")
 			var strength_total = results.get("strength_total", 0)
 			GameManager.record_story_battle_completion(battle_id, strength_total)
