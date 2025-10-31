@@ -360,7 +360,9 @@ func setup_hit_zone_borders():
 	for i in range(hit_zones.size()):
 		var hit_zone = hit_zones[i]
 		if is_instance_valid(hit_zone):
-			hit_zone.color = Color(1, 1, 1, 0)
+			# Set background color if it's a ColorRect
+			if hit_zone is ColorRect:
+				hit_zone.color = Color(1, 1, 1, 0)
 
 			var border = Line2D.new()
 			border.width = BattleManager.HITZONE_BORDER_WIDTH
