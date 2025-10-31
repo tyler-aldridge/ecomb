@@ -170,6 +170,10 @@ func _play_character_tone():
 	# Choose frequency: random for all but last, highest for last
 	var frequency = final_frequency if is_last_char else randf_range(min_frequency, max_frequency)
 
+	# Get amplitude from universal text volume setting (0-100 -> 0.0-0.3)
+	var text_volume = GameManager.get_setting("text_volume", 100)
+	var amplitude = (text_volume / 100.0) * 0.3
+
 	# Generate tone samples
 	var sample_count = int(audio_generator.mix_rate * tone_duration)
 	var increment = frequency / audio_generator.mix_rate
@@ -184,5 +188,5 @@ func _play_character_tone():
 		if i > sample_count * 0.7:
 			envelope = 1.0 - ((i - sample_count * 0.7) / (sample_count * 0.3))
 
-		# Push stereo frame (reduced amplitude from 0.3 to 0.15 for quieter sound)
-		playback.push_frame(Vector2(sample * envelope * 0.15, sample * envelope * 0.15))
+		# Push stereo frame with amplitude from universal settings
+		playback.push_frame(Vector2(sample * envelope * amplitude, sample * envelope * amplitude))
