@@ -135,11 +135,13 @@ func setup_ui():
 	effects_layer.z_index = 100
 	add_child(effects_layer)
 
-	# UI Container (positioned 50px from bottom of screen)
+	# UI Container - anchor to bottom of screen so button is 50px from bottom
 	ui_container = VBoxContainer.new()
-	ui_container.custom_minimum_size = Vector2(1500, 400)
-	ui_container.size = Vector2(1500, 400)
-	ui_container.position = Vector2(960 - 750, 1080 - 450)  # Centered horizontally, 50px from bottom
+	ui_container.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)  # Anchor to bottom
+	ui_container.grow_vertical = Control.GROW_DIRECTION_BEGIN  # Grow upward from bottom
+	ui_container.offset_left = 210  # Centered (960 - 750)
+	ui_container.offset_right = -210  # Centered (960 + 750 = 1710, screen = 1920)
+	ui_container.offset_bottom = -50  # 50px from bottom
 	ui_container.add_theme_constant_override("separation", 15)
 	add_child(ui_container)
 
@@ -311,13 +313,13 @@ func _start_conductor():
 	"""Start conductor after fade completes."""
 	setup_conductor()
 	conductor_started = true
-	# Spawn first note immediately so player doesn't wait
+	# Spawn first note after a delay so player doesn't wait
 	await get_tree().create_timer(0.5).timeout
 	if conductor and conductor_started:
-		spawn_random_note()
-		# Set last_spawn_bar so regular spawning continues from here
+		# Set last_spawn_bar BEFORE spawning to prevent _process from spawning duplicate
 		var ticks_per_bar = 4 * conductor.subdivision  # 4 beats per bar * 2 subdivision = 8 ticks
 		last_spawn_bar = int(conductor.song_pos_in_beats / ticks_per_bar)
+		spawn_random_note()
 
 func _process(_delta):
 	"""Spawn notes based on Conductor beats and play metronome when notes are centered."""
