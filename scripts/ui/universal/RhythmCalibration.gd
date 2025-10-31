@@ -306,6 +306,9 @@ func fade_from_black():
 	setup_conductor()
 	conductor_started = true
 	last_metronome_bar = -1
+	# Spawn first note immediately
+	spawn_random_note()
+	last_spawn_bar = 0
 	# Start fade
 	var tween = create_tween()
 	tween.tween_property(fade_overlay, "modulate:a", 0.0, 3.0).set_ease(Tween.EASE_OUT)
@@ -468,6 +471,12 @@ func _on_done_pressed():
 	"""Handle Done button press."""
 	# Stop spawning new notes and playing metronome
 	is_exiting = true
+
+	# Hide all active notes immediately
+	for note in active_notes:
+		if is_instance_valid(note):
+			note.queue_free()
+	active_notes.clear()
 
 	# Save the calibrated offset
 	GameManager.set_setting("rhythm_timing_offset", int(calibration_slider.value))

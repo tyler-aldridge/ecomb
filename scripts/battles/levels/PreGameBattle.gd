@@ -647,7 +647,9 @@ func check_automatic_misses():
 	for note in active_notes:
 		if is_instance_valid(note):
 			var hit_zone_y = BattleManager.HIT_ZONE_POSITIONS[note.track_key].y
-			if note.position.y > hit_zone_y + BattleManager.MISS_WINDOW:
+			var note_height = BattleManager.get_note_height(note)
+			# Check if BOTTOM of note has passed the miss window (not just top)
+			if note.position.y + note_height > hit_zone_y + BattleManager.HITZONE_HEIGHT + BattleManager.MISS_WINDOW:
 				notes_to_remove.append(note)
 
 	# Now process the missed notes outside the iteration
@@ -779,3 +781,24 @@ func process_miss():
 	# Register miss with BattleManager (handles combo reset, groove penalty, etc.)
 	BattleManager.register_hit("MISS")
 	BattleManager.animate_opponent_miss(opponent_sprite, opponent_original_pos, self)
+
+	# Play hurt sound
+	var hurt_sound = AudioStreamPlayer.new()
+	hurt_sound.stream = preload("res://assets/audio/sfx/hurt.ogg")
+	hurt_sound.bus = "SFX"
+	add_child(hurt_sound)
+	hurt_sound.play()
+	hurt_sound.finished.connect(func(): hurt_sound.queue_free())
+
+	# Flash screen red
+	var screen_flash = ColorRect.new()
+	screen_flash.color = Color(1.0, 0.0, 0.0, 0.3)  # Red with 30% opacity
+	screen_flash.size = get_viewport().get_visible_rect().size
+	screen_flash.z_index = 999
+	screen_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui_layer.add_child(screen_flash)
+
+	# Fade out the red flash
+	var flash_tween = create_tween()
+	flash_tween.tween_property(screen_flash, "modulate:a", 0.0, 0.3)
+	flash_tween.tween_callback(func(): screen_flash.queue_free())
