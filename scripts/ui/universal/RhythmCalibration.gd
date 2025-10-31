@@ -190,8 +190,6 @@ func setup_ui():
 
 	ui_container.add_child(calibration_slider)
 
-	print("Slider created: editable=", calibration_slider.editable, " scrollable=", calibration_slider.scrollable, " value=", calibration_slider.value)
-
 	# Instructions label (50px font, centered)
 	instructions_label = Label.new()
 	instructions_label.text = "Adjust timing until notes feel perfectly synchronized."
@@ -459,26 +457,22 @@ func _on_slider_value_changed(value: float):
 	# Existing notes on screen should not jump around when slider changes.
 
 func _on_slider_drag_ended(_value_changed: bool):
-	"""Handle slider drag end (log the value)."""
-	print("Offset preview: ", int(calibration_slider.value), "ms (applies to new notes only)")
+	"""Handle slider drag end."""
+	pass
 
 func _on_button_hover():
 	"""Play hover sound when mouse enters button."""
-	print("Button hover detected!")
 	if hover_sound:
 		hover_sound.play()
 
 func _on_done_pressed():
 	"""Handle Done button press."""
-	print("Done button pressed!")
-
 	# Stop spawning new notes and playing metronome
 	is_exiting = true
 
 	# Save the calibrated offset
 	GameManager.set_setting("rhythm_timing_offset", int(calibration_slider.value))
 	GameManager.save_settings()
-	print("Offset saved: ", int(calibration_slider.value), "ms")
 
 	# Play click sound
 	if click_sound:
