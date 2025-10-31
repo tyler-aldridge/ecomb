@@ -432,10 +432,11 @@ func spawn_notes_polling():
 	This function checks if notes should spawn based on the current beat position.
 	Uses while loop to catch up if frames were dropped.
 	"""
-	if not conductor or not conductor.playing:
+	if not conductor:
 		return
 
 	# Get current beat position from conductor (DSP time)
+	# NOTE: This works during negative countdown too! Allows notes to spawn in advance.
 	var current_beat = conductor.song_pos_in_beats
 
 	# Spawn all notes that should be visible now
