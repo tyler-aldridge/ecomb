@@ -21,6 +21,9 @@ var next_countdown_index: int = 0
 var next_trigger_index: int = 0
 var next_note_index: int = 0
 
+# Conductor state
+var conductor_started: bool = false  # Track if conductor has started playback
+
 # ============================================================================
 # UNIVERSAL BATTLE MECHANICS - See BattleManager autoload
 # ============================================================================
@@ -282,6 +285,7 @@ func _ready():
 	# ✅ ZERO notes/dialogue visible during fade (0-2.5s)
 	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
 	conductor.play_with_beat_offset()
+	conductor_started = true  # NOW notes can spawn
 
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
@@ -434,7 +438,7 @@ func spawn_notes_polling():
 	This function checks if notes should spawn based on the current beat position.
 	Uses while loop to catch up if frames were dropped.
 	"""
-	if not conductor:
+	if not conductor or not conductor_started:
 		return
 
 	# Get current beat position from conductor (DSP time)
