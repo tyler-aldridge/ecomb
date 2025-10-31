@@ -1,7 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://dt4uh06cpm0yx"]
+[gd_scene load_steps=10 format=3 uid="uid://dt4uh06cpm0yx"]
 
 [ext_resource type="Script" uid="uid://dwxp1t1ktixp" path="res://scripts/ui/title/LoadMenu.gd" id="1_e7oux"]
-[ext_resource type="Texture2D" uid="uid://cfhnm68xsojk6" path="res://assets/interface/ui/panel-gradient-1.png" id="2_vgpvv"]
+[ext_resource type="Texture2D" uid="uid://dylllg1j0ew1t" path="res://assets/interface/ui/panel-gradient-5.png" id="2_vgpvv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vgpvv"]
 content_margin_left = 25.0
@@ -61,6 +61,8 @@ content_margin_left = 50.0
 content_margin_top = 25.0
 content_margin_right = 50.0
 content_margin_bottom = 25.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Separator"]
 
 [node name="LoadMenu" type="Control"]
 custom_minimum_size = Vector2(1920, 1080)
@@ -142,7 +144,7 @@ wraparound_items = false
 [node name="Spacer" type="HSeparator" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-theme_override_styles/separator = SubResource("StyleBoxFlat_88x8e")
+theme_override_styles/separator = SubResource("StyleBoxFlat_Separator")
 
 [node name="ButtonContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2

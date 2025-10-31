@@ -1,7 +1,7 @@
 [gd_scene load_steps=16 format=3 uid="uid://d0rti8do8rhgl"]
 
 [ext_resource type="Script" uid="uid://co75rxqi8oa51" path="res://scripts/ui/title/CharacterCreation.gd" id="1_cbx6h"]
-[ext_resource type="Texture2D" uid="uid://dylllg1j0ew1t" path="res://assets/interface/ui/panel-gradient-5.png" id="2_l5yrd"]
+[ext_resource type="Texture2D" uid="uid://cfhnm68xsojk6" path="res://assets/interface/ui/panel-gradient-1.png" id="2_l5yrd"]
 [ext_resource type="Texture2D" uid="uid://cfvlcvrc6ylsq" path="res://assets/characters/muscle_man/RipJackson_idel2size.png" id="3_iwtsb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kd0gt"]

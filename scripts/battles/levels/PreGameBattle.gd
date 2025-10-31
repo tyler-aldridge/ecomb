@@ -276,16 +276,18 @@ func _ready():
 	# NO BEAT SIGNAL CONNECTION - we poll conductor.song_pos_in_beats instead
 
 	# Start with beat offset
-	# TIMELINE (at 152 BPM, beats_before_start=20):
+	# TIMELINE (at 152 BPM, beats_before_start=32):
 	#   0.0s: Scene starts, fade begins
-	#   0.5s: Conductor starts countdown at beat -20 (BATTLE_START_DELAY)
-	#   2.5s: Fade finishes (conductor at ~beat -14.4)
-	#   3.24s: First note spawns (beat -12, with FALL_BEATS=12 advance)
-	#   4.21s: Music starts (beat 0), dialogue appears, first note reaches hitzone
+	#   0.5s: Conductor starts countdown at beat -32 (BATTLE_START_DELAY)
+	#   2.5s: Fade finishes (conductor at ~beat -26.6)
+	#   3.02s: Backend activates at beat -30 (conductor_started = true)
+	#   3.97s: First note spawns (beat -12, with FALL_BEATS=12 advance)
+	#   6.34s: Music starts (beat 0), dialogue appears, first note reaches hitzone
 	# ✅ ZERO notes/dialogue visible during fade (0-2.5s)
+	# ✅ Backend activates at beat -30 (2 beats after conductor start)
 	await get_tree().create_timer(BattleManager.BATTLE_START_DELAY).timeout
 	conductor.play_with_beat_offset()
-	conductor_started = true  # NOW notes can spawn
+	# conductor_started will be set to true in _physics_process when beat reaches -30
 
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
@@ -408,6 +410,10 @@ func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
 	if conductor:
+		# Activate backend at beat -30 (2 beats after start)
+		if not conductor_started and conductor.song_pos_in_beats >= -30:
+			conductor_started = true
+
 		# Check for automatic misses (this also removes notes)
 		check_automatic_misses()
 

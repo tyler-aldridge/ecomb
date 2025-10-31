@@ -9,7 +9,7 @@
   "bpm": 152,
   "time_signature_numerator": 4,
   "time_signature_denominator": 4,
-  "beats_before_start": 20,
+  "beats_before_start": 32,
   "num_lanes": 3,
   "dialogue": [
     {"beat_position": 0, "text": "Yo chump! Think you got what it takes? Don't embarrass yourself out there, cupcake!", "character": "opponent", "duration": 5.0},
