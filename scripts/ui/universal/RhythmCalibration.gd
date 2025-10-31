@@ -208,7 +208,16 @@ func setup_ui():
 	done_button.focus_mode = Control.FOCUS_ALL
 	done_button.mouse_filter = Control.MOUSE_FILTER_PASS
 
-	# Style button with yellow border on hover
+	# Style button with white border normally, yellow on hover/press
+	var button_normal_style = StyleBoxFlat.new()
+	button_normal_style.bg_color = Color(0.7, 0.7, 0.7, 0.3)
+	button_normal_style.border_width_left = 3
+	button_normal_style.border_width_top = 3
+	button_normal_style.border_width_right = 3
+	button_normal_style.border_width_bottom = 3
+	button_normal_style.border_color = Color.WHITE
+	done_button.add_theme_stylebox_override("normal", button_normal_style)
+
 	var button_hover_style = StyleBoxFlat.new()
 	button_hover_style.bg_color = Color(0.8, 0.8, 0.8, 0.3)
 	button_hover_style.border_width_left = 3
