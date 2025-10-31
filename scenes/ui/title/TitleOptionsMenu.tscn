@@ -1,10 +1,11 @@
-[gd_scene load_steps=15 format=3 uid="uid://c6h3w4y0dc52j"]
+[gd_scene load_steps=16 format=3 uid="uid://c6h3w4y0dc52j"]
 
 [ext_resource type="Script" uid="uid://cubyc6d2rwa8f" path="res://scripts/ui/title/TitleOptionsMenu.gd" id="1_evyrg"]
 [ext_resource type="Texture2D" uid="uid://ddpukf3u74xr0" path="res://assets/interface/ui/panel-gradient-4.png" id="2_rcr6o"]
 [ext_resource type="Texture2D" uid="uid://dlteajxyiio2x" path="res://assets/interface/ui/grabber.png" id="3_glr2s"]
 [ext_resource type="AudioStream" uid="uid://crdbghfx0kv4j" path="res://assets/audio/sfx/blip.ogg" id="4_hover"]
 [ext_resource type="AudioStream" uid="uid://dwnyjl8oi2gwc" path="res://assets/audio/sfx/blop.ogg" id="5_8ojng"]
+[ext_resource type="AudioStream" uid="uid://dhlp5d5he2cwc" path="res://assets/audio/sfx/hurt.ogg" id="6_hurt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glr2s"]
 bg_color = Color(1, 1, 1, 1)
@@ -275,6 +276,10 @@ bus = &"SFX"
 
 [node name="SuccessSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("5_8ojng")
+bus = &"SFX"
+
+[node name="HurtSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6_hurt")
 bus = &"SFX"
 
 [connection signal="toggled" from="OptionsContainer/FullScreenContainer/FullScreenCheckbox" to="." method="_on_fullscreen_toggled"]

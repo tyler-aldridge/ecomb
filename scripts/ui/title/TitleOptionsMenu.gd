@@ -14,6 +14,7 @@ signal closed
 # Audio players
 @onready var button_hover_sound: AudioStreamPlayer = $ButtonHoverSound
 @onready var success_sound: AudioStreamPlayer = $SuccessSound
+@onready var hurt_sound: AudioStreamPlayer = $HurtSound
 
 func _ready():
 	# Connect volume sliders
@@ -95,7 +96,7 @@ func _on_close_pressed():
 
 func _on_reset_pressed():
 	"""Reset all settings to default values."""
-	success_sound.play()
+	hurt_sound.play()
 	# Reset all settings to defaults
 	GameManager.set_setting("master_volume", 85)
 	GameManager.set_setting("music_volume", 75)
