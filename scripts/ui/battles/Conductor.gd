@@ -35,7 +35,7 @@ var subdivision: int = 2
 
 # Countdown phase tracking (before audio starts)
 var in_countdown: bool = false
-var countdown_time_elapsed: float = 0.0
+var countdown_start_time: float = 0.0  # Real time when countdown started
 var countdown_duration: float = 0.0
 var countdown_tick_interval: float = 0.0
 var countdown_next_beat: float = 0.0
@@ -74,7 +74,8 @@ func _process(delta: float) -> void:
 
 	# COUNTDOWN PHASE: Before audio starts (silent beat tracking)
 	if in_countdown:
-		countdown_time_elapsed += delta
+		# Use real time instead of delta accumulation for web accuracy
+		var countdown_time_elapsed = (Time.get_ticks_msec() / 1000.0) - countdown_start_time
 
 		# Check if countdown is complete - start audio at beat 0
 		if countdown_time_elapsed >= countdown_duration:
@@ -145,9 +146,9 @@ func _attempt_audio_recovery():
 
 func play_with_beat_offset() -> void:
 	"""Start playback with countdown phase (industry standard approach)."""
-	# Initialize countdown phase
+	# Initialize countdown phase with real time tracking
 	in_countdown = true
-	countdown_time_elapsed = 0.0
+	countdown_start_time = Time.get_ticks_msec() / 1000.0  # Current time in seconds
 	countdown_tick_interval = sec_per_beat / float(subdivision)
 	countdown_next_beat = -beats_before_start
 
