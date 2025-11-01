@@ -103,9 +103,8 @@ func _process(_delta):
 	# Interpolate position based on progress
 	position.y = lerp(spawn_y, target_y, progress)
 
-	# Despawn when past screen (20% beyond target)
-	if progress > despawn_progress:
-		visible = false
+	# NOTE: Despawn is now handled by check_automatic_misses() in battle scenes
+	# This ensures notes are visible until they trigger the miss animation
 
 func is_past_despawn_threshold() -> bool:
 	"""Check if note is past the despawn threshold.
