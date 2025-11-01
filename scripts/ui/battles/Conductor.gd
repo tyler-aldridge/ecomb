@@ -190,6 +190,11 @@ func stop():
 	song_position = 0.0
 	song_pos_in_beats = 0.0
 
+# Active state (includes countdown phase + playing phase)
+var is_active: bool:
+	get:
+		return in_countdown or music_player.playing
+
 # Legacy compatibility properties
 var playing: bool:
 	get:

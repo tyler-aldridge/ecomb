@@ -299,9 +299,10 @@ func _ready():
 	# Mark fade as completed - notes can now spawn
 	fade_completed = true
 
-	# Start conductor after fade completes
+	# Start conductor countdown phase after fade completes
+	# The conductor will count from beat -33 to 0, then start the music
 	conductor.play_with_beat_offset()
-	# conductor_started will be set to true in _physics_process when conductor is playing
+	# conductor_started will be set to true in _physics_process when conductor becomes active
 
 func create_battle_ui():
 	"""Instantiate and add battle UI elements to a CanvasLayer."""
@@ -431,10 +432,10 @@ func prepare_notes():
 func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
-	# CRITICAL: Only process if conductor is actually playing AND fade is complete!
-	# This prevents notes from appearing during the initial fade-in
-	if conductor and conductor.playing and fade_completed:
-		# Activate backend when conductor is playing
+	# CRITICAL: Only process if conductor is active (countdown or playing) AND fade is complete!
+	# This allows notes to spawn during the countdown phase (beats -33 to 0)
+	if conductor and conductor.is_active and fade_completed:
+		# Activate backend when conductor is active
 		if not conductor_started:
 			conductor_started = true
 
@@ -551,8 +552,8 @@ func spawn_note_interpolation(note_data: Dictionary):
 	Args:
 		note_data: Dictionary containing note information
 	"""
-	# CRITICAL: Only spawn if conductor is playing
-	if not conductor or not conductor.playing:
+	# CRITICAL: Only spawn if conductor is active (countdown or playing)
+	if not conductor or not conductor.is_active:
 		return
 
 	var lane = note_data.get("lane", "1")
@@ -723,9 +724,6 @@ func check_automatic_misses():
 				note.stop_movement()
 			if note.has_method("set_physics_process"):
 				note.set_physics_process(false)
-
-			# Get note height for proper effect positioning
-			var note_height = BattleManager.get_note_height(note)
 
 			# Calculate effect position at the exact bottom edge of the screen
 			# Note center X, screen bottom Y (where the note is exiting)
