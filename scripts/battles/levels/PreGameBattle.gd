@@ -23,6 +23,7 @@ var next_note_index: int = 0
 
 # Conductor state
 var conductor_started: bool = false  # Track if conductor has started playback
+var fade_completed: bool = false  # Track if initial fade-in has completed
 
 # ============================================================================
 # UNIVERSAL BATTLE MECHANICS - See BattleManager autoload
@@ -256,9 +257,14 @@ func _ready():
 		BattleManager.battle_failed.connect(_on_battle_failed)
 
 	# Clear any leftover active notes from previous battle (in case of restart)
-	# CRITICAL: Free the actual note nodes, not just clear the array!
+	# CRITICAL: Free the actual note nodes IMMEDIATELY, not just clear the array!
 	for note in active_notes:
 		if is_instance_valid(note):
+			# Hide immediately to prevent visual artifacts
+			note.visible = false
+			# Remove from scene tree immediately (don't wait for queue_free)
+			if note.get_parent():
+				note.get_parent().remove_child(note)
 			note.queue_free()
 	active_notes.clear()
 
@@ -290,6 +296,9 @@ func _ready():
 	fade_from_black()
 	await get_tree().create_timer(BattleManager.FADE_FROM_BLACK_DURATION + 0.5).timeout  # Wait for fade + 0.5s buffer
 
+	# Mark fade as completed - notes can now spawn
+	fade_completed = true
+
 	# Start conductor after fade completes
 	conductor.play_with_beat_offset()
 	# conductor_started will be set to true in _physics_process when conductor is playing
@@ -316,7 +325,25 @@ func create_battle_ui():
 	# Song credit label (fades in at start, fades out after 10 seconds)
 	# Position: 50px from left edge, 50px below groove bar
 	if level_data.has("song_name"):
-		BattleManager.create_song_credit_label(level_data.get("song_name"), ui_layer, self)
+		var song_credit = Label.new()
+		song_credit.text = level_data.get("song_name")
+		song_credit.add_theme_font_size_override("font_size", 32)
+		song_credit.add_theme_color_override("font_color", Color.WHITE)
+		song_credit.position = Vector2(50, 100)  # 50px from left, 100px from top (below groove bar)
+		song_credit.modulate.a = 0.0  # Start invisible
+		ui_layer.add_child(song_credit)
+
+		# Fade in over 1 second
+		var fade_in_tween = create_tween()
+		fade_in_tween.tween_property(song_credit, "modulate:a", 1.0, 1.0)
+
+		# After 10 seconds, fade out over 1 second and remove
+		var fade_out_tween = create_tween()
+		fade_out_tween.tween_property(song_credit, "modulate:a", 0.0, 1.0).set_delay(10.0)
+		fade_out_tween.tween_callback(func():
+			if is_instance_valid(song_credit):
+				song_credit.queue_free()
+		)
 
 	# Battle results menu (hidden until battle completes successfully)
 	var battle_results_scene = preload("res://scenes/ui/battles/BattleResults.tscn")
@@ -404,8 +431,9 @@ func prepare_notes():
 func _physics_process(_delta):
 	"""Poll conductor and spawn notes based on beat position."""
 	# POLLING-BASED SPAWNING: Check conductor every frame
-	# CRITICAL: Only process if conductor is actually playing, not just existing!
-	if conductor and conductor.playing:
+	# CRITICAL: Only process if conductor is actually playing AND fade is complete!
+	# This prevents notes from appearing during the initial fade-in
+	if conductor and conductor.playing and fade_completed:
 		# Activate backend when conductor is playing
 		if not conductor_started:
 			conductor_started = true
@@ -696,16 +724,17 @@ func check_automatic_misses():
 			if note.has_method("set_physics_process"):
 				note.set_physics_process(false)
 
-			# Get note's actual height dynamically
+			# Get note height for proper effect positioning
 			var note_height = BattleManager.get_note_height(note)
 
-			# Calculate effect position - note center at screen bottom
+			# Calculate effect position at the exact bottom edge of the screen
+			# Note center X, screen bottom Y (where the note is exiting)
 			var effect_pos = Vector2(note.position.x + 100, screen_bottom)
 
 			# Create shatter effect IMMEDIATELY (this hides note and creates shards simultaneously)
 			BattleManager.create_miss_fade_tween(note)
 
-			# Show explosion and feedback at the SAME time
+			# Show explosion and feedback at the SAME time (no delay)
 			BattleManager.explode_note_at_position(note, "black", 2, effect_pos, effects_layer, self)
 			BattleManager.show_feedback_at_position(BattleManager.get_random_feedback_text("MISS"), effect_pos, true, effects_layer, self)
 
