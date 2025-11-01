@@ -67,7 +67,7 @@ func _ready() -> void:
 	add_child(music_player)
 	music_player.name = "MusicPlayer"
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	# Pause handling
 	if is_paused:
 		return

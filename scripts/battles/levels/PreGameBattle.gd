@@ -324,13 +324,13 @@ func create_battle_ui():
 	hit_zones = displays.get("hitzones", [])
 
 	# Song credit label (fades in at start, fades out after 10 seconds)
-	# Position: 50px from left edge, 50px below groove bar
+	# Position: 25px from left edge, 50px below groove bar
 	if level_data.has("song_name"):
 		var song_credit = Label.new()
 		song_credit.text = level_data.get("song_name")
-		song_credit.add_theme_font_size_override("font_size", 32)
+		song_credit.add_theme_font_size_override("font_size", 35)
 		song_credit.add_theme_color_override("font_color", Color.WHITE)
-		song_credit.position = Vector2(50, 100)  # 50px from left, 100px from top (below groove bar)
+		song_credit.position = Vector2(25, 100)  # 25px from left, 100px from top (below groove bar)
 		song_credit.modulate.a = 0.0  # Start invisible
 		ui_layer.add_child(song_credit)
 
