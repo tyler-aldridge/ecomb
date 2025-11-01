@@ -81,6 +81,12 @@ func _process(_delta: float) -> void:
 		if countdown_time_elapsed >= countdown_duration:
 			in_countdown = false
 			music_player.play()
+
+			# CRITICAL WEB FIX: Wait a frame for audio to actually start playing
+			# On web, there's a lag spike when play() is called, so we need to
+			# capture DSP time AFTER the audio has started, not before
+			await get_tree().process_frame
+
 			audio_start_dsp_time = AudioServer.get_time_since_last_mix()
 			song_pos_in_beats = 0.0
 			return
